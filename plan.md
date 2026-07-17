@@ -20,15 +20,15 @@
 - No Supabase state was inspected during this documentation update. The repository itself contains no `supabase/` directory or migrations.
 - Node is not on the shell's default `PATH`, but the Codex workspace provides Node 24 and pnpm 11 for scaffolding and verification.
 - With the bundled Node runtime on `PATH`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm build` pass as of 2026-07-17.
-- GitHub push succeeded, but no Git-integrated Vercel check appeared and the accessible Vercel team initially had no project. A connector call explicitly requesting `target: preview` instead created project `prj_911Yucv5Ugu7vGeLqkWunrjswBSV` and deployment `dpl_3jzQLEEoH6jFyU3ikSbXYYhYYwPZ` as a production target. After confirming that the exact project was created with and contained only that deployment, it was deleted through the authenticated Vercel dashboard on 2026-07-17. Authoritative reads return `404` for both IDs and the team project inventory is empty. Two fresh Vercel CLI device-login attempts were rejected while the CLI remained waiting; both sessions were cancelled, and no replacement project or deployment was created.
+- Vercel CLI authentication is established as `wangd25`. GitHub repository `wangd25/namemore` is connected to Vercel project `namemore` (`prj_w1Py6yIeo5YUcGGpduA32VdgFeSH`) in team `namemore`, with `main` configured as the production branch. Preview deployment `dpl_678tmSyH761zXoqfTnfdqsRg9hLh` at `https://namemore-5t10gmiq8-namemore.vercel.app` was verified `READY` with `target: preview`, returned HTTP 200 with the expected page, and passed the deployed smoke check. Production has zero deployments.
 - Browser QA verified ready, playing, and result states at 1440×1000 and 390×844 with no application console warnings/errors or horizontal overflow. The latest production-build trial confirmed a transparent borderless writing line, prefix-safe `James` → `LeBron James` acceptance, topic-icon adjacency, the stronger team-color wash, and the green quick-pair ripple/notification. At 390×844 the notification sits below the answer area without covering accepted names. The complete flow also covers milestone, duplicate location, graceful finish, timeline/team coverage, and replay. Web Share was present in the test browser, so its native share sheet was not opened automatically; automated tests cover the clipboard fallback and spoiler-free payload.
 
 ## Progress Snapshot
 
 | Phase | Status | What remains |
 | --- | --- | --- |
-| 1. Playable single-player vertical slice | **Branch/commit/push and Vercel cleanup complete; preview gate blocked** | Authenticate a preview-only deployment path, deploy the pushed commit with verifiable source identity and no production target, and run the deployed desktop/mobile smoke test. |
-| 2. Server-authoritative daily challenge | **Not started** | Supabase anonymous identity, schema/RLS/RPCs, Route Handlers, and hostile-client tests. |
+| 1. Playable single-player vertical slice | **Complete** | All implementation, publication, preview-target verification, and deployed smoke-test gates passed. |
+| 2. Server-authoritative daily challenge | **Active** | Supabase anonymous identity, schema/RLS/RPCs, Route Handlers, and hostile-client tests. |
 | 3. Daily leaderboard and preview release | **Not started** | Verified leaderboard, daily UX, E2E coverage, and preview deployment verification. |
 | 4. Secure private room lobby | **Not started** | Room/player schema, create/join/rejoin/start flows, UI, and authorization tests. |
 | 5. Live private-race multiplayer | **Not started** | Safe Realtime state, private submissions, reconnect behavior, and post-round reveal. |
@@ -36,7 +36,7 @@
 | 7. General category studio and discovery | **Not started** | Category-agnostic contracts, editable prompt recommendations, moderated custom-category drafts, and real aggregate discovery cards. |
 | 8. Production hardening and launch | **Not started** | Abuse controls, retention, full reviews, release verification, and production smoke tests. |
 
-**Phase count:** Phase 1 is locally complete with one blocked external publication gate remaining. Phases 2–8 have not started, so 7 full implementation phases remain after the Phase 1 gate is completed.
+**Phase count:** Phase 1 is complete. Phase 2 is active, and 7 implementation phases remain.
 
 ## Locked Product and Architecture Decisions
 
@@ -120,7 +120,7 @@ An answer may have no icon at all. Team codes become one NBA adapter for `visual
 
 ## Phase 1 — Playable Single-Player Vertical Slice
 
-**Status: Branch, focused application commit, GitHub push, and unintended Vercel production cleanup complete; preview gate blocked on authentication.** The game, automated tests, local checks, desktop/mobile local visual QA, complete diff review, and secret-scope review are complete. The pushed branch did not receive a Git-integrated preview. The unacceptable production-target project/deployment was deleted and verified absent, but Vercel rejected two fresh CLI device-login attempts. No replacement deployment or deployed smoke test exists.
+**Status: Complete.** The game, automated tests, local checks, desktop/mobile QA, complete diff review, secret-scope review, GitHub publication, preview-only deployment, authoritative target verification, and deployed smoke test are complete. All unintended production deployments were removed, and production has zero deployments.
 
 This phase is intentionally large enough for a separate chat: it establishes the entire frontend/tooling foundation, curates the 300-player domain dataset, implements the complete local game loop, and verifies it.
 
@@ -147,12 +147,12 @@ This phase is intentionally large enough for a separate chat: it establishes the
 - [x] Review the complete working-tree diff and secret scope before publication. The review passed on 2026-07-16; no staged files, `.env` files, credential-shaped values, API directories, Supabase directories, or migrations were found.
 - [x] After explicit approval, create `codex/phase-1-whiteboard-preview`, commit the reviewed Phase 1 scope as `09fcb0d3b412bbb9d289dfc3a579f4fe3325a696`, and push it to `origin`.
 - [x] Delete Vercel project `prj_911Yucv5Ugu7vGeLqkWunrjswBSV` and its only deployment `dpl_3jzQLEEoH6jFyU3ikSbXYYhYYwPZ`, which the connector created as `target: production` despite a preview request; verify both return `404` and the team project inventory is empty.
-- [ ] Resolve Vercel CLI or Git-integration authentication, establish a commit-addressable preview-only deployment for the pushed commit, and complete the required deployed desktop/mobile smoke test.
+- [x] Establish authenticated Vercel CLI and Git-integrated preview access, create a commit-addressable preview-only deployment, verify its authoritative target and source identity, and complete the deployed smoke test.
 - Phase 1 is complete only when the game is playable end-to-end and, after separate publish approval, its branch/commit is pushed and a Vercel preview is smoke-tested.
 
 ## Phase 2 — Server-Authoritative Daily Challenge
 
-**Status: Not started.** Begin only after the Phase 1 acceptance gate is complete.
+**Status: Active.** Phase 1's acceptance gate is complete.
 
 - Add Supabase SSR clients with cookie-backed anonymous sessions and dynamic rendering for user-specific pages. Enable anonymous sign-in with abuse controls before public release.
 - Add timestamped migrations for immutable category versions/answers/aliases, daily challenges, attempts, and accepted submissions. Seed the reviewed NBA snapshot; keep answer tables unreadable to browser roles.
@@ -269,6 +269,6 @@ Current handoff facts:
 - The slightly louder two-note accepted-answer chime is implemented and tested. The category-first future direction—editable prompt recommendations, generalized topic visuals, moderated category drafts, and real aggregate discovery cards—is documented across all three project Markdown files but intentionally not implemented before its prerequisite phase.
 - Desktop and mobile ready/playing/results checks passed at 1440×1000 and 390×844 without application console warnings/errors or horizontal overflow. Live QA covered automatic acceptance, the five-name milestone, duplicate-line location, graceful finish, detailed results, and replay; automated tests cover the full local interaction loop plus storage and spoiler-safe sharing.
 - The refreshed complete diff, whitespace, and secret-scope review passed. The approved 34-path scope is committed and pushed on `codex/phase-1-whiteboard-preview`; `main` remains untouched.
-- GitHub branch creation, commit, and push succeeded. The unintended Vercel production-target project/deployment was deleted and verified absent. Vercel publication remains blocked because two fresh CLI device-login attempts were rejected and the push produced no Git-integrated preview. No replacement deployment, deployed smoke test, or Supabase change exists.
+- GitHub branch creation, commit, and push succeeded. Vercel authentication and Git integration are established; the Phase 1 preview is `READY`, has `target: preview`, and passed its deployed smoke check. Production has zero deployments. No Supabase change exists yet.
 
-The next action is to establish authenticated Vercel CLI or Git-integrated preview access, then create a preview-only deployment for commit `09fcb0d3b412bbb9d289dfc3a579f4fe3325a696`, verify its authoritative target/source identity, and run the requested desktop/mobile smoke test. Do not claim Phase 1 publication success or begin Phase 2 until that gate is complete.
+The next action is Phase 2: add a non-production Supabase-backed, server-authoritative daily challenge with anonymous identity, hidden answer-bank storage, RLS, atomic start/submit/finish operations, thin Route Handlers, hostile-client tests, and a preview-only deployed smoke test. Do not begin Phase 3 until that gate is complete.

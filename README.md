@@ -4,11 +4,11 @@ NameMore is a fast-paced, category-first recall platform where players try to na
 
 ## Current Status
 
-The project has a **locally complete Phase 1 of 8: Playable Single-Player Vertical Slice**. Its reviewed branch, focused application commit, GitHub push, and cleanup of the unintended Vercel production deployment are complete. The preview-only deployment and deployed smoke-test portion of the publication gate is blocked on Vercel CLI authentication and remains incomplete.
+The project has a **complete Phase 1 of 8: Playable Single-Player Vertical Slice**. Its reviewed branch, focused application commit, GitHub push, preview-only Vercel deployment, deployed smoke test, and cleanup of unintended production deployments are complete. Phase 2, the server-authoritative daily challenge, is now the active milestone.
 
 **Handoff state:** `codex/phase-1-whiteboard-preview` contains pushed commit `09fcb0d3b412bbb9d289dfc3a579f4fe3325a696` (`Build Phase 1 whiteboard recall game`). The commit contains the 34 reviewed Phase 1 application, test, configuration, asset, lockfile, and documentation paths; the local and remote branch heads matched after push. `main` was not changed or merged, and no Supabase or Phase 2 work was performed.
 
-The pushed branch did not produce a Git-integrated Vercel check, and the accessible Vercel team initially had no project. A Vercel connector call explicitly requesting a preview instead created project `prj_911Yucv5Ugu7vGeLqkWunrjswBSV` and deployment `dpl_3jzQLEEoH6jFyU3ikSbXYYhYYwPZ` as a production target. The exact isolated project and its only deployment were deleted through the authenticated Vercel dashboard on 2026-07-17; authoritative reads now return `404` for both IDs and the team project inventory is empty. Two subsequent Vercel CLI device-login attempts were rejected while the CLI remained waiting, so no replacement project or deployment was created. Publication remains blocked until an authenticated preview-only deployment of the pushed commit is available and smoke-tested.
+Vercel CLI authentication is established as `wangd25`. GitHub repository `wangd25/namemore` is connected to Vercel project `namemore` (`prj_w1Py6yIeo5YUcGGpduA32VdgFeSH`) in team `namemore`, and `main` is the configured production branch. Preview deployment `dpl_678tmSyH761zXoqfTnfdqsRg9hLh` at `https://namemore-5t10gmiq8-namemore.vercel.app` was verified `Ready` with `target: preview`, returned HTTP 200 with the expected page, and passed the deployed smoke check. Production has zero deployments.
 
 Implemented:
 
@@ -37,7 +37,6 @@ Implemented:
 
 Not implemented yet:
 
-- Authenticated creation of a commit-addressable preview-only deployment of the pushed Phase 1 commit and the deployed desktop/mobile smoke test.
 - Daily challenge routes, server-authoritative validation, anonymous identity, Supabase schema/RLS, and leaderboard.
 - Private rooms, Realtime multiplayer, elimination mode, rate limiting, and production launch hardening.
 - The editable prompt composer, community-derived recommendations, general custom-category workflow, ambient popular-prompt/high-score/lobby cards, and category-agnostic result metrics.
@@ -90,7 +89,7 @@ Verification snapshot from 2026-07-17:
 
 ## Roadmap Remaining
 
-Phase 1 has only its Vercel authentication, preview, and smoke-test gate left. After that gate is completed, **7 full phases remain**: server-authoritative daily play, leaderboard/preview release, private-room lobby, live private-race multiplayer, elimination mode, general category studio/discovery, and production hardening/launch.
+Phase 1 is complete. **7 full phases remain**: server-authoritative daily play, leaderboard/preview release, private-room lobby, live private-race multiplayer, elimination mode, general category studio/discovery, and production hardening/launch.
 
 In Codex desktop, the shell may not include `node` on its default `PATH`. Use the bundled workspace Node runtime when that occurs; do not treat a missing shell executable as an application failure.
 
