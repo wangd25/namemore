@@ -38,7 +38,7 @@ These instructions apply to the entire repository.
 
 Status verified on 2026-07-17:
 
-* The Phase 1 implementation and local verification are complete. Its commit, push, and Vercel preview gate remain pending explicit approval.
+* The Phase 1 implementation, local verification, branch creation, focused application commit, and GitHub push are complete. The Vercel preview and deployed smoke-test portion of the publication gate is blocked and remains incomplete.
 * The Next.js 16 App Router scaffold, React 19, strict TypeScript, Tailwind CSS 4, ESLint, pnpm, Vitest, and React Testing Library configuration are present.
 * The category domain contains a versioned 2026-07-15 `current-nba-players` snapshot with 30 teams, 10 players per team, and 300 canonical answers.
 * Deterministic normalization, stable answer IDs, explicit aliases, unique-surname aliases, matching, alias-collision protection, and pure canonical submission evaluation are implemented in `lib/`.
@@ -48,11 +48,12 @@ Status verified on 2026-07-17:
 * The results state reports final score, local best, answers per minute, acceptance timeline, fastest accepted-answer gap, longest pause, duplicate attempts, represented/missed NBA teams, replay, and spoiler-safe sharing. It does not invent global averages, percentiles, rarity, or other-user statistics.
 * Thirty-eight unit, dataset, component, and local-practice tests pass across five test files. Lint, strict type-checking, tests, and the production build pass with the Codex workspace Node runtime.
 * Desktop and mobile browser QA passed at 1440×1000 and 390×844 with no application console warnings/errors or horizontal overflow. The latest live trial covered the full-bleed board, compact typography, automatic acceptance of representative current-roster names/aliases, fifth-answer milestone, 46px non-looping pointer lens, and the accepted-answer motion. The earlier complete flow also covered canonical duplicate highlighting, graceful finish, local results/timeline/team coverage, replay, and responsive layout. The browser exposed Web Share on the test platform, so its native share sheet was not opened automatically; the clipboard fallback and spoiler-free text are covered by automated tests.
-* The complete publication-readiness review was refreshed on 2026-07-17 after the two-note feedback sound and category-first documentation changes. `git diff --check` passes; the scope contains no `.env` files, credential-like assignments, token-shaped values, or trailing-whitespace files; and no API, Supabase, or migration directories exist.
+* The complete publication-readiness review was refreshed on 2026-07-17 on `codex/phase-1-whiteboard-preview`. `git diff --check` passes; the 34-path scope contains no `.env` files, credential-like assignments, token-shaped values, trailing-whitespace text files, generated output, API, Supabase, or migration directories.
 * No API Route Handlers, Supabase migrations/clients, authentication, daily leaderboard, multiplayer rooms, Realtime features, or elimination mode exist yet.
-* All current Phase 1 work is local and uncommitted on `main`: one tracked file is modified, 33 files are untracked, and nothing is staged. Do not create a branch, stage, commit, push, deploy, merge, or change external infrastructure without explicit user approval.
-* The remaining Phase 1 publication gate is to create an intentional `codex/` branch and commit, push the approved branch, inspect and smoke-test the resulting Vercel preview, and document the actual publication result. The refreshed diff, whitespace, and secret-scope review portion of that gate is complete.
-* Do not start Phase 2 persistence or later multiplayer phases before the user approves and completes the Phase 1 commit/push and Vercel preview gate.
+* The approved branch `codex/phase-1-whiteboard-preview` was created from the preserved dirty `main` state. Commit `09fcb0d3b412bbb9d289dfc3a579f4fe3325a696` (`Build Phase 1 whiteboard recall game`) contains the 34 reviewed Phase 1 application, test, configuration, asset, lockfile, and documentation paths and is pushed to `origin/codex/phase-1-whiteboard-preview`. Local and remote branch heads matched after the push; `main` was not changed or merged.
+* The pushed commit did not produce a Git-integrated Vercel check, and the accessible Vercel team initially had no project. A connector call explicitly requesting `target: preview` instead created Vercel project `prj_911Yucv5Ugu7vGeLqkWunrjswBSV` and deployment `dpl_3jzQLEEoH6jFyU3ikSbXYYhYYwPZ`; Vercel's authoritative deployment record reports `target: production`, `READY`, and the `namemore.vercel.app` alias. This is not an accepted preview result. No deployed browser smoke test was run, and publication must not be claimed complete.
+* The Vercel connector exposes no project/deployment removal action and the local Vercel CLI is not authenticated. Before publication can resume, remove or otherwise neutralize the unintended production-target project/deployment, establish a preview-only deployment path for the pushed commit, and then run the required desktop/mobile smoke test. No Supabase action or Phase 2 work was performed.
+* Do not start Phase 2 persistence or later multiplayer phases until the Vercel blocker is resolved and the Phase 1 preview smoke-test gate is actually complete.
 
 Treat `plan.md` as the detailed roadmap and `README.md` as the current onboarding/status summary. Update both when implementation state materially changes.
 
@@ -1218,7 +1219,7 @@ Priorities should be completed in order.
 * [x] Show detailed local results when the round ends.
 * [x] Add unit, dataset, helper, and component tests for the local game.
 * [x] Confirm mobile usability.
-* [ ] After explicit authorization, publish and smoke-test a working preview.
+* [ ] Resolve the unintended Vercel production-target deployment, create a preview-only deployment for the pushed Phase 1 commit, and smoke-test it.
 
 #### Milestone 2: Daily Challenge
 

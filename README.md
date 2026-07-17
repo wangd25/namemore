@@ -4,9 +4,11 @@ NameMore is a fast-paced, category-first recall platform where players try to na
 
 ## Current Status
 
-The project has a **locally complete Phase 1 of 8: Playable Single-Player Vertical Slice**. The complete local diff and secret scope have been reviewed successfully. Its branch/commit/push and Vercel preview gate remain pending because publishing requires separate approval.
+The project has a **locally complete Phase 1 of 8: Playable Single-Player Vertical Slice**. Its reviewed branch, focused application commit, and GitHub push are complete. The Vercel preview and deployed smoke-test portion of the publication gate is blocked and remains incomplete.
 
-**Handoff state:** all Phase 1 code and documentation are local and uncommitted on `main`. One tracked file is modified, 33 files are untracked, and nothing is staged. The publication-readiness audit was refreshed after the latest sound and roadmap changes. No branch, commit, push, deployment, Supabase migration, or other external infrastructure change was created.
+**Handoff state:** `codex/phase-1-whiteboard-preview` contains pushed commit `09fcb0d3b412bbb9d289dfc3a579f4fe3325a696` (`Build Phase 1 whiteboard recall game`). The commit contains the 34 reviewed Phase 1 application, test, configuration, asset, lockfile, and documentation paths; the local and remote branch heads matched after push. `main` was not changed or merged, and no Supabase or Phase 2 work was performed.
+
+The pushed branch did not produce a Git-integrated Vercel check, and the accessible Vercel team initially had no project. A Vercel connector call explicitly requesting a preview instead created project `prj_911Yucv5Ugu7vGeLqkWunrjswBSV` and deployment `dpl_3jzQLEEoH6jFyU3ikSbXYYhYYwPZ`; Vercel reports that deployment as `READY` with `target: production` and the `namemore.vercel.app` alias. It was not accepted or smoke-tested as a preview. Publication is blocked until that unintended production-target project/deployment is removed or neutralized and a preview-only deployment of the pushed commit is available.
 
 Implemented:
 
@@ -35,7 +37,7 @@ Implemented:
 
 Not implemented yet:
 
-- The approved Phase 1 branch, commit, push, Vercel preview inspection, and deployed smoke test.
+- Cleanup of the unintended Vercel production-target project/deployment, a preview-only deployment of the pushed Phase 1 commit, and the deployed desktop/mobile smoke test.
 - Daily challenge routes, server-authoritative validation, anonymous identity, Supabase schema/RLS, and leaderboard.
 - Private rooms, Realtime multiplayer, elimination mode, rate limiting, and production launch hardening.
 - The editable prompt composer, community-derived recommendations, general custom-category workflow, ambient popular-prompt/high-score/lobby cards, and category-agnostic result metrics.
@@ -79,7 +81,7 @@ pnpm build
 
 Verification snapshot from 2026-07-17:
 
-- The complete tracked/untracked publication scope was re-audited after the two-note sound and category-first roadmap changes. `git diff --check` passes; no `.env` files, credential-like assignments, token-shaped values, or trailing-whitespace files were found; and no API, Supabase, or migration directories exist.
+- The 34-path publication scope was re-audited on `codex/phase-1-whiteboard-preview`. `git diff --check` passes; no `.env` files, credential-like assignments, token-shaped values, trailing-whitespace text files, generated output, API, Supabase, or migration directories were found.
 - `pnpm lint` passes.
 - `pnpm typecheck` passes.
 - `pnpm build` passes and statically generates `/`.
@@ -88,7 +90,7 @@ Verification snapshot from 2026-07-17:
 
 ## Roadmap Remaining
 
-Phase 1 has only its authorized publication gate left. After that gate is completed, **7 full phases remain**: server-authoritative daily play, leaderboard/preview release, private-room lobby, live private-race multiplayer, elimination mode, general category studio/discovery, and production hardening/launch.
+Phase 1 has only its blocked Vercel preview/smoke-test gate left. After that gate is completed, **7 full phases remain**: server-authoritative daily play, leaderboard/preview release, private-room lobby, live private-race multiplayer, elimination mode, general category studio/discovery, and production hardening/launch.
 
 In Codex desktop, the shell may not include `node` on its default `PATH`. Use the bundled workspace Node runtime when that occurs; do not treat a missing shell executable as an application failure.
 

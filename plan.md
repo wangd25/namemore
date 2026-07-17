@@ -2,7 +2,7 @@
 
 ## Current Findings
 
-- As of 2026-07-17, the Phase 1 implementation and local checks are complete. The complete tracked/untracked publication scope was re-audited successfully after the two-note sound and category-first roadmap changes; the separate branch/commit/push and Vercel preview gate has not been authorized or performed.
+- As of 2026-07-17, the Phase 1 implementation and local checks are complete. The 34-path publication scope was re-audited successfully, committed as `09fcb0d3b412bbb9d289dfc3a579f4fe3325a696` on `codex/phase-1-whiteboard-preview`, and pushed to `origin`.
 - The homepage renders the responsive NameMore local practice game with `ready`, `playing`, `ending`, and `finished` states, an absolute-deadline timer, hover/focus/press-and-hold readiness, continuous typing with automatic exact/alias acceptance, keyboard fallback submission, feedback, scoring, accepted answers, manual finish, and replay.
 - NameMore's target product is category-first. NBA players are the current manually curated vertical slice; the future ready-state headline becomes an editable prompt composer with reviewed-category recommendations and a distinct custom-category creation path. This direction is documented but not implemented or authorized before the Phase 1 publication gate.
 - The future ready screen may include a sparse ambient layer of slowly drifting liquid-glass cards for real popular prompts, verified high scores, active public lobbies, or tiny aggregate trend traces. These cards remain secondary, reduced-motion-safe, mobile-aware, and absent when trusted aggregate data is unavailable; fabricated activity is prohibited.
@@ -15,18 +15,19 @@
 - Vitest and React Testing Library run 38 passing unit, dataset, component, and local-practice tests across 5 test files.
 - There are no API Route Handlers, Supabase clients, database migrations, authentication flows, leaderboards, room routes, or Realtime features.
 - `main` tracks the private GitHub repository `wangd25/namemore`.
-- The working tree contains pre-existing uncommitted user work, including the expanded `AGENTS.md` and the current application scaffold; preserve it.
-- The refreshed publication-readiness audit finds one modified tracked file, 33 untracked files, no staged files, no `.env` files, no credential-like assignments or token-shaped values, and no trailing-whitespace files. `git diff --check` passes.
+- The approved branch preserved the complete dirty `main` state before staging. The focused Phase 1 commit contains the reviewed application, tests, configuration, assets, lockfile, and documentation; local and remote branch heads matched after push, and `main` was not changed or merged.
+- The refreshed publication-readiness audit found no `.env` files, credential-like assignments, token-shaped values, trailing-whitespace text files, generated output, API, Supabase, or migration directories. `git diff --check` passes.
 - No Supabase state was inspected during this documentation update. The repository itself contains no `supabase/` directory or migrations.
 - Node is not on the shell's default `PATH`, but the Codex workspace provides Node 24 and pnpm 11 for scaffolding and verification.
 - With the bundled Node runtime on `PATH`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm build` pass as of 2026-07-17.
+- GitHub push succeeded, but no Git-integrated Vercel check appeared and the accessible Vercel team initially had no project. A connector call explicitly requesting `target: preview` instead created project `prj_911Yucv5Ugu7vGeLqkWunrjswBSV` and deployment `dpl_3jzQLEEoH6jFyU3ikSbXYYhYYwPZ`; Vercel's deployment record reports `READY`, `target: production`, and the `namemore.vercel.app` alias. The deployment was not accepted or browser-smoke-tested. The connector provides no removal action, and the local Vercel CLI is not authenticated.
 - Browser QA verified ready, playing, and result states at 1440×1000 and 390×844 with no application console warnings/errors or horizontal overflow. The latest production-build trial confirmed a transparent borderless writing line, prefix-safe `James` → `LeBron James` acceptance, topic-icon adjacency, the stronger team-color wash, and the green quick-pair ripple/notification. At 390×844 the notification sits below the answer area without covering accepted names. The complete flow also covers milestone, duplicate location, graceful finish, timeline/team coverage, and replay. Web Share was present in the test browser, so its native share sheet was not opened automatically; automated tests cover the clipboard fallback and spoiler-free payload.
 
 ## Progress Snapshot
 
 | Phase | Status | What remains |
 | --- | --- | --- |
-| 1. Playable single-player vertical slice | **Local implementation and diff/security review complete; publish gate pending** | With approval: create the branch/commit, push, inspect the Vercel preview, and run the deployed smoke test. |
+| 1. Playable single-player vertical slice | **Branch/commit/push complete; Vercel gate blocked** | Remove or neutralize the unintended production-target Vercel project/deployment, create a preview-only deployment for the pushed commit, and run the deployed desktop/mobile smoke test. |
 | 2. Server-authoritative daily challenge | **Not started** | Supabase anonymous identity, schema/RLS/RPCs, Route Handlers, and hostile-client tests. |
 | 3. Daily leaderboard and preview release | **Not started** | Verified leaderboard, daily UX, E2E coverage, and preview deployment verification. |
 | 4. Secure private room lobby | **Not started** | Room/player schema, create/join/rejoin/start flows, UI, and authorization tests. |
@@ -35,7 +36,7 @@
 | 7. General category studio and discovery | **Not started** | Category-agnostic contracts, editable prompt recommendations, moderated custom-category drafts, and real aggregate discovery cards. |
 | 8. Production hardening and launch | **Not started** | Abuse controls, retention, full reviews, release verification, and production smoke tests. |
 
-**Phase count:** Phase 1 is locally complete with one external publication gate remaining. Phases 2–8 have not started, so 7 full implementation phases remain after the Phase 1 gate is approved and completed.
+**Phase count:** Phase 1 is locally complete with one blocked external publication gate remaining. Phases 2–8 have not started, so 7 full implementation phases remain after the Phase 1 gate is completed.
 
 ## Locked Product and Architecture Decisions
 
@@ -119,7 +120,7 @@ An answer may have no icon at all. Team codes become one NBA adapter for `visual
 
 ## Phase 1 — Playable Single-Player Vertical Slice
 
-**Status: Local implementation and publication-readiness review complete; publish gate pending.** The game, automated tests, local checks, desktop/mobile visual QA, complete diff review, and secret-scope review are complete. No branch, staging, commit, push, or Vercel preview was performed.
+**Status: Branch, focused application commit, and GitHub push complete; Vercel preview gate blocked.** The game, automated tests, local checks, desktop/mobile local visual QA, complete diff review, and secret-scope review are complete. The pushed branch did not receive a Git-integrated preview, and the attempted connector preview created an unacceptable production-target deployment. No deployed smoke test was run.
 
 This phase is intentionally large enough for a separate chat: it establishes the entire frontend/tooling foundation, curates the 300-player domain dataset, implements the complete local game loop, and verifies it.
 
@@ -144,7 +145,9 @@ This phase is intentionally large enough for a separate chat: it establishes the
 - Component tests cover keyboard and hover-dwell start, answer-surface focus and pointer-coordinate ripples, restrained transform-free typing motion, prefix-safe automatic matching, unique-surname acceptance, wet-ink/topic-icon acceptance, quick-pair ripple/notification cleanup, keyboard fallback submission, milestone waves, duplicate location, local-best and feedback preferences, blocked submissions during/after the ending transition, timer urgency, manual finish, sharing, replay, and final results. Pure helper tests cover quick-pair copy tiers, timing/team metrics, versioned/corrupt storage, and spoiler-free share text.
 - Run `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm build`; then perform a desktop and mobile smoke test.
 - [x] Review the complete working-tree diff and secret scope before publication. The review passed on 2026-07-16; no staged files, `.env` files, credential-shaped values, API directories, Supabase directories, or migrations were found.
-- [ ] After explicit approval, create an intentional branch and commit, push the approved branch, inspect the resulting Vercel preview, and smoke-test the deployed build.
+- [x] After explicit approval, create `codex/phase-1-whiteboard-preview`, commit the reviewed Phase 1 scope as `09fcb0d3b412bbb9d289dfc3a579f4fe3325a696`, and push it to `origin`.
+- [ ] Remove or neutralize Vercel project `prj_911Yucv5Ugu7vGeLqkWunrjswBSV` / deployment `dpl_3jzQLEEoH6jFyU3ikSbXYYhYYwPZ`, which the connector created as `target: production` despite a preview request.
+- [ ] Establish a preview-only deployment for the pushed commit and complete the required deployed desktop/mobile smoke test.
 - Phase 1 is complete only when the game is playable end-to-end and, after separate publish approval, its branch/commit is pushed and a Vercel preview is smoke-tested.
 
 ## Phase 2 — Server-Authoritative Daily Challenge
@@ -265,7 +268,7 @@ Current handoff facts:
 - `pnpm lint`, `pnpm typecheck`, `pnpm test` (38 tests across 5 files), and `pnpm build` pass.
 - The slightly louder two-note accepted-answer chime is implemented and tested. The category-first future direction—editable prompt recommendations, generalized topic visuals, moderated category drafts, and real aggregate discovery cards—is documented across all three project Markdown files but intentionally not implemented before its prerequisite phase.
 - Desktop and mobile ready/playing/results checks passed at 1440×1000 and 390×844 without application console warnings/errors or horizontal overflow. Live QA covered automatic acceptance, the five-name milestone, duplicate-line location, graceful finish, detailed results, and replay; automated tests cover the full local interaction loop plus storage and spoiler-safe sharing.
-- The refreshed complete diff, whitespace, and secret-scope review passed. The working tree has one modified tracked file, 33 untracked files, and no staged files.
-- The working tree is uncommitted, and no branch, commit, push, Vercel deployment, or Supabase change was made.
+- The refreshed complete diff, whitespace, and secret-scope review passed. The approved 34-path scope is committed and pushed on `codex/phase-1-whiteboard-preview`; `main` remains untouched.
+- GitHub branch creation, commit, and push succeeded. Vercel publication did not: the push produced no Git-integrated preview, and the connector created a `READY` production-target deployment despite an explicit preview request. No deployed smoke test was run, and no Supabase change was made.
 
-The next action is a user choice. The diff and secret-scope review is already complete. If publication is approved, preserve the current dirty working tree, create an intentional `codex/` branch and commit, push the approved branch, inspect the Vercel preview, smoke-test the deployed build, and update all three status documents with the actual publication result. If publication is not approved, stop at the current local state. Do not begin Phase 2 until the Phase 1 publication gate is complete.
+The next action is to remove or neutralize the unintended production-target Vercel project/deployment using authenticated Vercel access, then configure or create a preview-only deployment for commit `09fcb0d3b412bbb9d289dfc3a579f4fe3325a696` and run the requested desktop/mobile smoke test. Do not claim Phase 1 publication success or begin Phase 2 until that gate is complete.
