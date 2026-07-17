@@ -38,7 +38,7 @@ These instructions apply to the entire repository.
 
 Status verified on 2026-07-17:
 
-* The Phase 1 implementation, local verification, branch creation, focused application commit, and GitHub push are complete. The Vercel preview and deployed smoke-test portion of the publication gate is blocked and remains incomplete.
+* The Phase 1 implementation, local verification, branch creation, focused application commit, GitHub push, and cleanup of the unintended Vercel production deployment are complete. The preview-only deployment and deployed smoke-test portion of the publication gate is blocked on Vercel CLI authentication and remains incomplete.
 * The Next.js 16 App Router scaffold, React 19, strict TypeScript, Tailwind CSS 4, ESLint, pnpm, Vitest, and React Testing Library configuration are present.
 * The category domain contains a versioned 2026-07-15 `current-nba-players` snapshot with 30 teams, 10 players per team, and 300 canonical answers.
 * Deterministic normalization, stable answer IDs, explicit aliases, unique-surname aliases, matching, alias-collision protection, and pure canonical submission evaluation are implemented in `lib/`.
@@ -51,8 +51,8 @@ Status verified on 2026-07-17:
 * The complete publication-readiness review was refreshed on 2026-07-17 on `codex/phase-1-whiteboard-preview`. `git diff --check` passes; the 34-path scope contains no `.env` files, credential-like assignments, token-shaped values, trailing-whitespace text files, generated output, API, Supabase, or migration directories.
 * No API Route Handlers, Supabase migrations/clients, authentication, daily leaderboard, multiplayer rooms, Realtime features, or elimination mode exist yet.
 * The approved branch `codex/phase-1-whiteboard-preview` was created from the preserved dirty `main` state. Commit `09fcb0d3b412bbb9d289dfc3a579f4fe3325a696` (`Build Phase 1 whiteboard recall game`) contains the 34 reviewed Phase 1 application, test, configuration, asset, lockfile, and documentation paths and is pushed to `origin/codex/phase-1-whiteboard-preview`. Local and remote branch heads matched after the push; `main` was not changed or merged.
-* The pushed commit did not produce a Git-integrated Vercel check, and the accessible Vercel team initially had no project. A connector call explicitly requesting `target: preview` instead created Vercel project `prj_911Yucv5Ugu7vGeLqkWunrjswBSV` and deployment `dpl_3jzQLEEoH6jFyU3ikSbXYYhYYwPZ`; Vercel's authoritative deployment record reports `target: production`, `READY`, and the `namemore.vercel.app` alias. This is not an accepted preview result. No deployed browser smoke test was run, and publication must not be claimed complete.
-* The Vercel connector exposes no project/deployment removal action and the local Vercel CLI is not authenticated. Before publication can resume, remove or otherwise neutralize the unintended production-target project/deployment, establish a preview-only deployment path for the pushed commit, and then run the required desktop/mobile smoke test. No Supabase action or Phase 2 work was performed.
+* The pushed commit did not produce a Git-integrated Vercel check, and the accessible Vercel team initially had no project. A connector call explicitly requesting `target: preview` instead created Vercel project `prj_911Yucv5Ugu7vGeLqkWunrjswBSV` and deployment `dpl_3jzQLEEoH6jFyU3ikSbXYYhYYwPZ` as a `READY` production target with the `namemore.vercel.app` alias. On 2026-07-17 the exact isolated project was verified to contain only that deployment, then deleted through the authenticated Vercel dashboard. Authoritative Vercel reads now return `404` for both IDs and the team project inventory is empty.
+* No replacement project or deployment was created. Two fresh Vercel CLI device-login attempts were rejected by Vercel while the CLI remained waiting, even though Chrome was authenticated to the correct account; both pending CLI sessions were cancelled. Before publication can resume, establish authenticated Vercel CLI or Git-integrated access, create a commit-addressable preview-only deployment for the pushed branch, verify its authoritative target and source identity, and run the required desktop/mobile smoke test. No Supabase action or Phase 2 work was performed.
 * Do not start Phase 2 persistence or later multiplayer phases until the Vercel blocker is resolved and the Phase 1 preview smoke-test gate is actually complete.
 
 Treat `plan.md` as the detailed roadmap and `README.md` as the current onboarding/status summary. Update both when implementation state materially changes.
@@ -1219,7 +1219,7 @@ Priorities should be completed in order.
 * [x] Show detailed local results when the round ends.
 * [x] Add unit, dataset, helper, and component tests for the local game.
 * [x] Confirm mobile usability.
-* [ ] Resolve the unintended Vercel production-target deployment, create a preview-only deployment for the pushed Phase 1 commit, and smoke-test it.
+* [ ] Authenticate a preview-only Vercel deployment path, deploy the pushed Phase 1 commit without a production target, and smoke-test it.
 
 #### Milestone 2: Daily Challenge
 
