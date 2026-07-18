@@ -36,7 +36,7 @@ These instructions apply to the entire repository.
 
 ### Current Implementation Status
 
-Status verified on 2026-07-17:
+Status verified on 2026-07-18 UTC:
 
 * Phase 1 is complete. The implementation, local verification, branch creation, focused application commit, GitHub push, preview-only Vercel deployment, deployed smoke test, and cleanup of all unintended production deployments have passed.
 * The Next.js 16 App Router scaffold, React 19, strict TypeScript, Tailwind CSS 4, ESLint, pnpm, Vitest, and React Testing Library configuration are present.
@@ -46,14 +46,16 @@ Status verified on 2026-07-17:
 * The local Phase 1 delight pass adds wet-ink answer settling, a board-wide wave every five answers, duplicate-line location, restrained optional Web Audio/haptics with a versioned local preference, final-ten-second tension, a graceful ending freeze, a versioned local-practice best, and spoiler-free Web Share/clipboard output. Local values are labeled unranked and are not trusted competitive data.
 * The playing layout is intentionally near full-bleed: the outer glass shell uses a 6px desktop gutter. Keystrokes receive a reduced-motion-aware, transform-free 90ms optical response; accepted answers add a spring check, reusable adjacent topic-icon slot, stronger team-color wash, and a slightly louder two-note glass chime. Quick pairs add a green liquid wash and measured glass notification. The pointer-following liquid lens is 46px on desktop and 36px on mobile, follows the pointer without React state, does not loop, and is not shown merely because the input has keyboard focus.
 * The results state reports final score, local best, answers per minute, acceptance timeline, fastest accepted-answer gap, longest pause, duplicate attempts, represented/missed NBA teams, replay, and spoiler-safe sharing. It does not invent global averages, percentiles, rarity, or other-user statistics.
-* Thirty-eight unit, dataset, component, and local-practice tests pass across five test files. Lint, strict type-checking, tests, and the production build pass with the Codex workspace Node runtime.
-* Desktop and mobile browser QA passed at 1440×1000 and 390×844 with no application console warnings/errors or horizontal overflow. The latest live trial covered the full-bleed board, compact typography, automatic acceptance of representative current-roster names/aliases, fifth-answer milestone, 46px non-looping pointer lens, and the accepted-answer motion. The earlier complete flow also covered canonical duplicate highlighting, graceful finish, local results/timeline/team coverage, replay, and responsive layout. The browser exposed Web Share on the test platform, so its native share sheet was not opened automatically; the clipboard fallback and spoiler-free text are covered by automated tests.
+* Fifty-eight unit, dataset, contract, request-boundary, session, migration, and component tests pass across ten test files. Lint, strict type-checking, direct hostile-client tests, the production build, client-bundle audit, and `git diff --check` pass with the Codex workspace Node runtime.
+* Phase 2 browser QA passed against the real non-production backend at 1440×1000 and 390×844 with no application console errors, answer-bank HTML leakage, or horizontal overflow. The live flow covered anonymous session establishment, server start, accepted answer, duplicate without score change, refresh/resume at the original deadline, finish, verified results, and safe HTTP 200 Route Handler responses.
 * The complete publication-readiness review was refreshed on 2026-07-17 on `codex/phase-1-whiteboard-preview`. `git diff --check` passes; the 34-path scope contains no `.env` files, credential-like assignments, token-shaped values, trailing-whitespace text files, generated output, API, Supabase, or migration directories.
-* No API Route Handlers, Supabase migrations/clients, authentication, daily leaderboard, multiplayer rooms, Realtime features, or elimination mode exist yet.
+* Phase 2 adds cookie-backed Supabase SSR/Proxy clients, anonymous identity, four no-store daily Route Handlers, safe runtime contracts, a narrow daily game Client Component, and repository-owned schema/seed/schedule/RPC/index migrations. The competitive browser graph no longer imports the answer bank.
+* Confirmed non-production Supabase project `namemore` (`hutmxxlicxeaovoeqbwg`) has anonymous sign-in enabled. It contains 300 private canonical answers, 561 private aliases, 31 scheduled challenges, deny-all RLS/direct grants, and exactly four authenticated security-definer RPCs that enforce `auth.uid()`, ownership, deadlines, atomic uniqueness, and derived scores.
+* Direct public-key hostile-client checks pass for unsigned/direct-table/hidden-schema denial, unique start/resume, separate ownership, accepted/invalid/duplicate/round-ended responses, concurrent duplicates, cross-user denial, arbitrary state-write denial, derived scoring, and idempotent finish. A rollback-only live deadline check proves late-answer rejection.
 * The approved branch `codex/phase-1-whiteboard-preview` was created from the preserved dirty `main` state. Commit `09fcb0d3b412bbb9d289dfc3a579f4fe3325a696` (`Build Phase 1 whiteboard recall game`) contains the 34 reviewed Phase 1 application, test, configuration, asset, lockfile, and documentation paths and is pushed to `origin/codex/phase-1-whiteboard-preview`. Local and remote branch heads matched after the push; `main` was not changed or merged.
 * Vercel CLI authentication is established as `wangd25`. GitHub repository `wangd25/namemore` is connected to Vercel project `namemore` (`prj_w1Py6yIeo5YUcGGpduA32VdgFeSH`) in team `namemore`, with `main` configured as the production branch.
 * Preview deployment `dpl_678tmSyH761zXoqfTnfdqsRg9hLh` at `https://namemore-5t10gmiq8-namemore.vercel.app` was verified `READY` with `target: preview`, returned HTTP 200 with the expected NameMore page, and passed the deployed smoke check. Vercel production has zero deployments. The earlier unintended production resources were removed.
-* Phase 2 is the active milestone. No Supabase schema, migration, client, or Phase 2 application code existed at this handoff.
+* Phase 2 is at its publication gate. Vercel contains only the two browser-safe Supabase variables scoped to Preview; Production variables and deployments remain untouched. Phase 3, leaderboard work, multiplayer, Realtime, permanent accounts, and production deployment have not started.
 
 Treat `plan.md` as the detailed roadmap and `README.md` as the current onboarding/status summary. Update both when implementation state materially changes.
 
@@ -1223,17 +1225,15 @@ Priorities should be completed in order.
 
 #### Milestone 2: Daily Challenge
 
-* Define the daily challenge data model.
-* Add a display-name entry step.
-* Create server-authoritative attempts.
-* Enforce server-side start and deadline timestamps.
-* Validate answers on the server.
-* Derive scores from accepted submissions.
-* Save completed attempts to Supabase.
-* Display the top ten verified scores.
-* Add RLS policies and database constraints.
-* Prevent arbitrary direct score insertion.
-* Deploy and smoke-test the daily flow.
+* [x] Define the daily challenge data model with immutable private category versions and hidden answer aliases.
+* [x] Create one server-authoritative attempt per anonymous user and UTC challenge.
+* [x] Enforce database-owned start, deadline, expiration, and completion timestamps.
+* [x] Validate normalized answer text through a narrow RPC without exposing the answer bank.
+* [x] Derive scores from unique accepted submission rows and save verified completion state.
+* [x] Add deny-all RLS/direct grants, constraints, indexes, safe search paths, `auth.uid()` ownership checks, and hostile-client verification.
+* [x] Prevent arbitrary direct score, owner, deadline, completion, attempt, and accepted-answer writes.
+* [ ] Push the reviewed Phase 2 branch and complete the preview-only deployed smoke/log gate.
+* Display-name entry and the top-ten verified leaderboard belong to Milestone/Phase 3 and must use only the trusted Phase 2 finish path.
 
 #### Milestone 3: Private Room Lobby
 

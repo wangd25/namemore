@@ -4,11 +4,13 @@ NameMore is a fast-paced, category-first recall platform where players try to na
 
 ## Current Status
 
-The project has a **complete Phase 1 of 8: Playable Single-Player Vertical Slice**. Its reviewed branch, focused application commit, GitHub push, preview-only Vercel deployment, deployed smoke test, and cleanup of unintended production deployments are complete. Phase 2, the server-authoritative daily challenge, is now the active milestone.
+The project has a **complete Phase 1 of 8** and a locally/database-verified **Phase 2: Server-Authoritative Daily Challenge**. The Phase 2 implementation, non-production Supabase migration, anonymous-auth configuration, direct hostile-client checks, advisors, build, bundle audit, and local browser QA pass. Feature-branch publication and the final Vercel Preview smoke gate are the remaining Phase 2 handoff steps.
 
-**Handoff state:** `codex/phase-1-whiteboard-preview` contains pushed commit `09fcb0d3b412bbb9d289dfc3a579f4fe3325a696` (`Build Phase 1 whiteboard recall game`). The commit contains the 34 reviewed Phase 1 application, test, configuration, asset, lockfile, and documentation paths; the local and remote branch heads matched after push. `main` was not changed or merged, and no Supabase or Phase 2 work was performed.
+**Handoff state:** Phase 2 is implemented on `codex/phase-2-server-authoritative-daily`, branched from the completed Phase 1 head. `main` has not been changed or merged. Phase 1’s documentation closeout is separately committed and pushed as `9898d8e2382bce72c5e3ac58abf7819ece6552d5` on `codex/phase-1-whiteboard-preview`.
 
 Vercel CLI authentication is established as `wangd25`. GitHub repository `wangd25/namemore` is connected to Vercel project `namemore` (`prj_w1Py6yIeo5YUcGGpduA32VdgFeSH`) in team `namemore`, and `main` is the configured production branch. Preview deployment `dpl_678tmSyH761zXoqfTnfdqsRg9hLh` at `https://namemore-5t10gmiq8-namemore.vercel.app` was verified `Ready` with `target: preview`, returned HTTP 200 with the expected page, and passed the deployed smoke check. Production has zero deployments.
+
+Supabase project `namemore` (`hutmxxlicxeaovoeqbwg`) was explicitly confirmed non-production. Anonymous sign-in is enabled. Repository migrations create the private immutable category/alias bank, UTC daily schedule, deny-all RLS tables, attempt/submission constraints and indexes, and four narrowly granted authenticated RPCs for status, start, submit, and finish. Vercel contains only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, scoped to Preview; Production variables were not changed.
 
 Implemented:
 
@@ -33,11 +35,16 @@ Implemented:
 - Detailed local results with score, local best, answers per minute, acceptance timeline, fastest gap, longest pause, duplicate count, and represented/missed NBA teams.
 - Explicitly activated spoiler-safe sharing through Web Share when available, with a clipboard fallback that does not include accepted or missed player names.
 - Accessible form labels, focus states, an ARIA live region, and reduced-motion behavior.
-- Thirty-eight passing unit, dataset, component, and local-practice tests across five test files.
+- Cookie-backed Supabase SSR sessions through Next.js 16 Proxy and request-scoped server clients; absent sessions fail closed or establish a Supabase anonymous identity.
+- Thin no-store Route Handlers for daily status, start, answer submission, and finish, with bounded JSON input and generic error responses.
+- Database-authoritative UTC challenge selection, one attempt per anonymous user/challenge, immutable start/deadline timestamps, hidden alias matching, atomic duplicate handling, accepted-answer presentation payloads, derived scores, expiration, and idempotent finish.
+- A narrow daily Client Component preserving the Phase 1 ready/play/end/results presentation while treating server responses and the absolute server deadline as authoritative. Refresh resumes the original attempt and completed results remain viewable.
+- A deterministic 300-answer/561-alias seed plus 30 scheduled UTC challenge dates from 2026-07-18 through 2026-08-16. Extending that schedule is an explicit operational prerequisite after the MVP window.
+- Fifty-eight passing unit, dataset, contract, session, request-boundary, migration, and component tests across ten test files, plus a direct publishable-key hostile-client script.
 
 Not implemented yet:
 
-- Daily challenge routes, server-authoritative validation, anonymous identity, Supabase schema/RLS, and leaderboard.
+- Public daily leaderboard and aggregate/community statistics.
 - Private rooms, Realtime multiplayer, elimination mode, rate limiting, and production launch hardening.
 - The editable prompt composer, community-derived recommendations, general custom-category workflow, ambient popular-prompt/high-score/lobby cards, and category-agnostic result metrics.
 
@@ -78,18 +85,19 @@ pnpm test
 pnpm build
 ```
 
-Verification snapshot from 2026-07-17:
+Verification snapshot from 2026-07-18 UTC:
 
-- The 34-path publication scope was re-audited on `codex/phase-1-whiteboard-preview`. `git diff --check` passes; no `.env` files, credential-like assignments, token-shaped values, trailing-whitespace text files, generated output, API, Supabase, or migration directories were found.
-- `pnpm lint` passes.
-- `pnpm typecheck` passes.
-- `pnpm build` passes and statically generates `/`.
-- `pnpm test` passes 38 tests in 5 test files.
-- Browser QA verified the ready, playing, and results states at 1440×1000 and 390×844 with no application console warnings/errors or horizontal overflow. The latest production-build trial confirmed a fully transparent, borderless typing line; automatic `James` → `LeBron James` acceptance after the prefix-safe delay; topic icons immediately beside accepted names; stronger team-color washes; and a green quick-pair ripple with a timed glass notification. The mobile notification sits below the answer area without overlapping accepted names. The complete flow also covers fifth-answer milestones, canonical duplicate highlighting, graceful finish, results/timeline/team coverage, and replay. Web Share was available in the test browser, so its native share sheet was not opened automatically; automated tests verify the clipboard fallback and spoiler-free payload.
+- `git diff --check`, `pnpm lint`, `pnpm typecheck`, and the Next.js production build pass.
+- `pnpm test` passes 58 tests in 10 test files.
+- `pnpm test:hostile-client` passes directly against Supabase using only the public URL/publishable key and two anonymous identities. It proves unsigned denial, hidden answer-bank/direct-table denial, unique start/resume, separate-user attempts, accepted/invalid/duplicate/round-ended results, concurrent duplicate serialization, cross-user RPC denial, arbitrary score/owner/deadline/status write denial, derived scoring, and idempotent finish.
+- A rollback-only live database deadline test returned `round-ended` and `expired` without accepting a late answer. Migration history, 300 answers, 561 aliases, 31 scheduled challenges, RLS, grants, constraints, and indexes were inspected live.
+- Supabase security advisors report only intentional deny-all/no-policy tables, the four intentionally callable authenticated security-definer RPCs, and leaked-password protection for the deferred permanent-account path. Performance advisors report only expected unused indexes on the new schema; both missing foreign-key indexes were fixed.
+- `pnpm audit:client-bundle` audits the page’s manifest-referenced browser chunks and finds no NBA answer-bank markers. HTML inspection also found no canonical answer leakage before acceptance.
+- Browser QA at 1440×1000 and 390×844 completed the real Next.js/Supabase flow: anonymous session, start, accepted answer, duplicate without score change, refresh/resume at the original deadline, finish, verified results, HTTP 200 route responses, no application errors, and no horizontal overflow.
 
 ## Roadmap Remaining
 
-Phase 1 is complete. **7 full phases remain**: server-authoritative daily play, leaderboard/preview release, private-room lobby, live private-race multiplayer, elimination mode, general category studio/discovery, and production hardening/launch.
+Phase 1 is complete and Phase 2 is at its feature-branch publication gate. **6 later phases remain**: leaderboard/preview release, private-room lobby, live private-race multiplayer, elimination mode, general category studio/discovery, and production hardening/launch.
 
 In Codex desktop, the shell may not include `node` on its default `PATH`. Use the bundled workspace Node runtime when that occurs; do not treat a missing shell executable as an application failure.
 
@@ -97,31 +105,37 @@ In Codex desktop, the shell may not include `node` on its default `PATH`. Use th
 
 ```text
 app/
+  api/daily/             No-store status/start/submit/finish Route Handlers
   globals.css            White liquid-glass, clean answer-surface, ripple, and responsive rules
   layout.tsx             Root layout and NameMore metadata
   page.tsx               Server-rendered NameMore homepage shell
 components/
+  DailyGameBoard.tsx     Narrow server-authoritative timer/input Client Component
+  DailyGameResults.tsx   Verified accepted-answer timeline and team coverage
   GameBoard.tsx          Ready dwell, clean answer field, delight feedback, timer, and local state
-  GameBoard.test.tsx     Component interaction, timer, preference, and replay tests
   GameResults.tsx        Detailed local timeline, metrics, coverage, sharing, and replay UI
 lib/
   categories.ts          Versioned 300-player NBA dataset
-  categories.test.ts     Dataset invariant tests
   category-types.ts      Category and submission domain types
+  daily-*.ts             Safe contracts, browser API, Route helpers, and trusted RPC service
+  supabase/              SSR config, request client, anonymous session, and Proxy refresh
   game-logic.ts          Matching and canonical submission evaluation
-  game-logic.test.ts     Matching, collision, and duplicate tests
   normalize.ts           Deterministic answer normalization helpers
-  normalize.test.ts      Normalization and name-helper tests
   practice-game.ts       Local result metrics, storage, team coverage, and share helpers
-  practice-game.test.ts  Local metrics, storage corruption, and spoiler-safe share tests
+scripts/
+  audit-client-bundle.mjs      Manifest-scoped answer-bank leak audit
+  hostile-client-check.mjs     Direct public-key Supabase authorization/concurrency checks
+supabase/
+  config.toml             Anonymous-auth local configuration
+  migrations/             Schema/seed, schedule, RPC correction, and index migrations
 AGENTS.md                 Repository-wide product, security, and coding rules
 plan.md                   Eight-phase implementation plan and live status
 ```
 
-There are currently no API Route Handlers, `supabase/` migrations, authentication flows, leaderboards, or multiplayer routes.
+There is no leaderboard, display-name flow, multiplayer route, Realtime feature, permanent account, or production deployment.
 
 ## Security Boundary
 
-Phase 1 is intentionally local and noncompetitive, so its answer bank may eventually be included in the browser bundle. Before scores become persistent, Phase 2 must move answer validation, timing, ownership, and scoring to trusted server/database code. Never place server-only credentials in browser code or weaken Supabase RLS to make a feature work.
+The daily answer bank is private database data and is absent from competitive browser JavaScript, HTML, RSC payloads, and public API responses. Anonymous users receive the `authenticated` role, but direct table access remains denied by explicit grants and RLS; only the four ownership-checking RPCs are executable. Browser-visible configuration contains only the Supabase project URL and publishable key. Never introduce a service-role key into this application path or weaken the deny-by-default boundary.
 
 The future multiplayer visual direction uses equal player and opponent liquid-glass boards. Opponent typing will look live through synthetic blurred placeholders based only on safe typing status and a coarse length bucket. Raw opponent letters or answers must never be sent to the browser during an active round.
