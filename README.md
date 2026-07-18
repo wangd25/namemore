@@ -4,13 +4,15 @@ NameMore is a fast-paced, category-first recall platform where players try to na
 
 ## Current Status
 
-The project has complete Phases 1 and 2 plus an implemented **Phase 3: Daily Leaderboard and Preview Release** awaiting its final GitHub/Vercel publication gate. The Phase 3 migration is applied to the confirmed non-production Supabase project; direct hostile-client checks, advisors, build, bundle audit, and local desktop/mobile browser gates pass.
+Phases 1–3 are complete. **Phase 3: Daily Leaderboard and Preview Release** passed its implementation, non-production Supabase, hostile-client, advisor, build, bundle, GitHub publication, protected Preview, desktop/mobile browser, and runtime-log gates.
 
 **Current branch:** `codex/phase-3-daily-leaderboard-preview`, created exactly from verified Phase 2 head `50bf03304884170f86ef9c432b23840e6030dec4`. `main` has not been changed or merged.
 
 Vercel CLI authentication is established as `wangd25`. GitHub repository `wangd25/namemore` is connected to Vercel project `namemore` (`prj_w1Py6yIeo5YUcGGpduA32VdgFeSH`) in team `namemore`, and `main` is the configured production branch. Preview deployment `dpl_678tmSyH761zXoqfTnfdqsRg9hLh` at `https://namemore-5t10gmiq8-namemore.vercel.app` was verified `Ready` with `target: preview`, returned HTTP 200 with the expected page, and passed the deployed smoke check. Production has zero deployments.
 
 Phase 2 application preview `dpl_uriC84X7XFDHzAZE5Wqhhzm9Xc6f` at `https://namemore-io5cx2wo8-namemore.vercel.app` was verified `Ready`, `target: preview`, and sourced from the Phase 2 branch/application commit. The protected deployed flow passed start, accepted, duplicate, refresh/resume, finish, desktop/mobile layout, console, and error-log checks. Vercel Production still has zero deployments.
+
+Phase 3 application commit `a169bc12ccf4e6eb386d9ff3c53181ca22b39b54` (`Build trusted daily leaderboard`) is pushed to `origin/codex/phase-3-daily-leaderboard-preview`. Git-integrated Preview `dpl_76HfnTfCiJzhXciMskCWkwzHi7ck` at `https://namemore-crpu1byy8-namemore.vercel.app` was verified `READY`, `target: preview`, and sourced from that exact commit. Its protected desktop/mobile flow passed name, start, accepted, duplicate, refresh/resume, finish, leaderboard/tie, console, overflow, and HTTP/runtime-log checks. Production still has zero deployments and no environment variables.
 
 Supabase project `namemore` (`hutmxxlicxeaovoeqbwg`) was explicitly confirmed non-production. Anonymous sign-in is enabled. Six repository migrations now provide the private immutable category/alias bank, a UTC schedule through 2026-12-31, deny-all RLS tables, attempt/submission constraints and indexes, immutable display names, strict control-character rejection, a database answer-check burst guard, and five narrowly granted authenticated RPCs for status, named start, submit, finish, and top-ten leaderboard. Vercel contains only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, scoped to Preview; Production variables were not changed.
 
@@ -96,14 +98,14 @@ Verification snapshot from 2026-07-18 UTC:
 - `git diff --check`, `pnpm lint`, `pnpm typecheck`, and the Next.js production build pass.
 - `pnpm test` passes 66 tests in 11 test files.
 - The hostile-client script passes directly against Supabase using only the public URL/publishable key and anonymous identities. It additionally proves display-name validation/normalization/immutability, active-attempt exclusion, top-ten limiting, deterministic tie order, safe projection keys, no UUID/answer leakage, direct leaderboard insertion denial, concurrent idempotent finish, and the 40-per-10-second burst guard.
-- A rollback-only live database deadline test returned `round-ended` and `expired` without accepting a late answer. Migration history, 300 answers, 561 aliases, 31 scheduled challenges, RLS, grants, constraints, and indexes were inspected live.
-- Supabase security advisors report only intentional deny-all/no-policy tables, the four intentionally callable authenticated security-definer RPCs, and leaked-password protection for the deferred permanent-account path. Performance advisors report only expected unused indexes on the new schema; both missing foreign-key indexes were fixed.
+- A rollback-only live database deadline test returned `round-ended` and `expired` without accepting a late answer. Migration history, 300 answers, 561 aliases, 168 scheduled challenges through 2026-12-31, RLS, grants, constraints, and indexes were inspected live.
+- Supabase security advisors report only intentional deny-all/no-policy tables, the five intentionally callable authenticated security-definer RPCs, and leaked-password protection for the deferred permanent-account path. Performance advisors report only expected unused indexes on the fresh schema; both missing foreign-key indexes were fixed.
 - `pnpm audit:client-bundle` audits the page’s manifest-referenced browser chunks and finds no NBA answer-bank markers. HTML inspection also found no canonical answer leakage before acceptance.
-- Browser QA at 1440×1000 and 390×844 completed the real Next.js/Supabase flow: malicious-name rejection, normalized name, named start, accepted answer, duplicate without score change, refresh/resume at the original deadline, finish, leaderboard, forced offline/error and retry recovery, deterministic ties, HTTP 200 route responses, no application errors, no answer-bank leakage, and no horizontal overflow.
+- Local and protected deployed browser QA at 1440×1000 and 390×844 completed the real Next.js/Supabase flow: malicious-name rejection, normalized name, named start, accepted answer, duplicate without score change, refresh/resume at the original deadline, finish, leaderboard, forced local offline/error and retry recovery, deterministic ties, HTTP 200/204 route responses, no application or runtime errors, no answer-bank leakage, and no horizontal overflow.
 
 ## Roadmap Remaining
 
-Phases 1 and 2 are complete and Phase 3 is implemented pending publication. **5 later product phases remain after the Phase 3 preview gate**: private-room lobby, live private-race multiplayer, elimination mode, general category studio/discovery, and production hardening/launch.
+Phases 1–3 are complete. **5 later product phases remain**: private-room lobby, live private-race multiplayer, elimination mode, general category studio/discovery, and production hardening/launch.
 
 In Codex desktop, the shell may not include `node` on its default `PATH`. Use the bundled workspace Node runtime when that occurs; do not treat a missing shell executable as an application failure.
 
