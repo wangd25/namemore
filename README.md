@@ -4,11 +4,13 @@ NameMore is a fast-paced, category-first recall platform where players try to na
 
 ## Current Status
 
-The project has a **complete Phase 1 of 8** and a locally/database-verified **Phase 2: Server-Authoritative Daily Challenge**. The Phase 2 implementation, non-production Supabase migration, anonymous-auth configuration, direct hostile-client checks, advisors, build, bundle audit, and local browser QA pass. Feature-branch publication and the final Vercel Preview smoke gate are the remaining Phase 2 handoff steps.
+The project has a **complete Phase 1 of 8** and a complete **Phase 2: Server-Authoritative Daily Challenge**. The Phase 2 implementation, non-production Supabase migration, anonymous-auth configuration, direct hostile-client checks, advisors, build, bundle audit, GitHub publication, and local/deployed browser gates pass.
 
-**Handoff state:** Phase 2 is implemented on `codex/phase-2-server-authoritative-daily`, branched from the completed Phase 1 head. `main` has not been changed or merged. Phase 1’s documentation closeout is separately committed and pushed as `9898d8e2382bce72c5e3ac58abf7819ece6552d5` on `codex/phase-1-whiteboard-preview`.
+**Handoff state:** Phase 2 application commit `9e6c2e3754ce619f6f75585b75ebbb73d8b4b1a2` (`Build server-authoritative daily challenge`) is pushed on `codex/phase-2-server-authoritative-daily`, branched from the completed Phase 1 head. `main` has not been changed or merged. Phase 1’s documentation closeout is separately committed and pushed as `9898d8e2382bce72c5e3ac58abf7819ece6552d5`.
 
 Vercel CLI authentication is established as `wangd25`. GitHub repository `wangd25/namemore` is connected to Vercel project `namemore` (`prj_w1Py6yIeo5YUcGGpduA32VdgFeSH`) in team `namemore`, and `main` is the configured production branch. Preview deployment `dpl_678tmSyH761zXoqfTnfdqsRg9hLh` at `https://namemore-5t10gmiq8-namemore.vercel.app` was verified `Ready` with `target: preview`, returned HTTP 200 with the expected page, and passed the deployed smoke check. Production has zero deployments.
+
+Phase 2 application preview `dpl_uriC84X7XFDHzAZE5Wqhhzm9Xc6f` at `https://namemore-io5cx2wo8-namemore.vercel.app` was verified `Ready`, `target: preview`, and sourced from the Phase 2 branch/application commit. The protected deployed flow passed start, accepted, duplicate, refresh/resume, finish, desktop/mobile layout, console, and error-log checks. Vercel Production still has zero deployments.
 
 Supabase project `namemore` (`hutmxxlicxeaovoeqbwg`) was explicitly confirmed non-production. Anonymous sign-in is enabled. Repository migrations create the private immutable category/alias bank, UTC daily schedule, deny-all RLS tables, attempt/submission constraints and indexes, and four narrowly granted authenticated RPCs for status, start, submit, and finish. Vercel contains only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, scoped to Preview; Production variables were not changed.
 
@@ -97,7 +99,7 @@ Verification snapshot from 2026-07-18 UTC:
 
 ## Roadmap Remaining
 
-Phase 1 is complete and Phase 2 is at its feature-branch publication gate. **6 later phases remain**: leaderboard/preview release, private-room lobby, live private-race multiplayer, elimination mode, general category studio/discovery, and production hardening/launch.
+Phases 1 and 2 are complete. **6 later phases remain**: leaderboard/preview release, private-room lobby, live private-race multiplayer, elimination mode, general category studio/discovery, and production hardening/launch.
 
 In Codex desktop, the shell may not include `node` on its default `PATH`. Use the bundled workspace Node runtime when that occurs; do not treat a missing shell executable as an application failure.
 

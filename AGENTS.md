@@ -55,7 +55,7 @@ Status verified on 2026-07-18 UTC:
 * The approved branch `codex/phase-1-whiteboard-preview` was created from the preserved dirty `main` state. Commit `09fcb0d3b412bbb9d289dfc3a579f4fe3325a696` (`Build Phase 1 whiteboard recall game`) contains the 34 reviewed Phase 1 application, test, configuration, asset, lockfile, and documentation paths and is pushed to `origin/codex/phase-1-whiteboard-preview`. Local and remote branch heads matched after the push; `main` was not changed or merged.
 * Vercel CLI authentication is established as `wangd25`. GitHub repository `wangd25/namemore` is connected to Vercel project `namemore` (`prj_w1Py6yIeo5YUcGGpduA32VdgFeSH`) in team `namemore`, with `main` configured as the production branch.
 * Preview deployment `dpl_678tmSyH761zXoqfTnfdqsRg9hLh` at `https://namemore-5t10gmiq8-namemore.vercel.app` was verified `READY` with `target: preview`, returned HTTP 200 with the expected NameMore page, and passed the deployed smoke check. Vercel production has zero deployments. The earlier unintended production resources were removed.
-* Phase 2 is at its publication gate. Vercel contains only the two browser-safe Supabase variables scoped to Preview; Production variables and deployments remain untouched. Phase 3, leaderboard work, multiplayer, Realtime, permanent accounts, and production deployment have not started.
+* Phase 2 is complete. Application commit `9e6c2e3754ce619f6f75585b75ebbb73d8b4b1a2` is pushed on `codex/phase-2-server-authoritative-daily`; preview `dpl_uriC84X7XFDHzAZE5Wqhhzm9Xc6f` was verified `Ready`, `target: preview`, commit-addressable, and passed the protected deployed daily/browser/log gate. Vercel contains only the two browser-safe Supabase variables scoped to Preview; Production variables and deployments remain untouched. Phase 3, leaderboard work, multiplayer, Realtime, permanent accounts, and production deployment have not started.
 
 Treat `plan.md` as the detailed roadmap and `README.md` as the current onboarding/status summary. Update both when implementation state materially changes.
 
@@ -1232,7 +1232,7 @@ Priorities should be completed in order.
 * [x] Derive scores from unique accepted submission rows and save verified completion state.
 * [x] Add deny-all RLS/direct grants, constraints, indexes, safe search paths, `auth.uid()` ownership checks, and hostile-client verification.
 * [x] Prevent arbitrary direct score, owner, deadline, completion, attempt, and accepted-answer writes.
-* [ ] Push the reviewed Phase 2 branch and complete the preview-only deployed smoke/log gate.
+* [x] Push the reviewed Phase 2 branch and complete the preview-only deployed smoke/log gate.
 * Display-name entry and the top-ten verified leaderboard belong to Milestone/Phase 3 and must use only the trusted Phase 2 finish path.
 
 #### Milestone 3: Private Room Lobby
