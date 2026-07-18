@@ -16,11 +16,13 @@ import {
 import { DailyGameResults } from "@/components/DailyGameResults";
 import type { CategoryAnswer, NbaTeamCode } from "@/lib/category-types";
 import { dailyGameApi } from "@/lib/daily-api";
+import { normalizeDisplayName } from "@/lib/daily-contract";
 import type {
   DailyAcceptedAnswer,
   DailyAttempt,
   DailyChallenge,
   DailyGameApi,
+  DailyLeaderboardPayload,
   DailyStatusPayload,
 } from "@/lib/daily-types";
 import {
@@ -34,6 +36,7 @@ import {
 type Phase =
   | "loading"
   | "unavailable"
+  | "name"
   | "ready"
   | "starting"
   | "playing"
@@ -110,6 +113,11 @@ export function DailyGameBoard({ api = dailyGameApi }: DailyGameBoardProps) {
   const [clockOffsetMs, setClockOffsetMs] = useState(0);
   const [remainingSeconds, setRemainingSeconds] = useState(0);
   const [inputValue, setInputValue] = useState("");
+  const [nameInput, setNameInput] = useState("");
+  const [confirmedName, setConfirmedName] = useState("");
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [leaderboard, setLeaderboard] = useState<DailyLeaderboardPayload | null>(null);
+  const [leaderboardState, setLeaderboardState] = useState<"loading" | "ready" | "error">("loading");
   const [duplicateCount, setDuplicateCount] = useState(0);
   const [highlightedDuplicateId, setHighlightedDuplicateId] = useState<string | null>(null);
   const [freshAnswerId, setFreshAnswerId] = useState<string | null>(null);
@@ -124,6 +132,7 @@ export function DailyGameBoard({ api = dailyGameApi }: DailyGameBoardProps) {
   const inputValueRef = useRef("");
   const finishPendingRef = useRef(false);
   const requestSequenceRef = useRef(0);
+  const leaderboardSequenceRef = useRef(0);
   const inFlightAnswersRef = useRef(new Set<string>());
   const audioContextRef = useRef<AudioContext | null>(null);
   const readyTimeoutRef = useRef<number | null>(null);
@@ -167,15 +176,32 @@ export function DailyGameBoard({ api = dailyGameApi }: DailyGameBoardProps) {
     setClockOffsetMs(Number.isFinite(offset) ? offset : 0);
     setChallenge(payload.challenge);
     setAttempt(payload.attempt);
+    setConfirmedName(payload.attempt?.displayName ?? "");
     setInputValue("");
     inputValueRef.current = "";
     setFeedback(null);
     finishPendingRef.current = false;
     if (!payload.challenge) setPhase("unavailable");
-    else if (!payload.attempt) setPhase("ready");
+    else if (!payload.attempt || (payload.attempt.status === "active" && !payload.attempt.displayName)) setPhase("name");
     else if (payload.attempt.status === "active" && Date.parse(payload.attempt.deadlineAt) > Date.parse(payload.serverNow)) setPhase("playing");
     else setPhase("finished");
   }, []);
+
+  const loadLeaderboard = useCallback(async () => {
+    const sequence = ++leaderboardSequenceRef.current;
+    setLeaderboardState("loading");
+    try {
+      const payload = await api.getLeaderboard();
+      if (sequence === leaderboardSequenceRef.current) {
+        setLeaderboard(payload);
+        setLeaderboardState("ready");
+      }
+    } catch {
+      if (sequence === leaderboardSequenceRef.current) {
+        setLeaderboardState("error");
+      }
+    }
+  }, [api]);
 
   const loadStatus = useCallback(async () => {
     const sequence = ++requestSequenceRef.current;
@@ -195,6 +221,11 @@ export function DailyGameBoard({ api = dailyGameApi }: DailyGameBoardProps) {
     const id = window.setTimeout(() => void loadStatus(), 0);
     return () => window.clearTimeout(id);
   }, [loadStatus]);
+  useEffect(() => {
+    if (phase !== "finished") return;
+    const id = window.setTimeout(() => void loadLeaderboard(), 0);
+    return () => window.clearTimeout(id);
+  }, [loadLeaderboard, phase]);
   useEffect(() => {
     const id = window.setTimeout(() => setIsFeedbackEnabled(readFeedbackPreference(window.localStorage)), 0);
     return () => window.clearTimeout(id);
@@ -247,12 +278,38 @@ export function DailyGameBoard({ api = dailyGameApi }: DailyGameBoardProps) {
   }
 
   async function startRound() {
-    if (phase !== "ready") return;
+    if (phase !== "ready" || !confirmedName) return;
     clearReadyIntent();
     setPhase("starting");
-    try { hydrate(await api.start()); }
+    try { hydrate(await api.start(confirmedName)); }
     catch {
-      setFeedback({ kind: "error", message: "The round couldn’t start. No time was counted; retry when ready." });
+      setFeedback({ kind: "error", message: "The round couldn’t be recovered. Retry to preserve any original deadline." });
+      setPhase("error");
+    }
+  }
+
+  async function handleNameSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const normalizedName = normalizeDisplayName(nameInput);
+    if (!normalizedName) {
+      setNameError("Use 2–24 letters or numbers. Spaces, apostrophes, periods, and hyphens are allowed.");
+      return;
+    }
+
+    setNameError(null);
+    setConfirmedName(normalizedName);
+    setNameInput(normalizedName);
+
+    if (!attempt) {
+      setPhase("ready");
+      return;
+    }
+
+    setPhase("starting");
+    try {
+      hydrate(await api.start(normalizedName));
+    } catch {
+      setFeedback({ kind: "error", message: "This pre-release attempt can’t be renamed or restarted." });
       setPhase("error");
     }
   }
@@ -299,6 +356,10 @@ export function DailyGameBoard({ api = dailyGameApi }: DailyGameBoardProps) {
       }
       if (result.status === "invalid") {
         if (reportInvalid) setFeedback({ kind: "invalid", message: "No match yet — check the name or try another player." });
+        return;
+      }
+      if (result.status === "rate-limited") {
+        setFeedback({ kind: "error", message: "Too many checks at once — pause briefly, then keep naming." });
         return;
       }
       if (inputValueRef.current.trim() === submitted) { setInputValue(""); inputValueRef.current = ""; }
@@ -394,15 +455,50 @@ export function DailyGameBoard({ api = dailyGameApi }: DailyGameBoardProps) {
         <div className="ready-state" aria-live="polite"><div className="ready-copy"><h1 id="game-prompt">{phase === "starting" ? "Starting your verified round…" : "Loading today’s challenge…"}</h1><p>The server is preparing your daily board.</p></div></div>
       ) : phase === "unavailable" || phase === "error" ? (
         <div className="ready-state"><div className="ready-copy"><h1 id="game-prompt">{phase === "unavailable" ? "Today’s challenge isn’t available yet." : "We couldn’t reach the daily challenge."}</h1><p>{feedback?.message ?? "Try again in a moment."}</p></div><button className="ready-zone" type="button" onClick={() => void loadStatus()}><strong>Retry</strong><span>Your score and timer remain server-authoritative.</span></button></div>
+      ) : phase === "name" && challenge ? (
+        <div className="ready-state name-state">
+          <div className="ready-copy">
+            <h1 id="game-prompt">Choose your daily display name</h1>
+            <p>One verified attempt per UTC challenge. Your display name is public on the leaderboard and cannot be changed after the round starts.</p>
+          </div>
+          <form className="display-name-form" onSubmit={handleNameSubmit}>
+            <label htmlFor="display-name">Display name</label>
+            <div className="display-name-entry">
+              <input
+                id="display-name"
+                name="displayName"
+                type="text"
+                value={nameInput}
+                onChange={(event) => setNameInput(event.target.value)}
+                autoComplete="nickname"
+                maxLength={24}
+                aria-describedby="display-name-help display-name-error"
+                autoFocus
+              />
+              <button type="submit">Continue</button>
+            </div>
+            <p id="display-name-help">2–24 characters. Duplicate names are allowed; names are never used as identity.</p>
+            <p id="display-name-error" className="display-name-error" role="alert">{nameError}</p>
+          </form>
+        </div>
       ) : phase === "ready" && challenge ? (
         <div className="ready-state">
-          <div className="ready-copy"><h1 id="game-prompt">{prompt}</h1><p>{challenge.category.timeLimitSeconds} seconds. The server starts the clock and verifies every name.</p></div>
+          <div className="ready-copy"><h1 id="game-prompt">{prompt}</h1><p>{challenge.category.timeLimitSeconds} seconds as {confirmedName}. The server starts the one-attempt clock and verifies every name.</p></div>
           <button className={`ready-zone ripple-surface${isReadyIntentActive ? " is-activating" : ""}`} type="button" aria-describedby="ready-instructions" onPointerEnter={(event) => { if (event.pointerType === "mouse") beginReadyIntent(); }} onPointerLeave={clearReadyIntent} onPointerDown={(event) => { if (event.pointerType !== "mouse") beginReadyIntent(); }} onPointerUp={clearReadyIntent} onPointerCancel={clearReadyIntent} onPointerMove={handleRipplePointerMove} onFocus={beginReadyIntent} onBlur={clearReadyIntent} onKeyDown={handleReadyKeyDown}>
             <LiquidRipple /><span className="ready-ring" aria-hidden="true"><svg viewBox="0 0 120 120"><circle className="ready-ring-track" cx="60" cy="60" r="53" /><circle className="ready-ring-progress" cx="60" cy="60" r="53" /></svg><span className="ready-dot" /></span><strong>Move here when you’re ready</strong><span id="ready-instructions">Focus or press and hold also works.</span>
           </button>
         </div>
       ) : phase === "finished" && challenge && attempt ? (
-        <DailyGameResults category={challenge.category} stats={stats} shareStatus={shareStatus} onRefresh={() => void loadStatus()} onShare={() => void shareResult()} />
+        <DailyGameResults
+          category={challenge.category}
+          stats={stats}
+          shareStatus={shareStatus}
+          leaderboard={leaderboard}
+          leaderboardState={leaderboardState}
+          onRefresh={() => void loadStatus()}
+          onRetryLeaderboard={() => void loadLeaderboard()}
+          onShare={() => void shareResult()}
+        />
       ) : (
         <div className="play-surface">
           <div className="prompt-block"><h1 id="game-prompt">{prompt}</h1></div>
@@ -419,7 +515,7 @@ export function DailyGameBoard({ api = dailyGameApi }: DailyGameBoardProps) {
         </div>
       )}
 
-      <footer className="board-footer"><span>{challenge ? `Daily challenge · ${challenge.date} · verified` : "Daily challenge · verified"}</span>{phase === "playing" ? <button type="button" onClick={() => void finishRound()}>End round</button> : null}</footer>
+      <footer className="board-footer"><span>{challenge ? `UTC daily · ${challenge.date} · resets 00:00 UTC` : "Daily challenge · verified"}</span>{phase === "playing" ? <button type="button" onClick={() => void finishRound()}>End round</button> : null}</footer>
     </section>
   );
 }

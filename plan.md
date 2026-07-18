@@ -3,11 +3,12 @@
 ## Current Findings
 
 - As of 2026-07-18 UTC, Phase 2 is complete. It passed local/non-production Supabase, direct hostile-client, advisor, bundle-leak, GitHub publication, and local/deployed desktop/mobile browser gates.
+- Phase 3 is implemented on `codex/phase-3-daily-leaderboard-preview` and its reviewed migration is applied to the confirmed non-production project. Local tests/build/bundle checks, rollback-only migration validation, live public-key hostile checks, advisors, and local 1440×1000/390×844 browser flows pass; focused GitHub publication and the final Vercel Preview gate remain.
 - `codex/phase-2-server-authoritative-daily` adds cookie-backed Supabase anonymous sessions, Next.js 16 Proxy/session refresh, four thin daily Route Handlers, runtime-validated safe contracts, and a narrow daily game Client Component that never imports the answer bank.
-- Non-production Supabase project `namemore` (`hutmxxlicxeaovoeqbwg`) has anonymous sign-in enabled and four applied repository-owned migrations: the private category/alias schema and deterministic seed; a 30-day UTC schedule through 2026-08-16; corrected RPC time variables; and covering foreign-key indexes.
-- The database contains 300 canonical answers and 561 normalized aliases in the unexposed `private` schema. All six tables have RLS enabled and no permissive browser policies. Direct table privileges are revoked; exactly four `authenticated` security-definer RPCs have a safe empty search path and enforce `auth.uid()`, ownership, deadlines, atomic uniqueness, and derived scores.
+- Non-production Supabase project `namemore` (`hutmxxlicxeaovoeqbwg`) has anonymous sign-in enabled and six applied repository-owned migrations. The two Phase 3 migrations add immutable normalized display names, strict control-character rejection, a partial leaderboard index, an answer-check burst window, a safe top-ten RPC, and deterministic scheduling through 2026-12-31.
+- The database contains 300 canonical answers and 561 normalized aliases in the unexposed `private` schema. All six tables have RLS enabled and no permissive browser policies. Direct table privileges are revoked; exactly five `authenticated` security-definer RPCs have a safe empty search path and enforce `auth.uid()`, ownership, deadlines, atomic uniqueness, immutable names, derived scores, and safe projection.
 - Vercel project `namemore` contains only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, scoped to Preview. No Production variables or deployments were changed.
-- `pnpm test` passes 58 tests across 10 files. `pnpm test:hostile-client`, `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm audit:client-bundle`, and `git diff --check` pass. Live browser QA covered start, accepted, duplicate, refresh/resume, finish, verified results, console state, payload leakage, and overflow at 1440×1000 and 390×844.
+- `pnpm test` passes 66 tests across 11 files. `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm audit:client-bundle`, and `git diff --check` pass. The public-key hostile script passes with Preview-scoped public configuration. Local live-backend browser QA covers malicious-name rejection, normalized named start, accepted, duplicate, refresh/resume, finish, leaderboard, forced error/retry, tie display, console state, payload leakage, and overflow at 1440×1000 and 390×844.
 - As of 2026-07-17, the Phase 1 implementation and local checks are complete. The 34-path publication scope was re-audited successfully, committed as `09fcb0d3b412bbb9d289dfc3a579f4fe3325a696` on `codex/phase-1-whiteboard-preview`, and pushed to `origin`.
 - The homepage renders the responsive NameMore local practice game with `ready`, `playing`, `ending`, and `finished` states, an absolute-deadline timer, hover/focus/press-and-hold readiness, continuous typing with automatic exact/alias acceptance, keyboard fallback submission, feedback, scoring, accepted answers, manual finish, and replay.
 - NameMore's target product is category-first. NBA players are the current manually curated vertical slice; the future ready-state headline becomes an editable prompt composer with reviewed-category recommendations and a distinct custom-category creation path. This direction is documented but not implemented or authorized before the Phase 1 publication gate.
@@ -19,7 +20,7 @@
 - `lib/categories.ts` contains a versioned 2026-07-15 NBA snapshot with 30 teams, 10 players per team, and 300 canonical answers.
 - `lib/normalize.ts` and `lib/game-logic.ts` implement deterministic normalization, canonical lookup construction, explicit aliases, unique-surname aliases, and collision detection.
 - Vitest and React Testing Library run 58 passing unit, dataset, component, contract, request-boundary, session, and migration tests across 10 test files.
-- There is no leaderboard, display-name flow, room route, Realtime feature, permanent account, or production deployment.
+- There is no room route, Realtime feature, permanent account, general aggregate analytics, CAPTCHA integration, or production deployment.
 - `main` tracks the private GitHub repository `wangd25/namemore`.
 - The approved branch preserved the complete dirty `main` state before staging. The focused Phase 1 commit contains the reviewed application, tests, configuration, assets, lockfile, and documentation; local and remote branch heads matched after push, and `main` was not changed or merged.
 - The refreshed publication-readiness audit found no `.env` files, credential-like assignments, token-shaped values, trailing-whitespace text files, generated output, API, Supabase, or migration directories. `git diff --check` passes.
@@ -34,14 +35,14 @@
 | --- | --- | --- |
 | 1. Playable single-player vertical slice | **Complete** | All implementation, publication, preview-target verification, and deployed smoke-test gates passed. |
 | 2. Server-authoritative daily challenge | **Complete** | Implementation, trusted-data, publication, preview-target, deployed flow, and logs gates passed. |
-| 3. Daily leaderboard and preview release | **Not started** | Verified leaderboard, daily UX, E2E coverage, and preview deployment verification. |
+| 3. Daily leaderboard and preview release | **Implementation/data gate complete** | Focused commit/push and final protected Vercel Preview verification. |
 | 4. Secure private room lobby | **Not started** | Room/player schema, create/join/rejoin/start flows, UI, and authorization tests. |
 | 5. Live private-race multiplayer | **Not started** | Safe Realtime state, private submissions, reconnect behavior, and post-round reveal. |
 | 6. Atomic elimination mode | **Not started** | Transactional answer claims, already-taken feedback, and concurrency tests. |
 | 7. General category studio and discovery | **Not started** | Category-agnostic contracts, editable prompt recommendations, moderated custom-category drafts, and real aggregate discovery cards. |
 | 8. Production hardening and launch | **Not started** | Abuse controls, retention, full reviews, release verification, and production smoke tests. |
 
-**Phase count:** Phases 1 and 2 are complete, and 6 later implementation phases remain.
+**Phase count:** Phases 1 and 2 are complete, Phase 3 is at its publication gate, and 5 later product phases remain after it.
 
 ## Locked Product and Architecture Decisions
 
@@ -173,14 +174,19 @@ Known limitations: Phase 2 schedules the trusted NBA category only through 2026-
 
 ## Phase 3 — Daily Leaderboard and Preview Release
 
-**Status: Not started.** Depends on Phase 2's trusted attempt and scoring path.
+**Status: Implementation and non-production data gates complete; publication pending.** Depends on Phase 2's trusted attempt and scoring path.
 
-- Add a safe leaderboard projection/table populated only by the trusted finish path; expose only challenge, display name, verified score, and ordering timestamps.
-- Build the display-name entry, daily status/resume experience, final submission state, top-ten leaderboard, loading/empty/error states, and safe retry behavior.
-- Add one-attempt messaging, UTC reset copy, category version preservation, and corrections through new versions rather than historical mutation.
-- Establish the trusted data needed for later daily retention features: streak/archive history, personal score history, global average/percentile, answer rarity, and most-missed-answer summaries. Ship only metrics whose privacy, minimum-sample, moderation, and versioning rules are documented and tested.
-- Add core daily Playwright coverage once the flow is stable, then verify migrations, RLS, security/performance advisors, GitHub diff, Vercel environment names, preview deployment, and end-to-end smoke tests.
-- Gate: a deployed preview completes the anonymous daily flow without exposing the answer bank or accepting browser-forged state.
+- [x] Add nullable legacy-compatible `display_name` attempt data with a trusted normalization function. New names must normalize to 2–24 characters, use the documented character allowlist, and become immutable once a named attempt exists. Duplicate names are allowed and never authorize access.
+- [x] Replace the no-argument start RPC with `daily_start_attempt(text)`. Existing unnamed completed/expired attempts remain ineligible; an unnamed active attempt may receive a name only when it has no submissions, preserving safe migration behavior without restart.
+- [x] Add `daily_get_leaderboard()` as the fifth narrow authenticated security-definer RPC. It expires overdue attempts, derives scores from accepted rows, limits to ten, and returns only date/category version plus rank, display name, score, and equal-score tie state.
+- [x] Lock ordering to score descending, completion ascending, attempt creation ascending, then internal ID as an unexposed deterministic fallback. Active and unnamed attempts are excluded; historical challenge/category-version foreign keys remain immutable.
+- [x] Add a 40-answer-checks-per-10-seconds database burst guard on each owned active attempt. Database ownership, deadline, duplicate, and score invariants remain authoritative even when Route Handlers are bypassed.
+- [x] Extend the deterministic version-1 NBA schedule from 2026-08-17 through 2026-12-31, producing 168 total UTC challenge dates without changing historical versions.
+- [x] Build accessible name entry, one-attempt/UTC reset copy, result leaderboard, loading, empty, unavailable, forced-offline error, retry, and tie guidance while preserving the accepted-answer timeline, sound preference, reduced motion, sharing, and mobile layout.
+- [x] Pass 66 automated tests across 11 files, rollback-only live migration validation, direct public-key hostile checks, zero direct table grants, zero score mismatches, five-RPC inspection, advisors, production build, client-bundle audit, and local 1440×1000/390×844 real-backend browser QA.
+- [ ] Commit and push only `codex/phase-3-daily-leaderboard-preview`; verify the exact Git-integrated Vercel Preview source SHA, protected desktop/mobile flow, error/5xx logs, and zero Production deployments.
+
+Known limitations: rejected/duplicate raw guesses are not persisted, so duplicate counts remain client-session-only. The non-production hostile suite intentionally creates disposable anonymous QA users/attempts; cleanup should target only users linked to `daily_attempts.display_name like 'QA %'` in this project after an explicit count/review, relying on the existing auth-user cascade. No cleanup job or retention deletion policy was created. CAPTCHA is not configured because Supabase requires a selected hCaptcha or Cloudflare Turnstile site/secret pair and frontend token flow; keep the preview team-auth protected until that choice is supplied. Global averages, percentiles, rarity, histories, streaks, and other community metrics remain deferred rather than fabricated.
 
 ## Phase 4 — Secure Private Room Lobby
 
@@ -275,10 +281,11 @@ At the end of every phase, record:
 Current handoff facts:
 
 - Phase 1 is complete and its documentation closeout is pushed. `main` remains untouched.
-- Phase 2 is implemented on `codex/phase-2-server-authoritative-daily`. The non-production Supabase project has four applied repository migrations and persisted anonymous-auth configuration.
-- `pnpm lint`, `pnpm typecheck`, `pnpm test` (58 tests across 10 files), `pnpm test:hostile-client`, `pnpm build`, `pnpm audit:client-bundle`, and `git diff --check` pass.
-- Direct public-key and rollback-only database tests prove ownership, direct-access denial, hidden answers, unique attempts/submissions, deadline rejection, derived score, concurrent duplicates, and idempotent finish.
-- Desktop/mobile real-backend QA passed at 1440×1000 and 390×844 without application errors, answer-bank leakage, or horizontal overflow. The flow covered start, acceptance, duplicate, refresh/resume, finish, verified results, and safe HTTP 200 route responses.
-- Supabase security advisor findings are intentional deny-all/no-policy and narrowly granted RPC notices; performance has only expected unused-index notices on the fresh schema. Preview-only public environment variable names are configured in Vercel; Production was not changed.
+- Phase 3 is implemented on `codex/phase-3-daily-leaderboard-preview`, created from verified Phase 2 head `50bf03304884170f86ef9c432b23840e6030dec4`.
+- Non-production Supabase has six applied repository migrations, 168 UTC challenges through 2026-12-31, five narrow authenticated RPCs, zero direct table grants, and zero completed/expired score mismatches.
+- `pnpm lint`, `pnpm typecheck`, `pnpm test` (66 tests across 11 files), `pnpm build`, `pnpm audit:client-bundle`, and `git diff --check` pass. The direct hostile-client suite passes when run with the Vercel Preview-scoped public configuration.
+- Rollback-only and applied-migration checks prove name normalization/immutability, safe legacy behavior, active exclusion, derived scores, top-ten limiting, deterministic ties, burst limiting, hidden answers, ownership, direct-write denial, and concurrent idempotent finish.
+- Local desktop/mobile real-backend QA passed at 1440×1000 and 390×844 without application errors, answer-bank leakage, or horizontal overflow. The flow covered malicious-name rejection, named start, acceptance, duplicate, refresh/resume, finish, leaderboard, forced error, retry, and ties.
+- Supabase security advisor findings remain intentional deny-all/no-policy and narrowly granted RPC notices; leaked-password protection is deferred with permanent accounts. Performance has expected unused-index notices on the fresh schema. Preview-only public environment variable names are unchanged; Production is untouched.
 
-Phase 2 is complete. The next authorized milestone would be Phase 3’s privacy-reviewed leaderboard projection, display-name flow, abuse controls for a broader preview, extended challenge schedule, and deployed E2E gate. Do not begin Phase 3, merge `main`, or deploy Production without separate authorization.
+Phase 3’s only remaining work is focused commit/push and the exact-source protected Vercel Preview smoke/log gate. Do not merge `main`, deploy Production, configure CAPTCHA without provider credentials, or begin Phase 4 before that gate passes.

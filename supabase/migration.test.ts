@@ -18,6 +18,14 @@ const indexMigration = readFileSync(
   resolve(process.cwd(), "supabase/migrations/20260718011806_add_daily_foreign_key_indexes.sql"),
   "utf8",
 );
+const leaderboardMigration = readFileSync(
+  resolve(process.cwd(), "supabase/migrations/20260718020151_add_phase3_daily_leaderboard.sql"),
+  "utf8",
+);
+const displayNameControlFixMigration = readFileSync(
+  resolve(process.cwd(), "supabase/migrations/20260718022352_reject_display_name_control_characters.sql"),
+  "utf8",
+);
 
 describe("server-authoritative daily migration", () => {
   it("keeps the answer bank private and exposes only narrow RPCs", () => {
@@ -60,5 +68,37 @@ describe("server-authoritative daily migration", () => {
   it("covers foreign keys used by cleanup and integrity checks", () => {
     expect(indexMigration).toContain("daily_challenges_category_version_idx");
     expect(indexMigration).toContain("daily_submissions_answer_idx");
+  });
+
+  it("makes display names immutable attempt data and exposes only a narrow leaderboard RPC", () => {
+    expect(leaderboardMigration).toContain("add column display_name text");
+    expect(leaderboardMigration).toContain("char_length(display_name) between 2 and 24");
+    expect(leaderboardMigration).toContain("drop function public.daily_start_attempt()");
+    expect(leaderboardMigration).toContain("create function public.daily_start_attempt(p_display_name text)");
+    expect(leaderboardMigration).toContain("current_attempt.display_name is distinct from normalized_display_name");
+    expect(leaderboardMigration).toContain("create or replace function public.daily_get_leaderboard()");
+    expect(leaderboardMigration).toContain("limit 10");
+    expect(leaderboardMigration).toContain("grant execute on function public.daily_get_leaderboard() to authenticated");
+    expect(leaderboardMigration).not.toMatch(/grant\s+select\s+on\s+table\s+public\.daily_attempts/i);
+    expect(displayNameControlFixMigration).toContain("p_display_name ~ '[[:cntrl:]]'");
+    expect(displayNameControlFixMigration).toContain("revoke all on function private.normalize_daily_display_name(text)");
+  });
+
+  it("derives eligible scores, excludes active attempts, and orders ties deterministically", () => {
+    expect(leaderboardMigration).toContain("attempt.status in ('completed', 'expired')");
+    expect(leaderboardMigration).toContain("attempt.display_name is not null");
+    expect(leaderboardMigration).toContain("attempt.verified_score desc");
+    expect(leaderboardMigration).toContain("attempt.completed_at asc");
+    expect(leaderboardMigration).toContain("attempt.created_at asc");
+    expect(leaderboardMigration).toContain("attempt.id asc");
+    expect(leaderboardMigration).toContain("count(*)::integer");
+    expect(leaderboardMigration).toContain("submission_window_count >= 40");
+    expect(leaderboardMigration).toContain("'rate-limited'");
+  });
+
+  it("extends the deterministic UTC preview schedule without changing category history", () => {
+    expect(leaderboardMigration).toContain("'2026-08-17'::date");
+    expect(leaderboardMigration).toContain("'2026-12-31'::date");
+    expect(leaderboardMigration).toContain("on conflict (challenge_date) do nothing");
   });
 });

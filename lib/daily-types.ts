@@ -14,6 +14,7 @@ export type DailyCategoryMetadata = {
 export type DailyChallenge = {
   id: string;
   date: string;
+  resetAt: string;
   category: DailyCategoryMetadata;
 };
 
@@ -26,6 +27,7 @@ export type DailyAcceptedAnswer = {
 
 export type DailyAttempt = {
   id: string;
+  displayName: string | null;
   status: DailyAttemptStatus;
   startedAt: string;
   deadlineAt: string;
@@ -48,6 +50,7 @@ export type DailySubmissionResult =
       answer: DailyAcceptedAnswer;
     }
   | { status: "invalid"; serverNow: string }
+  | { status: "rate-limited"; serverNow: string }
   | {
       status: "round-ended";
       serverNow: string;
@@ -59,13 +62,30 @@ export type DailyFinishPayload = {
   attempt: DailyAttempt;
 };
 
+export type DailyLeaderboardEntry = {
+  rank: number;
+  displayName: string;
+  score: number;
+  isTied: boolean;
+};
+
+export type DailyLeaderboardPayload = {
+  serverNow: string;
+  challenge: {
+    date: string;
+    category: { slug: string; version: number };
+  } | null;
+  entries: readonly DailyLeaderboardEntry[];
+};
+
 export type ApiResponse<T> =
   | { ok: true; data: T }
   | { ok: false; error: { code: string; message: string } };
 
 export type DailyGameApi = {
   getStatus(): Promise<DailyStatusPayload>;
-  start(): Promise<DailyStatusPayload>;
+  start(displayName: string): Promise<DailyStatusPayload>;
   submit(attemptId: string, answer: string): Promise<DailySubmissionResult>;
   finish(attemptId: string): Promise<DailyFinishPayload>;
+  getLeaderboard(): Promise<DailyLeaderboardPayload>;
 };

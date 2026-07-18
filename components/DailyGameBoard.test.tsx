@@ -14,6 +14,7 @@ import type {
 const challenge: DailyChallenge = {
   id: "22222222-2222-4222-8222-222222222222",
   date: "2099-07-17",
+  resetAt: "2099-07-18T00:00:00.000Z",
   category: {
     slug: "current-nba-players",
     version: 1,
@@ -31,6 +32,7 @@ const curry: DailyAcceptedAnswer = {
 };
 const activeAttempt: DailyAttempt = {
   id: "11111111-1111-4111-8111-111111111111",
+  displayName: "Daily Player",
   status: "active",
   startedAt: "2099-07-17T12:00:00.000Z",
   deadlineAt: "2099-07-17T12:01:30.000Z",
@@ -54,8 +56,22 @@ function mockApi(overrides: Partial<DailyGameApi> = {}): DailyGameApi {
       serverNow: "2099-07-17T12:00:30.000Z",
       attempt: { ...activeAttempt, status: "completed", completedAt: "2099-07-17T12:00:30.000Z" },
     }),
+    getLeaderboard: vi.fn().mockResolvedValue({
+      serverNow: "2099-07-17T12:00:30.000Z",
+      challenge: {
+        date: challenge.date,
+        category: { slug: challenge.category.slug, version: challenge.category.version },
+      },
+      entries: [{ rank: 1, displayName: "Daily Player", score: 1, isTied: false }],
+    }),
     ...overrides,
   };
+}
+
+async function enterDisplayName(name = "Daily Player") {
+  const input = await screen.findByLabelText("Display name");
+  fireEvent.change(input, { target: { value: name } });
+  fireEvent.submit(input.closest("form")!);
 }
 
 function deferred<T>() {
@@ -76,10 +92,12 @@ describe("DailyGameBoard", () => {
     const api = mockApi({ submit });
     render(<DailyGameBoard api={api} />);
 
+    await enterDisplayName();
     const readyButton = await screen.findByRole("button", { name: /Move here when you’re ready/ });
     fireEvent.keyDown(readyButton, { key: "Enter" });
     const input = await screen.findByLabelText("Type an NBA player’s name");
     expect(api.start).toHaveBeenCalledTimes(1);
+    expect(api.start).toHaveBeenCalledWith("Daily Player");
 
     fireEvent.change(input, { target: { value: "Curry" } });
     fireEvent.submit(input.closest("form")!);
@@ -146,6 +164,21 @@ describe("DailyGameBoard", () => {
     fireEvent.click(await screen.findByRole("button", { name: "End round" }));
     expect(await screen.findByText("Verified daily result")).toBeInTheDocument();
     expect(finish).toHaveBeenCalledWith(activeAttempt.id);
+    expect(await screen.findByRole("heading", { name: "Today’s top ten" })).toBeInTheDocument();
+    expect(await screen.findByText("Daily Player")).toBeInTheDocument();
+  });
+
+  it("validates and normalizes a public display name before the attempt starts", async () => {
+    const api = mockApi();
+    render(<DailyGameBoard api={api} />);
+
+    await enterDisplayName("<script>alert(1)</script>");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Use 2–24 letters or numbers");
+    expect(screen.queryByText("<script>alert(1)</script>")).toBeNull();
+
+    await enterDisplayName("  Daily   Player  ");
+    fireEvent.keyDown(await screen.findByRole("button", { name: /Move here when you’re ready/ }), { key: "Enter" });
+    await waitFor(() => expect(api.start).toHaveBeenCalledWith("Daily Player"));
   });
 
   it("offers a safe retry when no daily challenge exists", async () => {

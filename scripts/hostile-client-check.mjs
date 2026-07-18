@@ -26,18 +26,24 @@ async function assertDenied(label, operation) {
 
 const unsigned = client();
 await assertDenied("unsigned RPC", () => unsigned.rpc("daily_get_status"));
+await assertDenied("legacy start without display name", () =>
+  unsigned.rpc("daily_start_attempt"),
+);
 
-const playerA = client();
-const playerB = client();
-const [authA, authB] = await Promise.all([
-  playerA.auth.signInAnonymously(),
-  playerB.auth.signInAnonymously(),
-]);
-assert.ifError(authA.error);
-assert.ifError(authB.error);
-assert.ok(authA.data.user?.is_anonymous);
-assert.ok(authB.data.user?.is_anonymous);
-assert.notEqual(authA.data.user?.id, authB.data.user?.id);
+const runId = String(Date.now()).slice(-6);
+const players = Array.from({ length: 12 }, () => client());
+const authResults = await Promise.all(
+  players.map((player) => player.auth.signInAnonymously()),
+);
+authResults.forEach(({ data, error }) => {
+  assert.ifError(error);
+  assert.ok(data.user?.is_anonymous);
+});
+assert.equal(new Set(authResults.map(({ data }) => data.user?.id)).size, players.length);
+
+const [playerA, playerB] = players;
+const authA = authResults[0];
+const authB = authResults[1];
 
 await assertDenied("private answer-bank read", () =>
   playerA.schema("private").from("category_answers").select("canonical_text").limit(1),
@@ -54,15 +60,32 @@ assert.ifError(statusError);
 assert.ok(statusA.challenge, "The current UTC challenge is missing.");
 assert.equal(statusA.attempt, null);
 assert.equal("answers" in statusA.challenge.category, false);
+assert.equal(typeof statusA.challenge.resetAt, "string");
+
+for (const displayName of [
+  "A",
+  "x".repeat(25),
+  "Player\u0000Name",
+  "Player\tName",
+  "<script>alert(1)</script>",
+]) {
+  await assertDenied(`invalid display name ${JSON.stringify(displayName)}`, () =>
+    playerA.rpc("daily_start_attempt", { p_display_name: displayName }),
+  );
+}
+
+const playerAName = `QA ${runId} Player A`;
+const playerBName = `QA ${runId} Player B`;
 
 const [{ data: startA1, error: startError1 }, { data: startA2, error: startError2 }] =
   await Promise.all([
-    playerA.rpc("daily_start_attempt"),
-    playerA.rpc("daily_start_attempt"),
+    playerA.rpc("daily_start_attempt", { p_display_name: `  ${playerAName}  ` }),
+    playerA.rpc("daily_start_attempt", { p_display_name: playerAName }),
   ]);
 assert.ifError(startError1);
 assert.ifError(startError2);
 assert.equal(startA1.attempt.id, startA2.attempt.id);
+assert.equal(startA1.attempt.displayName, playerAName);
 assert.equal(startA1.attempt.deadlineAt, startA2.attempt.deadlineAt);
 assert.equal(
   Date.parse(startA1.attempt.deadlineAt) - Date.parse(startA1.attempt.startedAt),
@@ -72,8 +95,16 @@ assert.equal(
 const { data: resumedA, error: resumeError } = await playerA.rpc("daily_get_status");
 assert.ifError(resumeError);
 assert.equal(resumedA.attempt.id, startA1.attempt.id);
+assert.equal(resumedA.attempt.displayName, playerAName);
 
-const { data: startB, error: startErrorB } = await playerB.rpc("daily_start_attempt");
+await assertDenied("attempt rename", () =>
+  playerA.rpc("daily_start_attempt", { p_display_name: `QA ${runId} Renamed` }),
+);
+
+const { data: startB, error: startErrorB } = await playerB.rpc(
+  "daily_start_attempt",
+  { p_display_name: playerBName },
+);
 assert.ifError(startErrorB);
 assert.notEqual(startB.attempt.id, startA1.attempt.id);
 
@@ -132,6 +163,7 @@ await assertDenied("arbitrary score write", () =>
       deadline_at: "2099-01-01T00:00:00Z",
       status: "completed",
       user_id: authB.data.user.id,
+      display_name: "Forged Name",
     })
     .eq("id", startA1.attempt.id),
 );
@@ -141,21 +173,22 @@ await assertDenied("direct accepted-row write", () =>
     answer_id: "00000000-0000-4000-8000-000000000000",
   }),
 );
+await assertDenied("direct leaderboard insertion", () =>
+  playerA.from("daily_leaderboard").insert({ display_name: "Forged", verified_score: 999 }),
+);
 
-const { data: finish1, error: finishError1 } = await playerA.rpc(
-  "daily_finish_attempt",
-  { p_attempt_id: startA1.attempt.id },
-);
-const { data: finish2, error: finishError2 } = await playerA.rpc(
-  "daily_finish_attempt",
-  { p_attempt_id: startA1.attempt.id },
-);
+const [{ data: finish1, error: finishError1 }, { data: finish2, error: finishError2 }] =
+  await Promise.all([
+    playerA.rpc("daily_finish_attempt", { p_attempt_id: startA1.attempt.id }),
+    playerA.rpc("daily_finish_attempt", { p_attempt_id: startA1.attempt.id }),
+  ]);
 assert.ifError(finishError1);
 assert.ifError(finishError2);
 assert.equal(finish1.attempt.status, "completed");
 assert.equal(finish1.attempt.score, 2);
 assert.equal(finish2.attempt.score, 2);
 assert.deepEqual(finish2.attempt.answers, finish1.attempt.answers);
+assert.equal(finish1.attempt.displayName, playerAName);
 
 const { data: afterFinish, error: afterFinishError } = await playerA.rpc(
   "daily_submit_answer",
@@ -165,8 +198,90 @@ assert.ifError(afterFinishError);
 assert.equal(afterFinish.status, "round-ended");
 assert.equal(afterFinish.attempt.score, 2);
 
-await Promise.all([playerA.auth.signOut(), playerB.auth.signOut()]);
+const acceptedAliases = [
+  "curry",
+  "harden",
+  "durant",
+  "lebron james",
+  "anthony davis",
+  "jayson tatum",
+  "jaylen brown",
+  "nikola jokic",
+  "jamal murray",
+  "luka doncic",
+  "kyrie irving",
+  "giannis antetokounmpo",
+];
+const targetScores = [12, 11, 10, 9, 8, 7, 6, 5, 5, 4];
+const completedNames = [];
+
+for (let index = 0; index < targetScores.length; index += 1) {
+  const player = players[index + 2];
+  const displayName = `QA ${runId} Player ${String(index + 3).padStart(2, "0")}`;
+  const { data: started, error: startError } = await player.rpc(
+    "daily_start_attempt",
+    { p_display_name: displayName },
+  );
+  assert.ifError(startError);
+
+  for (const normalizedAnswer of acceptedAliases.slice(0, targetScores[index])) {
+    const { data, error } = await player.rpc("daily_submit_answer", {
+      p_attempt_id: started.attempt.id,
+      p_normalized_answer: normalizedAnswer,
+    });
+    assert.ifError(error);
+    assert.equal(data.status, "accepted");
+  }
+
+  const { data: finished, error: finishError } = await player.rpc(
+    "daily_finish_attempt",
+    { p_attempt_id: started.attempt.id },
+  );
+  assert.ifError(finishError);
+  assert.equal(finished.attempt.score, targetScores[index]);
+  completedNames.push(displayName);
+}
+
+const { data: leaderboard, error: leaderboardError } = await playerA.rpc(
+  "daily_get_leaderboard",
+);
+assert.ifError(leaderboardError);
+assert.equal(leaderboard.challenge.date, statusA.challenge.date);
+assert.equal(leaderboard.challenge.category.slug, statusA.challenge.category.slug);
+assert.equal(leaderboard.challenge.category.version, statusA.challenge.category.version);
+assert.equal(leaderboard.entries.length, 10);
+leaderboard.entries.forEach((entry, index) => {
+  assert.deepEqual(Object.keys(entry).sort(), ["displayName", "isTied", "rank", "score"]);
+  assert.equal(entry.rank, index + 1);
+  if (index > 0) {
+    assert.ok(entry.score <= leaderboard.entries[index - 1].score);
+  }
+});
+assert.equal(leaderboard.entries.some(({ displayName }) => displayName === playerBName), false);
+assert.equal(leaderboard.entries.some(({ displayName }) => displayName === playerAName), false);
+assert.equal(JSON.stringify(leaderboard).includes(authA.data.user.id), false);
+assert.equal(JSON.stringify(leaderboard).includes("canonicalText"), false);
+assert.equal(JSON.stringify(leaderboard).includes("answer"), false);
+
+const firstTie = leaderboard.entries.find(({ displayName }) => displayName === completedNames[7]);
+const secondTie = leaderboard.entries.find(({ displayName }) => displayName === completedNames[8]);
+assert.ok(firstTie?.isTied);
+assert.ok(secondTie?.isTied);
+assert.ok(firstTie.rank < secondTie.rank);
+
+const burst = await Promise.all(
+  Array.from({ length: 41 }, (_, index) =>
+    playerB.rpc("daily_submit_answer", {
+      p_attempt_id: startB.attempt.id,
+      p_normalized_answer: `invalid burst ${index}`,
+    }),
+  ),
+);
+burst.forEach(({ error }) => assert.ifError(error));
+assert.ok(burst.some(({ data }) => data.status === "rate-limited"));
+
+await Promise.all(players.map((player) => player.auth.signOut()));
 
 console.log(
-  "Hostile client checks passed: anonymous auth, hidden answers, ownership, atomic duplicate handling, derived score, and idempotent finish.",
+  "Hostile client checks passed: display names, hidden answers, ownership, rate limiting, derived scores, idempotent finish, and safe top-ten ordering.",
 );

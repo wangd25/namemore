@@ -6,12 +6,16 @@ import type {
   DailyAttemptStatus,
   DailyChallenge,
   DailyFinishPayload,
+  DailyLeaderboardEntry,
+  DailyLeaderboardPayload,
   DailyStatusPayload,
   DailySubmissionResult,
 } from "@/lib/daily-types";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const controlCharacters = /[\u0000-\u001f\u007f]/;
+const displayNameControlCharacters = /[\p{Cc}\p{Cf}]/u;
+const displayNameCharacters = /^[\p{L}\p{M}\p{N}][\p{L}\p{M}\p{N} .'’-]*$/u;
 const teamCodes = new Set<string>(nbaTeamCodes);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -48,6 +52,30 @@ function readInteger(record: Record<string, unknown>, key: string): number {
   return value as number;
 }
 
+function readBoolean(record: Record<string, unknown>, key: string): boolean {
+  const value = record[key];
+  if (typeof value !== "boolean") {
+    throw new Error(`Invalid ${key}.`);
+  }
+  return value;
+}
+
+export function normalizeDisplayName(value: string): string | null {
+  if (displayNameControlCharacters.test(value)) {
+    return null;
+  }
+  const normalized = value.normalize("NFC").trim().replace(/\s+/gu, " ");
+  const length = Array.from(normalized).length;
+  if (
+    length < 2
+    || length > 24
+    || !displayNameCharacters.test(normalized)
+  ) {
+    return null;
+  }
+  return normalized;
+}
+
 function parseAcceptedAnswer(value: unknown): DailyAcceptedAnswer {
   if (!isRecord(value)) {
     throw new Error("Invalid accepted answer.");
@@ -75,8 +103,13 @@ export function parseDailyAttempt(value: unknown): DailyAttempt {
   if (!Array.isArray(value.answers)) {
     throw new Error("Invalid accepted answers.");
   }
+  const displayName = readNullableString(value, "displayName");
+  if (displayName !== null && normalizeDisplayName(displayName) !== displayName) {
+    throw new Error("Invalid display name.");
+  }
   return {
     id: readString(value, "id"),
+    displayName,
     status: status as DailyAttemptStatus,
     startedAt: readString(value, "startedAt"),
     deadlineAt: readString(value, "deadlineAt"),
@@ -94,6 +127,7 @@ function parseDailyChallenge(value: unknown): DailyChallenge {
   return {
     id: readString(value, "id"),
     date: readString(value, "date"),
+    resetAt: readString(value, "resetAt"),
     category: {
       slug: readString(category, "slug"),
       version: readInteger(category, "version"),
@@ -122,7 +156,7 @@ export function parseDailySubmissionResult(value: unknown): DailySubmissionResul
   }
   const status = readString(value, "status");
   const serverNow = readString(value, "serverNow");
-  if (status === "invalid") {
+  if (status === "invalid" || status === "rate-limited") {
     return { status, serverNow };
   }
   if (status === "round-ended") {
@@ -145,6 +179,55 @@ export function parseDailyFinishPayload(value: unknown): DailyFinishPayload {
   return {
     serverNow: readString(value, "serverNow"),
     attempt: parseDailyAttempt(value.attempt),
+  };
+}
+
+function parseLeaderboardEntry(value: unknown): DailyLeaderboardEntry {
+  if (!isRecord(value)) {
+    throw new Error("Invalid leaderboard entry.");
+  }
+  const rank = readInteger(value, "rank");
+  const displayName = readString(value, "displayName");
+  if (rank < 1 || rank > 10 || normalizeDisplayName(displayName) !== displayName) {
+    throw new Error("Invalid leaderboard entry.");
+  }
+  return {
+    rank,
+    displayName,
+    score: readInteger(value, "score"),
+    isTied: readBoolean(value, "isTied"),
+  };
+}
+
+export function parseDailyLeaderboardPayload(value: unknown): DailyLeaderboardPayload {
+  if (!isRecord(value) || !Array.isArray(value.entries) || value.entries.length > 10) {
+    throw new Error("Invalid daily leaderboard.");
+  }
+  const entries = value.entries.map(parseLeaderboardEntry);
+  entries.forEach((entry, index) => {
+    if (entry.rank !== index + 1) {
+      throw new Error("Invalid leaderboard rank.");
+    }
+  });
+
+  let challenge: DailyLeaderboardPayload["challenge"] = null;
+  if (value.challenge !== null) {
+    if (!isRecord(value.challenge) || !isRecord(value.challenge.category)) {
+      throw new Error("Invalid leaderboard challenge.");
+    }
+    challenge = {
+      date: readString(value.challenge, "date"),
+      category: {
+        slug: readString(value.challenge.category, "slug"),
+        version: readInteger(value.challenge.category, "version"),
+      },
+    };
+  }
+
+  return {
+    serverNow: readString(value, "serverNow"),
+    challenge,
+    entries,
   };
 }
 
@@ -182,6 +265,14 @@ export function parseSubmitRequest(value: unknown): {
     return null;
   }
   return { attemptId: value.attemptId, answer };
+}
+
+export function parseStartRequest(value: unknown): { displayName: string } | null {
+  if (!isRecord(value) || typeof value.displayName !== "string") {
+    return null;
+  }
+  const displayName = normalizeDisplayName(value.displayName);
+  return displayName ? { displayName } : null;
 }
 
 export function parseFinishRequest(value: unknown): { attemptId: string } | null {

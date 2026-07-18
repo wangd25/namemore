@@ -1,12 +1,19 @@
+import { DailyLeaderboard } from "@/components/DailyLeaderboard";
 import { nbaTeamCodes } from "@/lib/category-types";
-import type { DailyCategoryMetadata } from "@/lib/daily-types";
+import type {
+  DailyCategoryMetadata,
+  DailyLeaderboardPayload,
+} from "@/lib/daily-types";
 import type { PracticeStats } from "@/lib/practice-game";
 
 type DailyGameResultsProps = {
   category: DailyCategoryMetadata;
   stats: PracticeStats;
   shareStatus: "idle" | "copied" | "shared" | "error";
+  leaderboard: DailyLeaderboardPayload | null;
+  leaderboardState: "loading" | "ready" | "error";
   onRefresh: () => void;
+  onRetryLeaderboard: () => void;
   onShare: () => void;
 };
 
@@ -46,7 +53,10 @@ export function DailyGameResults({
   category,
   stats,
   shareStatus,
+  leaderboard,
+  leaderboardState,
   onRefresh,
+  onRetryLeaderboard,
   onShare,
 }: DailyGameResultsProps) {
   const representedTeams = new Set(stats.representedTeamCodes);
@@ -150,6 +160,12 @@ export function DailyGameResults({
               : "None — complete league coverage"}
           </p>
         </div>
+
+        <DailyLeaderboard
+          leaderboard={leaderboard}
+          state={leaderboardState}
+          onRetry={onRetryLeaderboard}
+        />
       </section>
 
       <h1 className="sr-only" id="game-prompt">

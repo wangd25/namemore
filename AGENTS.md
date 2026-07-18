@@ -46,16 +46,18 @@ Status verified on 2026-07-18 UTC:
 * The local Phase 1 delight pass adds wet-ink answer settling, a board-wide wave every five answers, duplicate-line location, restrained optional Web Audio/haptics with a versioned local preference, final-ten-second tension, a graceful ending freeze, a versioned local-practice best, and spoiler-free Web Share/clipboard output. Local values are labeled unranked and are not trusted competitive data.
 * The playing layout is intentionally near full-bleed: the outer glass shell uses a 6px desktop gutter. Keystrokes receive a reduced-motion-aware, transform-free 90ms optical response; accepted answers add a spring check, reusable adjacent topic-icon slot, stronger team-color wash, and a slightly louder two-note glass chime. Quick pairs add a green liquid wash and measured glass notification. The pointer-following liquid lens is 46px on desktop and 36px on mobile, follows the pointer without React state, does not loop, and is not shown merely because the input has keyboard focus.
 * The results state reports final score, local best, answers per minute, acceptance timeline, fastest accepted-answer gap, longest pause, duplicate attempts, represented/missed NBA teams, replay, and spoiler-safe sharing. It does not invent global averages, percentiles, rarity, or other-user statistics.
-* Fifty-eight unit, dataset, contract, request-boundary, session, migration, and component tests pass across ten test files. Lint, strict type-checking, direct hostile-client tests, the production build, client-bundle audit, and `git diff --check` pass with the Codex workspace Node runtime.
+* Sixty-six unit, dataset, contract, request-boundary, session, migration, and component tests pass across eleven test files. Lint, strict type-checking, direct hostile-client tests, the production build, client-bundle audit, and `git diff --check` pass with the Codex workspace Node runtime.
 * Phase 2 browser QA passed against the real non-production backend at 1440×1000 and 390×844 with no application console errors, answer-bank HTML leakage, or horizontal overflow. The live flow covered anonymous session establishment, server start, accepted answer, duplicate without score change, refresh/resume at the original deadline, finish, verified results, and safe HTTP 200 Route Handler responses.
 * The complete publication-readiness review was refreshed on 2026-07-17 on `codex/phase-1-whiteboard-preview`. `git diff --check` passes; the 34-path scope contains no `.env` files, credential-like assignments, token-shaped values, trailing-whitespace text files, generated output, API, Supabase, or migration directories.
 * Phase 2 adds cookie-backed Supabase SSR/Proxy clients, anonymous identity, four no-store daily Route Handlers, safe runtime contracts, a narrow daily game Client Component, and repository-owned schema/seed/schedule/RPC/index migrations. The competitive browser graph no longer imports the answer bank.
-* Confirmed non-production Supabase project `namemore` (`hutmxxlicxeaovoeqbwg`) has anonymous sign-in enabled. It contains 300 private canonical answers, 561 private aliases, 31 scheduled challenges, deny-all RLS/direct grants, and exactly four authenticated security-definer RPCs that enforce `auth.uid()`, ownership, deadlines, atomic uniqueness, and derived scores.
+* Confirmed non-production Supabase project `namemore` (`hutmxxlicxeaovoeqbwg`) has anonymous sign-in enabled. It contains 300 private canonical answers, 561 private aliases, 168 scheduled challenges through 2026-12-31 UTC, deny-all RLS/direct grants, and exactly five authenticated security-definer RPCs that enforce `auth.uid()`, ownership, deadlines, atomic uniqueness, derived scores, immutable display names, and safe leaderboard projection.
 * Direct public-key hostile-client checks pass for unsigned/direct-table/hidden-schema denial, unique start/resume, separate ownership, accepted/invalid/duplicate/round-ended responses, concurrent duplicates, cross-user denial, arbitrary state-write denial, derived scoring, and idempotent finish. A rollback-only live deadline check proves late-answer rejection.
 * The approved branch `codex/phase-1-whiteboard-preview` was created from the preserved dirty `main` state. Commit `09fcb0d3b412bbb9d289dfc3a579f4fe3325a696` (`Build Phase 1 whiteboard recall game`) contains the 34 reviewed Phase 1 application, test, configuration, asset, lockfile, and documentation paths and is pushed to `origin/codex/phase-1-whiteboard-preview`. Local and remote branch heads matched after the push; `main` was not changed or merged.
 * Vercel CLI authentication is established as `wangd25`. GitHub repository `wangd25/namemore` is connected to Vercel project `namemore` (`prj_w1Py6yIeo5YUcGGpduA32VdgFeSH`) in team `namemore`, with `main` configured as the production branch.
 * Preview deployment `dpl_678tmSyH761zXoqfTnfdqsRg9hLh` at `https://namemore-5t10gmiq8-namemore.vercel.app` was verified `READY` with `target: preview`, returned HTTP 200 with the expected NameMore page, and passed the deployed smoke check. Vercel production has zero deployments. The earlier unintended production resources were removed.
-* Phase 2 is complete. Application commit `9e6c2e3754ce619f6f75585b75ebbb73d8b4b1a2` is pushed on `codex/phase-2-server-authoritative-daily`; preview `dpl_uriC84X7XFDHzAZE5Wqhhzm9Xc6f` was verified `Ready`, `target: preview`, commit-addressable, and passed the protected deployed daily/browser/log gate. Vercel contains only the two browser-safe Supabase variables scoped to Preview; Production variables and deployments remain untouched. Phase 3, leaderboard work, multiplayer, Realtime, permanent accounts, and production deployment have not started.
+* Phase 2 is complete. Application commit `9e6c2e3754ce619f6f75585b75ebbb73d8b4b1a2` is pushed on `codex/phase-2-server-authoritative-daily`; preview `dpl_uriC84X7XFDHzAZE5Wqhhzm9Xc6f` was verified `Ready`, `target: preview`, commit-addressable, and passed the protected deployed daily/browser/log gate.
+* Phase 3 implementation and non-production data gates pass on `codex/phase-3-daily-leaderboard-preview`. A 2–24-character normalized display name becomes immutable attempt data; duplicate names are allowed and are never identity. Only completed/expired named attempts enter the current UTC challenge’s top ten, ordered by score descending, verified completion ascending, attempt creation ascending, then internal ID as an unexposed final deterministic fallback. The projection exposes only rank, display name, score, and equal-score tie state. Direct table access remains denied, and answer submissions are capped at 40 checks per rolling 10-second attempt window. Preview publication is pending the focused Phase 3 commit and deploy gate. Vercel still contains only the two browser-safe Supabase variables scoped to Preview; Production variables and deployments remain untouched. Multiplayer, Realtime, permanent accounts, CAPTCHA provider configuration, and Production deployment have not started.
+* Phase 3 uses two new timestamped migrations: `add_phase3_daily_leaderboard` for the trusted data/RPC/schedule extension and `reject_display_name_control_characters` as a forward-only correction ensuring tabs, newlines, and all other controls are rejected before whitespace normalization.
 
 Treat `plan.md` as the detailed roadmap and `README.md` as the current onboarding/status summary. Update both when implementation state materially changes.
 
@@ -1235,7 +1237,21 @@ Priorities should be completed in order.
 * [x] Push the reviewed Phase 2 branch and complete the preview-only deployed smoke/log gate.
 * Display-name entry and the top-ten verified leaderboard belong to Milestone/Phase 3 and must use only the trusted Phase 2 finish path.
 
-#### Milestone 3: Private Room Lobby
+#### Milestone 3: Daily Leaderboard
+
+* [x] Require a normalized 2–24-character display name before a new trusted attempt starts.
+* [x] Keep display names immutable after start, allow duplicates, and never use them for authorization.
+* [x] Return a current-UTC top ten through a narrow authenticated RPC with no user IDs, attempt IDs, answers, guesses, auth metadata, or ordering timestamps.
+* [x] Include only completed or expired named attempts and derive every score from accepted submissions.
+* [x] Order by score descending, verified completion ascending, attempt creation ascending, and an unexposed internal-ID fallback; mark equal scores as tied.
+* [x] Preserve deny-all table grants/RLS and prove forged score, rename, cross-user, duplicate-finish, direct-insert, and hidden-data attacks fail.
+* [x] Add a 40-checks-per-10-seconds database burst guard and extend the deterministic UTC schedule through 2026-12-31.
+* [x] Add accessible name, leaderboard loading/empty/error/retry/tie, desktop/mobile, and answer-bank leakage coverage.
+* [ ] Push the focused Phase 3 branch, verify a protected Vercel Preview from the exact source commit, smoke-test it, and confirm Production remains empty.
+
+CAPTCHA remains a broader-preview prerequisite because Supabase requires an hCaptcha or Cloudflare Turnstile site/secret pair and a corresponding frontend token flow. Do not add provider credentials or a CAPTCHA dependency until that product/provider choice is supplied.
+
+#### Milestone 4: Private Room Lobby
 
 * Create private rooms.
 * Generate shareable room URLs.
@@ -1247,7 +1263,7 @@ Priorities should be completed in order.
 * Add room lifecycle states.
 * Handle refreshes and disconnected players safely.
 
-#### Milestone 4: Live Multiplayer Boards
+#### Milestone 5: Live Multiplayer Boards
 
 * Add Supabase Presence.
 * Add ephemeral typing Broadcast events.
@@ -1258,7 +1274,7 @@ Priorities should be completed in order.
 * Reveal results only after the round ends.
 * Test privacy using browser network and state inspection.
 
-#### Milestone 5: Elimination Mode
+#### Milestone 6: Elimination Mode
 
 * Add elimination as an optional room mode.
 * Atomically claim canonical answers.
@@ -1267,7 +1283,7 @@ Priorities should be completed in order.
 * Test simultaneous submissions.
 * Preserve private race mode as the default.
 
-#### Milestone 6: General Category Studio and Discovery
+#### Milestone 7: General Category Studio and Discovery
 
 Begin only after the Phase 1 publication gate and the trusted identity, scoring, and leaderboard foundations are complete.
 

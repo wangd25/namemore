@@ -1,10 +1,12 @@
 import {
   parseDailyFinishPayload,
+  parseDailyLeaderboardPayload,
   parseDailyStatusPayload,
   parseDailySubmissionResult,
 } from "@/lib/daily-contract";
 import type {
   DailyFinishPayload,
+  DailyLeaderboardPayload,
   DailyStatusPayload,
   DailySubmissionResult,
 } from "@/lib/daily-types";
@@ -72,8 +74,11 @@ export async function getDailyStatus(): Promise<DailyStatusPayload> {
   return parseTrustedResult(await callRpc("daily_get_status"), parseDailyStatusPayload);
 }
 
-export async function startDailyAttempt(): Promise<DailyStatusPayload> {
-  return parseTrustedResult(await callRpc("daily_start_attempt"), parseDailyStatusPayload);
+export async function startDailyAttempt(displayName: string): Promise<DailyStatusPayload> {
+  return parseTrustedResult(
+    await callRpc("daily_start_attempt", { p_display_name: displayName }),
+    parseDailyStatusPayload,
+  );
 }
 
 export async function submitDailyAnswer(
@@ -99,5 +104,12 @@ export async function finishDailyAttempt(
   return parseTrustedResult(
     await callRpc("daily_finish_attempt", { p_attempt_id: attemptId }),
     parseDailyFinishPayload,
+  );
+}
+
+export async function getDailyLeaderboard(): Promise<DailyLeaderboardPayload> {
+  return parseTrustedResult(
+    await callRpc("daily_get_leaderboard"),
+    parseDailyLeaderboardPayload,
   );
 }

@@ -264,6 +264,70 @@ button {
   letter-spacing: -0.02em;
 }
 
+.name-state {
+  gap: clamp(28px, 4vh, 48px);
+}
+
+.display-name-form {
+  width: min(560px, 100%);
+}
+
+.display-name-form > label {
+  display: block;
+  margin-bottom: 9px;
+  color: #354052;
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.display-name-entry {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+.display-name-entry input {
+  min-width: 0;
+  height: 54px;
+  padding: 0 16px;
+  border: 1px solid rgba(137, 158, 187, 0.5);
+  border-radius: 14px;
+  outline: none;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--foreground);
+  font-size: 1rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.96);
+}
+
+.display-name-entry input:focus-visible {
+  border-color: rgba(22, 119, 255, 0.62);
+  box-shadow: 0 0 0 4px rgba(22, 119, 255, 0.1);
+}
+
+.display-name-entry button,
+.leaderboard-message button {
+  min-height: 44px;
+  padding: 0 20px;
+  border: 1px solid var(--accent);
+  border-radius: 13px;
+  background: var(--accent);
+  color: #ffffff;
+  font-size: 0.84rem;
+  font-weight: 650;
+}
+
+.display-name-form > p {
+  margin: 9px 2px 0;
+  color: #7a8493;
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.display-name-form .display-name-error {
+  min-height: 1.1rem;
+  color: var(--danger);
+}
+
 .ready-zone {
   position: relative;
   display: flex;
@@ -1067,7 +1131,7 @@ button {
 .results-sheet {
   display: grid;
   min-height: 0;
-  grid-template-columns: minmax(280px, 1fr) minmax(330px, 0.95fr);
+  grid-template-columns: minmax(260px, 1fr) minmax(280px, 0.9fr) minmax(260px, 0.85fr);
   overflow: hidden;
   border: 1px solid rgba(145, 168, 197, 0.34);
   border-radius: 22px;
@@ -1090,7 +1154,8 @@ button {
 }
 
 .result-timeline-panel,
-.team-coverage-panel {
+.team-coverage-panel,
+.leaderboard-panel {
   min-width: 0;
   overflow-y: auto;
   scrollbar-color: rgba(121, 139, 164, 0.3) transparent;
@@ -1103,6 +1168,84 @@ button {
 
 .team-coverage-panel {
   padding: 18px 24px 24px;
+  border-right: 1px solid rgba(132, 151, 178, 0.14);
+}
+
+.leaderboard-panel {
+  padding: 18px 20px 24px;
+}
+
+.leaderboard-message {
+  margin: 28px 0;
+  color: #667184;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.leaderboard-message.is-error p {
+  margin: 0 0 12px;
+}
+
+.leaderboard-message button {
+  min-height: 38px;
+  padding-inline: 14px;
+  font-size: 0.72rem;
+}
+
+.leaderboard-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.leaderboard-list li {
+  display: grid;
+  min-height: 43px;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid rgba(132, 151, 178, 0.1);
+}
+
+.leaderboard-rank,
+.leaderboard-score {
+  font-family: var(--font-apple-mono);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.leaderboard-rank {
+  color: #8a93a1;
+}
+
+.leaderboard-list strong {
+  overflow: hidden;
+  color: #273142;
+  font-size: 0.8rem;
+  font-weight: 560;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leaderboard-tie {
+  grid-column: 2;
+  margin-top: -9px;
+  color: #8a6b25;
+  font-size: 0.6rem;
+}
+
+.leaderboard-score {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  color: var(--accent);
+  font-weight: 650;
+}
+
+.leaderboard-rule {
+  margin: 16px 0 0;
+  color: #7f8998;
+  font-size: 0.64rem;
+  line-height: 1.45;
 }
 
 .results-section-heading {
@@ -1585,6 +1728,11 @@ button {
     border-bottom: 1px solid rgba(132, 151, 178, 0.14);
   }
 
+  .team-coverage-panel {
+    border-right: 0;
+    border-bottom: 1px solid rgba(132, 151, 178, 0.14);
+  }
+
   .team-coverage-grid {
     grid-template-columns: repeat(6, minmax(42px, 1fr));
   }
@@ -1659,6 +1807,15 @@ button {
     min-height: min(330px, 42vh);
     padding: 28px 18px;
     border-radius: 22px;
+  }
+
+  .display-name-entry {
+    grid-template-columns: 1fr;
+  }
+
+  .display-name-entry input,
+  .display-name-entry button {
+    width: 100%;
   }
 
   .ready-ring {
@@ -1893,7 +2050,8 @@ button {
   }
 
   .result-timeline-panel,
-  .team-coverage-panel {
+  .team-coverage-panel,
+  .leaderboard-panel {
     overflow: visible;
   }
 
@@ -1903,6 +2061,10 @@ button {
   }
 
   .team-coverage-panel {
+    padding: 16px 14px 20px;
+  }
+
+  .leaderboard-panel {
     padding: 16px 14px 20px;
   }
 

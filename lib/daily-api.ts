@@ -1,6 +1,7 @@
 import {
   parseApiResponse,
   parseDailyFinishPayload,
+  parseDailyLeaderboardPayload,
   parseDailyStatusPayload,
   parseDailySubmissionResult,
 } from "@/lib/daily-contract";
@@ -30,8 +31,12 @@ export const dailyGameApi: DailyGameApi = {
   getStatus() {
     return request("/api/daily/status", { method: "GET" }, parseDailyStatusPayload);
   },
-  start() {
-    return request("/api/daily/start", { method: "POST", body: "{}" }, parseDailyStatusPayload);
+  start(displayName) {
+    return request(
+      "/api/daily/start",
+      { method: "POST", body: JSON.stringify({ displayName }) },
+      parseDailyStatusPayload,
+    );
   },
   submit(attemptId, answer) {
     return request(
@@ -45,6 +50,13 @@ export const dailyGameApi: DailyGameApi = {
       "/api/daily/finish",
       { method: "POST", body: JSON.stringify({ attemptId }) },
       parseDailyFinishPayload,
+    );
+  },
+  getLeaderboard() {
+    return request(
+      "/api/daily/leaderboard",
+      { method: "GET" },
+      parseDailyLeaderboardPayload,
     );
   },
 };
