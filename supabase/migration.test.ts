@@ -26,6 +26,14 @@ const displayNameControlFixMigration = readFileSync(
   resolve(process.cwd(), "supabase/migrations/20260718022352_reject_display_name_control_characters.sql"),
   "utf8",
 );
+const roomLobbyMigration = readFileSync(
+  resolve(process.cwd(), "supabase/migrations/20260720040822_add_phase4_secure_room_lobby.sql"),
+  "utf8",
+);
+const roomHostIndexMigration = readFileSync(
+  resolve(process.cwd(), "supabase/migrations/20260720052757_add_room_host_foreign_key_index.sql"),
+  "utf8",
+);
 
 describe("server-authoritative daily migration", () => {
   it("keeps the answer bank private and exposes only narrow RPCs", () => {
@@ -100,5 +108,36 @@ describe("server-authoritative daily migration", () => {
     expect(leaderboardMigration).toContain("'2026-08-17'::date");
     expect(leaderboardMigration).toContain("'2026-12-31'::date");
     expect(leaderboardMigration).toContain("on conflict (challenge_date) do nothing");
+  });
+
+  it("keeps room tables deny-all and exposes only narrow authenticated RPCs", () => {
+    expect(roomLobbyMigration).toContain("alter table public.rooms enable row level security");
+    expect(roomLobbyMigration).toContain("alter table public.room_players enable row level security");
+    expect(roomLobbyMigration).toContain("revoke all on table public.rooms from public, anon, authenticated");
+    expect(roomLobbyMigration).toContain("revoke all on table public.room_players from public, anon, authenticated");
+    expect(roomLobbyMigration.match(/security definer\nset search_path = ''/g)).toHaveLength(4);
+    expect(roomLobbyMigration).toContain("grant execute on function public.room_create(text) to authenticated");
+    expect(roomLobbyMigration).toContain("grant execute on function public.room_get_status(text) to authenticated");
+    expect(roomLobbyMigration).not.toMatch(/grant\s+(select|insert|update|delete)\s+on\s+(table\s+)?public\.(rooms|room_players)/i);
+  });
+
+  it("locks capacity, membership, host start, and server timestamps in the database", () => {
+    expect(roomLobbyMigration).toContain("unique (room_id, user_id)");
+    expect(roomLobbyMigration).toContain("where is_host;");
+    expect(roomLobbyMigration).toContain("for update;");
+    expect(roomLobbyMigration).toContain("if player_count >= 8 then");
+    expect(roomLobbyMigration).toContain("selected_room.status <> 'waiting'");
+    expect(roomLobbyMigration).toContain("current_member.id <> selected_room.host_player_id");
+    expect(roomLobbyMigration).toContain("started_at = v_now");
+    expect(roomLobbyMigration).toContain("deadline_at = v_now + make_interval");
+    expect(roomLobbyMigration).toContain("participant.last_seen_at > p_now - interval '20 seconds'");
+    expect(roomHostIndexMigration).toContain("on public.rooms (host_player_id, id)");
+  });
+
+  it("uses non-ambiguous codes and hides participant names from outsiders", () => {
+    expect(roomLobbyMigration).toContain("^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{8}$");
+    expect(roomLobbyMigration).toContain("when member.id is null then '[]'::jsonb");
+    expect(roomLobbyMigration).toContain("when member.id is null then null");
+    expect(roomLobbyMigration).toContain("left join public.room_players as member");
   });
 });

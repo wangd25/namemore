@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   type CSSProperties,
   type ChangeEvent,
@@ -538,7 +539,7 @@ export function DailyGameBoard({ api = dailyGameApi }: DailyGameBoardProps) {
         </div>
       )}
 
-      <footer className="board-footer"><span>{challenge ? `UTC daily · ${challenge.date} · resets 00:00 UTC` : "Daily challenge · verified"}</span>{phase === "playing" ? <button type="button" onClick={() => void finishRound()}>End round</button> : null}</footer>
+      <footer className="board-footer"><span>{challenge ? `UTC daily · ${challenge.date} · resets 00:00 UTC` : "Daily challenge · verified"}</span>{phase === "playing" ? <button type="button" onClick={() => void finishRound()}>End round</button> : <Link href="/room">Private rooms</Link>}</footer>
     </section>
   );
 }

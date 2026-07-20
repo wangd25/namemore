@@ -1,4 +1,5 @@
 import { nbaTeamCodes } from "@/lib/category-types";
+import { normalizeDisplayName } from "@/lib/display-name";
 import type {
   ApiResponse,
   DailyAcceptedAnswer,
@@ -14,8 +15,6 @@ import type {
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const controlCharacters = /[\u0000-\u001f\u007f]/;
-const displayNameControlCharacters = /[\p{Cc}\p{Cf}]/u;
-const displayNameCharacters = /^[\p{L}\p{M}\p{N}][\p{L}\p{M}\p{N} .'’-]*$/u;
 const teamCodes = new Set<string>(nbaTeamCodes);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -60,21 +59,7 @@ function readBoolean(record: Record<string, unknown>, key: string): boolean {
   return value;
 }
 
-export function normalizeDisplayName(value: string): string | null {
-  if (displayNameControlCharacters.test(value)) {
-    return null;
-  }
-  const normalized = value.normalize("NFC").trim().replace(/\s+/gu, " ");
-  const length = Array.from(normalized).length;
-  if (
-    length < 2
-    || length > 24
-    || !displayNameCharacters.test(normalized)
-  ) {
-    return null;
-  }
-  return normalized;
-}
+export { normalizeDisplayName } from "@/lib/display-name";
 
 function parseAcceptedAnswer(value: unknown): DailyAcceptedAnswer {
   if (!isRecord(value)) {
