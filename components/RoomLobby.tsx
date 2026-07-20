@@ -4,6 +4,7 @@ import Link from "next/link";
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 
 import { normalizeDisplayName } from "@/lib/display-name";
+import { RoomGame } from "@/components/RoomGame";
 import { roomApi } from "@/lib/room-api";
 import type { Room, RoomApi } from "@/lib/room-types";
 
@@ -100,6 +101,10 @@ export function RoomLobby({ roomCode, api = roomApi }: RoomLobbyProps) {
         <footer className="board-footer"><span>Private room · server verified</span></footer>
       </section>
     );
+  }
+
+  if (room.membership && (room.status === "active" || room.status === "completed")) {
+    return <RoomGame roomCode={roomCode} api={api} />;
   }
 
   const isMember = room.membership !== null;

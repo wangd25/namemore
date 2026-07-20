@@ -8,6 +8,14 @@ const responseHeaders = {
   Pragma: "no-cache",
 };
 
+export async function readRoomJsonBody(request: Request): Promise<unknown> {
+  try {
+    return await request.json();
+  } catch {
+    return null;
+  }
+}
+
 export function roomSuccess<T>(data: T) {
   const payload: ApiResponse<T> = { ok: true, data };
   return NextResponse.json(payload, { headers: responseHeaders });

@@ -1,5 +1,14 @@
-import { parseRoomPayload } from "@/lib/room-contract";
-import type { RoomPayload } from "@/lib/room-types";
+import {
+  parseRoomGamePayload,
+  parseRoomPayload,
+  parseRoomSubmissionResult,
+} from "@/lib/room-contract";
+import { normalizeAnswer } from "@/lib/normalize";
+import type {
+  RoomGamePayload,
+  RoomPayload,
+  RoomSubmissionResult,
+} from "@/lib/room-types";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ensureAnonymousIdentity } from "@/lib/supabase/session";
 
@@ -74,4 +83,32 @@ export async function joinRoom(roomCode: string, displayName: string): Promise<R
 
 export async function startRoom(roomCode: string): Promise<RoomPayload> {
   return parseTrustedRoom(await callRpc("room_start", { p_room_code: roomCode }));
+}
+
+export async function getRoomGame(roomCode: string): Promise<RoomGamePayload> {
+  try {
+    return parseRoomGamePayload(await callRpc("room_get_game", { p_room_code: roomCode }));
+  } catch (error) {
+    if (error instanceof RoomServiceError) throw error;
+    throw new RoomServiceError("invalid-room-response", "The live room returned an invalid response.", 502);
+  }
+}
+
+export async function submitRoomAnswer(
+  roomCode: string,
+  rawAnswer: string,
+): Promise<RoomSubmissionResult> {
+  const normalizedAnswer = normalizeAnswer(rawAnswer);
+  if (!normalizedAnswer || normalizedAnswer.length > 80) {
+    return { status: "invalid", serverNow: new Date().toISOString() };
+  }
+  try {
+    return parseRoomSubmissionResult(await callRpc("room_submit_answer", {
+      p_room_code: roomCode,
+      p_normalized_answer: normalizedAnswer,
+    }));
+  } catch (error) {
+    if (error instanceof RoomServiceError) throw error;
+    throw new RoomServiceError("invalid-room-response", "The room answer returned an invalid response.", 502);
+  }
 }

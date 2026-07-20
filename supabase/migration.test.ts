@@ -34,6 +34,18 @@ const roomHostIndexMigration = readFileSync(
   resolve(process.cwd(), "supabase/migrations/20260720052757_add_room_host_foreign_key_index.sql"),
   "utf8",
 );
+const roomGameMigration = readFileSync(
+  resolve(process.cwd(), "supabase/migrations/20260720181046_add_phase5_live_private_race.sql"),
+  "utf8",
+);
+const roomSubmissionIndexMigration = readFileSync(
+  resolve(process.cwd(), "supabase/migrations/20260720182631_add_room_submission_player_fk_index.sql"),
+  "utf8",
+);
+const roomRealtimeFixMigration = readFileSync(
+  resolve(process.cwd(), "supabase/migrations/20260720182937_fix_room_realtime_authorization_boundary.sql"),
+  "utf8",
+);
 
 describe("server-authoritative daily migration", () => {
   it("keeps the answer bank private and exposes only narrow RPCs", () => {
@@ -139,5 +151,36 @@ describe("server-authoritative daily migration", () => {
     expect(roomLobbyMigration).toContain("when member.id is null then '[]'::jsonb");
     expect(roomLobbyMigration).toContain("when member.id is null then null");
     expect(roomLobbyMigration).toContain("left join public.room_players as member");
+  });
+
+  it("keeps multiplayer submissions server-owned and active opponent answers hidden", () => {
+    expect(roomGameMigration).toContain("create table public.room_submissions");
+    expect(roomGameMigration).toContain("unique (player_id, answer_id)");
+    expect(roomGameMigration).toContain("revoke all on table public.room_submissions from public, anon, authenticated");
+    expect(roomGameMigration).toContain("when ranked.id = member.id or room.status = 'completed'");
+    expect(roomGameMigration).toContain("else null");
+    expect(roomGameMigration).toContain("selected_room.deadline_at <= v_now");
+    expect(roomGameMigration).toContain("submission_window_count >= 40");
+    expect(roomGameMigration).not.toMatch(/grant\s+(select|insert|update|delete)\s+on\s+(table\s+)?public\.room_submissions/i);
+  });
+
+  it("authorizes private realtime topics by both room membership and owning player", () => {
+    expect(roomGameMigration).toContain("on realtime.messages");
+    expect(roomGameMigration).toContain("private.room_realtime_authorized");
+    expect(roomGameMigration).toContain("and (not p_write or topic_player.user_id = p_user_id)");
+    expect(roomGameMigration).toContain("realtime.messages.extension in ('broadcast', 'presence')");
+    expect(roomGameMigration).toContain("'board_changed'");
+    expect(roomGameMigration).not.toContain("canonicalText', matched_answer.canonical_text,\n      'playerId'");
+  });
+
+  it("covers the composite room submission player foreign key", () => {
+    expect(roomSubmissionIndexMigration).toContain("on public.room_submissions (player_id, room_id)");
+  });
+
+  it("keeps realtime authorization callable without granting private-schema usage", () => {
+    expect(roomRealtimeFixMigration).toContain("create or replace function public.room_realtime_authorized");
+    expect(roomRealtimeFixMigration).toContain("and (not p_write or topic_player.user_id = auth.uid())");
+    expect(roomRealtimeFixMigration).toContain("drop function private.room_realtime_authorized");
+    expect(roomRealtimeFixMigration).not.toContain("grant usage on schema private");
   });
 });

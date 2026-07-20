@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { RoomLobby } from "@/components/RoomLobby";
-import type { RoomApi, RoomPayload } from "@/lib/room-types";
+import type { RoomApi, RoomGamePayload, RoomPayload } from "@/lib/room-types";
 
 const waitingPayload: RoomPayload = {
   serverNow: "2026-07-20T12:00:00.000Z",
@@ -47,6 +47,27 @@ const waitingPayload: RoomPayload = {
   },
 };
 
+const activeGamePayload: RoomGamePayload = {
+  serverNow: "2026-07-20T12:00:10.000Z",
+  game: {
+    code: "K7M4Q2PX",
+    status: "active",
+    mode: "private-race",
+    startedAt: "2026-07-20T12:00:10.000Z",
+    deadlineAt: "2026-07-20T12:01:40.000Z",
+    endedAt: null,
+    category: waitingPayload.room.category,
+    membership: waitingPayload.room.membership!,
+    players: waitingPayload.room.participants.map((participant, index) => ({
+      ...participant,
+      score: 0,
+      rank: index + 1,
+      isTied: true,
+      answers: index === 0 ? [] : null,
+    })),
+  },
+};
+
 function makeApi(overrides: Partial<RoomApi> = {}): RoomApi {
   return {
     create: vi.fn().mockResolvedValue(waitingPayload),
@@ -61,6 +82,8 @@ function makeApi(overrides: Partial<RoomApi> = {}): RoomApi {
         deadlineAt: "2026-07-20T12:01:40.000Z",
       },
     }),
+    getGame: vi.fn().mockResolvedValue(activeGamePayload),
+    submit: vi.fn().mockResolvedValue({ status: "invalid", serverNow: activeGamePayload.serverNow }),
     ...overrides,
   };
 }
@@ -76,7 +99,7 @@ describe("RoomLobby", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Start round/ }));
     await waitFor(() => expect(api.start).toHaveBeenCalledWith("K7M4Q2PX"));
-    expect(await screen.findByText("Room started securely.")).toBeInTheDocument();
+    expect(await screen.findByRole("textbox", { name: "Type an NBA player’s name" })).toBeInTheDocument();
   });
 
   it("shows only the join gate for a non-member preview", async () => {
