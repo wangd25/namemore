@@ -2,16 +2,17 @@
 
 ## Current Findings
 
+- Phase 6 is complete on `codex/phase-6-atomic-elimination`. One forward-only migration adds the deny-all claim table, unique `(room_id, answer_id)` first-owner invariant, mode-aware room creation, and atomic answer submission while preserving the one-argument private-race creator. Application commit `1781efe1ca641d26f2607103b1b833d5ceb5d8ab` is pushed; exact-source protected Preview `dpl_GDCbaEUg19nSxAGdKBPKzkPfg6HU` is `READY` and passed protected homepage/room/current-daily smoke, runtime error/5xx, two-browser simultaneous-claim, answer secrecy, ownership reveal, and desktop/mobile visual gates.
 - Phase 5 is complete on `codex/phase-5-live-private-race`. Three forward-only migrations add deny-all per-player submissions, canonical per-player uniqueness, answer-check burst control, server-authoritative game/submit/reveal RPCs, a corrective foreign-key index, and private per-player Realtime authorization. Application commit `cba8380e8b93d65383b9c0342aa6fc172b5e73c3` is pushed; exact-source protected Preview `dpl_ADAE2bevosLdTLLMof3LKp478QvE` is `READY` and passed protected smoke/error-log checks. Separate in-app and Chrome sessions completed the same private race with synchronized safe counts, hidden active answers, and server-deadline reveal.
 - Phase 4 is complete on `codex/phase-4-secure-room-lobby`. Two forward-only migrations add deny-all room/player tables, indexed host linkage, non-ambiguous codes, unique membership, atomic capacity and host-only start enforcement, plus four narrow authenticated RPCs. Application commit `84731004b12b151c22eff3b1e34a31ddbf3db3e8` is pushed; exact-source protected Preview `dpl_9NjNPMpW3bshp43RPdQYWA6FRDCr` passed the two-session desktop/mobile create, join, refresh, synchronize, start, console, overflow, HTTP, and runtime-log gates.
 - As of 2026-07-18 UTC, Phase 2 is complete. It passed local/non-production Supabase, direct hostile-client, advisor, bundle-leak, GitHub publication, and local/deployed desktop/mobile browser gates.
 - Phase 3 is complete on `codex/phase-3-daily-leaderboard-preview`. Its two reviewed migrations are applied to the confirmed non-production project, application commit `a169bc12ccf4e6eb386d9ff3c53181ca22b39b54` is pushed, and exact-source protected Preview `dpl_76HfnTfCiJzhXciMskCWkwzHi7ck` passed desktop/mobile flow, HTTP, console, overflow, runtime error/5xx, and Production-isolation gates.
 - The focused post–Phase 3 branch `codex/daily-ready-spring-latency` hardens transient empty-status recovery, replaces the ready dwell's linear loading feel with damped spring charge/launch motion, and reduces competitive automatic-check debounce from 420ms to 180ms with an immediate pending cue. On 2026-07-20 UTC, the non-production database was independently verified to have one active challenge today and a continuous 168-day schedule through 2026-12-31; no schema or trusted-data change was needed. Application commit `49d1687c65e05a3d060983b39693363490ef134a` is pushed, and exact-source protected Preview `dpl_AAN9cqyDdoSspYU1NYqikypwTEiD` passed its desktop/mobile daily flow, answer-latency, console, overflow, and runtime-log gates.
 - `codex/phase-2-server-authoritative-daily` adds cookie-backed Supabase anonymous sessions, Next.js 16 Proxy/session refresh, four thin daily Route Handlers, runtime-validated safe contracts, and a narrow daily game Client Component that never imports the answer bank.
-- Non-production Supabase project `namemore` (`hutmxxlicxeaovoeqbwg`) has anonymous sign-in enabled and eleven applied repository-owned migrations. The three Phase 5 migrations add the private-race submission/RPC/Realtime model and two forward-only authorization/index corrections.
-- The database contains 300 canonical answers and 561 normalized aliases in the unexposed `private` schema. All nine application tables have RLS enabled and no permissive direct browser policies. Direct table privileges are revoked; eleven gameplay/status RPCs plus one Realtime authorization helper enforce `auth.uid()`, membership, ownership, deadlines, atomic uniqueness/capacity, immutable names, host authority, derived scores, active-answer secrecy, and safe projection.
+- Non-production Supabase project `namemore` (`hutmxxlicxeaovoeqbwg`) has anonymous sign-in enabled and twelve applied repository-owned migrations. The Phase 6 migration adds the deny-all atomic claim model and mode-aware RPC overload.
+- The database contains 300 canonical answers and 561 normalized aliases in the unexposed `private` schema. All ten application tables have RLS enabled and no permissive direct browser policies. Direct table privileges are revoked; twelve gameplay/status RPC signatures plus one Realtime authorization helper enforce `auth.uid()`, membership, ownership, deadlines, atomic uniqueness/capacity/claims, immutable names, host authority, derived scores, active-answer secrecy, and safe projection.
 - Vercel project `namemore` contains only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, scoped to Preview. No Production variables or deployments were changed.
-- `pnpm test` passes 89 tests across 15 files. `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm audit:client-bundle`, and `git diff --check` pass. All three public-key hostile scripts pass with Preview-scoped public configuration. Local browser QA covers desktop/mobile active/results rendering and a true two-browser create/join/start/submit/synchronize/reveal flow; the protected Preview passed authenticated CLI smoke and runtime-error scans.
+- `pnpm test` passes 94 tests across 16 files. `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm audit:client-bundle`, and `git diff --check` pass. All four public-key hostile scripts pass with Preview-scoped public configuration. Local browser QA covers desktop/mobile entry/active/results rendering and a true two-browser create/join/start/simultaneous-claim/synchronize/reveal flow; the protected Preview passed authenticated CLI smoke and runtime-error/5xx scans.
 - As of 2026-07-17, the Phase 1 implementation and local checks are complete. The 34-path publication scope was re-audited successfully, committed as `09fcb0d3b412bbb9d289dfc3a579f4fe3325a696` on `codex/phase-1-whiteboard-preview`, and pushed to `origin`.
 - The homepage renders the responsive NameMore local practice game with `ready`, `playing`, `ending`, and `finished` states, an absolute-deadline timer, hover/focus/press-and-hold readiness, continuous typing with automatic exact/alias acceptance, keyboard fallback submission, feedback, scoring, accepted answers, manual finish, and replay.
 - NameMore's target product is category-first. NBA players are the current manually curated vertical slice; the future ready-state headline becomes an editable prompt composer with reviewed-category recommendations and a distinct custom-category creation path. This direction is documented but not implemented or authorized before the Phase 1 publication gate.
@@ -23,7 +24,7 @@
 - `lib/categories.ts` contains a versioned 2026-07-15 NBA snapshot with 30 teams, 10 players per team, and 300 canonical answers.
 - `lib/normalize.ts` and `lib/game-logic.ts` implement deterministic normalization, canonical lookup construction, explicit aliases, unique-surname aliases, and collision detection.
 - Vitest and React Testing Library run 58 passing unit, dataset, component, contract, request-boundary, session, and migration tests across 10 test files.
-- There is no elimination mode, permanent account, general aggregate analytics, CAPTCHA integration, or production deployment.
+- There is no permanent account, general aggregate analytics, CAPTCHA integration, or production deployment.
 - `main` tracks the private GitHub repository `wangd25/namemore`.
 - The approved branch preserved the complete dirty `main` state before staging. The focused Phase 1 commit contains the reviewed application, tests, configuration, assets, lockfile, and documentation; local and remote branch heads matched after push, and `main` was not changed or merged.
 - The refreshed publication-readiness audit found no `.env` files, credential-like assignments, token-shaped values, trailing-whitespace text files, generated output, API, Supabase, or migration directories. `git diff --check` passes.
@@ -41,11 +42,11 @@
 | 3. Daily leaderboard and preview release | **Complete** | All implementation, trusted-data, publication, preview-target, protected deployed-flow, and log gates passed. |
 | 4. Secure private room lobby | **Complete** | All implementation, database, hostile-client, publication, protected Preview, two-session browser, and runtime-log gates passed. |
 | 5. Live private-race multiplayer | **Complete** | Private submissions, safe Realtime, reconnect fallback, synchronized boards, and post-round reveal passed. |
-| 6. Atomic elimination mode | **Not started** | Transactional answer claims, already-taken feedback, and concurrency tests. |
+| 6. Atomic elimination mode | **Complete** | Transactional first-owner claims, safe already-taken feedback, private-race regression, and concurrency gates passed. |
 | 7. General category studio and discovery | **Not started** | Category-agnostic contracts, editable prompt recommendations, moderated custom-category drafts, and real aggregate discovery cards. |
 | 8. Production hardening and launch | **Not started** | Abuse controls, retention, full reviews, release verification, and production smoke tests. |
 
-**Phase count:** Phases 1–5 are complete, and 3 later product phases remain.
+**Phase count:** Phases 1–6 are complete, and 2 later product phases remain.
 
 ## Locked Product and Architecture Decisions
 
@@ -101,7 +102,7 @@ type AnswerSubmissionResult =
   | { status: "round-ended" };
 ```
 
-This is the currently implemented Phase 1 union. The `already-taken` result is intentionally deferred until Phase 6 introduces elimination mode.
+This remains the Phase 1 local-practice union. The multiplayer `RoomSubmissionResult` now adds an answer-free `already-taken` status for atomic elimination claims.
 
 Phase 7 will evolve the universal presentation contract without rewriting the Phase 1 NBA snapshot. The exact type will be finalized then, but the boundary should resemble:
 
@@ -220,13 +221,15 @@ Known limitations: private race intentionally has no host transfer, cancellation
 
 ## Phase 6 — Atomic Elimination Mode
 
-**Status: Not started.** Depends on the working private-race multiplayer path from Phase 5.
+**Status: Complete.** Built on the working private-race multiplayer path from Phase 5.
 
-- Extend the room mode union with `elimination` while preserving `private_race` as default.
-- Implement a transactional claim path with a unique `(room_id, category_answer_id)` invariant. The first valid claim scores; concurrent losers receive `already-taken` without leaking the owner's answer during the round.
-- Add elimination-specific feedback and final ownership results without changing private-race behavior.
-- Test true concurrent submissions, retries/idempotency, cross-room isolation, deadline races, disconnects, and mode regression coverage.
-- Gate: database concurrency tests prove exactly one owner per canonical answer per room.
+- [x] Extend the room mode union with `elimination` while preserving `private_race` as default and keeping the original one-argument creator compatible.
+- [x] Implement a transactional claim path with a unique `(room_id, answer_id)` invariant. The first valid claim scores; concurrent losers receive `already-taken` without answer or owner data.
+- [x] Add an accessible mode picker, elimination-specific live feedback, claim language, and final ownership results without changing private-race behavior.
+- [x] Test true concurrent submissions, winner retries, cross-room isolation, deadline rejection, active secrecy, direct-table denial, and private-race regression coverage.
+- [x] Pass the gate: hostile database concurrency and a real two-browser race both prove exactly one owner per canonical answer per room.
+
+Known limitations: elimination currently shares Phase 5's fixed NBA category, 90-second room rule, eight-player cap, best-effort Presence display, and deferred host-transfer/cancellation/cleanup/history work. Disconnected players retain valid server-owned claims; there is no reclaim mechanic. Production and broader unprotected access remain deferred.
 
 ## Phase 7 — General Category Studio and Discovery
 
@@ -289,11 +292,11 @@ At the end of every phase, record:
 
 Current handoff facts:
 
-- Phase 5 is complete on `codex/phase-5-live-private-race`; application commit `cba8380e8b93d65383b9c0342aa6fc172b5e73c3` is pushed and exact-source protected Preview `dpl_ADAE2bevosLdTLLMof3LKp478QvE` is `READY`.
-- Non-production Supabase has eleven applied repository migrations, eleven narrow gameplay/status RPCs plus one Realtime authorization helper, zero direct application-table grants, and private member-scoped per-player topics.
-- `pnpm lint`, `pnpm typecheck`, `pnpm test` (89 tests across 15 files), `pnpm build`, `pnpm audit:client-bundle`, and `git diff --check` pass. All three direct hostile-client suites pass with Preview-scoped public configuration.
-- Room-game hostile checks prove independent per-player canonical scoring, duplicate/invalid/deadline behavior, direct-table and outsider denial, active opponent-answer secrecy, own-topic-only publishing, member-only subscriptions, and completed reveal.
-- Desktop/mobile visual QA passed at 1440×1000 and 390×844 without horizontal overflow. Separate in-app and Chrome sessions completed the same live race and saw synchronized counts, hidden active answers, and identical server-verified results.
+- Phase 6 is complete on `codex/phase-6-atomic-elimination`; application commit `1781efe1ca641d26f2607103b1b833d5ceb5d8ab` is pushed and exact-source protected Preview `dpl_GDCbaEUg19nSxAGdKBPKzkPfg6HU` is `READY`.
+- Non-production Supabase has twelve applied repository migrations, twelve narrow gameplay/status RPC signatures plus one Realtime authorization helper, zero direct application-table grants, a deny-all claim table, and private member-scoped per-player topics.
+- `pnpm lint`, `pnpm typecheck`, `pnpm test` (94 tests across 16 files), `pnpm build`, `pnpm audit:client-bundle`, and `git diff --check` pass. All four direct hostile-client suites pass with Preview-scoped public configuration.
+- Elimination hostile checks prove one atomic owner under simultaneous submission, answer-free losers, retries, cross-room isolation, deadline behavior, direct-claim denial, unchanged private-race scoring, active secrecy, and completed ownership reveal.
+- Desktop/mobile visual QA passed without horizontal overflow or browser errors. Separate in-app and Chrome sessions raced for the same canonical answer, saw exactly one claim and one safe rejection, then saw identical server-verified ownership results after the deadline.
 - Security advisor findings remain the intentional deny-all/no-policy, narrowly granted RPC, member-constrained anonymous Realtime, and deferred password-account notices. Performance has only expected unused-index notices on the fresh schema. Preview-only environment variable names are unchanged; Production is untouched.
 
-The next milestone is Phase 6’s atomic elimination mode. Preserve Phase 5’s trusted membership, server clock, deny-all direct-table posture, active answer secrecy, private Realtime topics, and protected Preview-only deployment policy. Add a database uniqueness/transaction boundary so exactly one player can claim a canonical answer per room; do not simulate claims client-side, merge `main`, deploy Production, or configure CAPTCHA without explicit authorization and provider credentials.
+The next milestone is Phase 7’s general category studio and discovery. Preserve the trusted daily/room identity, server clock, deny-all direct-table posture, reviewed versioned answer banks, active answer secrecy, private Realtime topics, atomic elimination claims, and protected Preview-only deployment policy. Generalize category presentation, add an editable reviewed-category combobox and distinct practice-draft creation flow, and use only moderated real aggregates for ambient cards; do not fabricate activity, admit unreviewed drafts to competitive play, merge `main`, deploy Production, or configure CAPTCHA without explicit authorization and provider credentials.
