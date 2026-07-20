@@ -6,6 +6,7 @@ import {
 import { normalizeAnswer } from "@/lib/normalize";
 import type {
   RoomGamePayload,
+  RoomMode,
   RoomPayload,
   RoomSubmissionResult,
 } from "@/lib/room-types";
@@ -66,8 +67,11 @@ function parseTrustedRoom(value: unknown): RoomPayload {
   }
 }
 
-export async function createRoom(displayName: string): Promise<RoomPayload> {
-  return parseTrustedRoom(await callRpc("room_create", { p_display_name: displayName }));
+export async function createRoom(displayName: string, mode: RoomMode): Promise<RoomPayload> {
+  return parseTrustedRoom(await callRpc("room_create", {
+    p_display_name: displayName,
+    p_mode: mode,
+  }));
 }
 
 export async function getRoomStatus(roomCode: string): Promise<RoomPayload> {

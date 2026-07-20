@@ -32,7 +32,7 @@ type RoomGameProps = {
   realtimeConnector?: typeof connectRoomRealtime | null;
 };
 
-type Feedback = { kind: "accepted" | "duplicate" | "invalid" | "error"; message: string };
+type Feedback = { kind: "accepted" | "duplicate" | "already-taken" | "invalid" | "error"; message: string };
 
 const automaticSubmitMilliseconds = 180;
 
@@ -198,13 +198,27 @@ export function RoomGame({ roomCode, api = roomApi, realtimeConnector = connectR
         setFeedback({ kind: "error", message: "Too many checks at once — pause briefly, then keep naming." });
         return;
       }
+      if (result.status === "already-taken") {
+        if (inputValueRef.current.trim() === submitted) {
+          setInputValue("");
+          inputValueRef.current = "";
+          void connectionRef.current?.sendTyping(buildTypingSignal(""));
+        }
+        setFeedback({ kind: "already-taken", message: "Already taken — another player claimed that name first." });
+        return;
+      }
       if (inputValueRef.current.trim() === submitted) {
         setInputValue("");
         inputValueRef.current = "";
         void connectionRef.current?.sendTyping(buildTypingSignal(""));
       }
       if (result.status === "duplicate") {
-        setFeedback({ kind: "duplicate", message: `${result.answer.canonicalText} is already on your board.` });
+        setFeedback({
+          kind: "duplicate",
+          message: gameRef.current.mode === "elimination"
+            ? `${result.answer.canonicalText} is already your claim.`
+            : `${result.answer.canonicalText} is already on your board.`,
+        });
         return;
       }
       setFreshAnswerId(result.answer.id);
@@ -227,7 +241,12 @@ export function RoomGame({ roomCode, api = roomApi, realtimeConnector = connectR
         gameRef.current = next;
         return next;
       });
-      setFeedback({ kind: "accepted", message: `${result.answer.canonicalText} added.` });
+      setFeedback({
+        kind: "accepted",
+        message: gameRef.current?.mode === "elimination"
+          ? `${result.answer.canonicalText} claimed.`
+          : `${result.answer.canonicalText} added.`,
+      });
     } catch {
       setFeedback({ kind: "error", message: "That answer couldn’t be checked. Your verified score is safe; try again." });
     } finally {
@@ -276,7 +295,10 @@ export function RoomGame({ roomCode, api = roomApi, realtimeConnector = connectR
       </header>
 
       <main className="room-live-content">
-        <h1 id="room-game-title">{game.category.prompt}</h1>
+        <div className="room-live-heading">
+          <span>{game.mode === "elimination" ? "Elimination · first claim wins" : "Private race · shared answer pool"}</span>
+          <h1 id="room-game-title">{game.category.prompt}</h1>
+        </div>
         <form className={`room-live-entry${isChecking ? " is-checking" : ""}`} onSubmit={handleSubmit} aria-busy={isChecking}>
           <label className="sr-only" htmlFor="room-answer-input">Type an NBA player’s name</label>
           <input ref={inputRef} id="room-answer-input" value={inputValue} onChange={handleInputChange} autoComplete="off" autoCapitalize="words" spellCheck="false" maxLength={80} placeholder="Type a full name or unique last name…" />
@@ -312,12 +334,12 @@ export function RoomGame({ roomCode, api = roomApi, realtimeConnector = connectR
           })}
         </div>
 
-        <div className="room-live-status" aria-live="polite">
+        <div className={`room-live-status${feedback ? ` is-${feedback.kind}` : ""}`} aria-live="polite">
           <span className={`room-realtime-dot is-${realtimeState}`} />
           <p>{feedback?.message ?? (realtimeState === "degraded" ? "Live signals are reconnecting; verified scores still sync safely." : "Answers reveal when time ends.")}</p>
         </div>
       </main>
-      <footer className="board-footer"><span>Private race · server clock</span><Link href="/room">Leave room</Link></footer>
+      <footer className="board-footer"><span>{game.mode === "elimination" ? "Elimination" : "Private race"} · server clock</span><Link href="/room">Leave room</Link></footer>
     </section>
   );
 }

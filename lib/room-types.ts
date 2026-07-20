@@ -1,5 +1,5 @@
 export type RoomStatus = "waiting" | "active" | "completed" | "cancelled";
-export type RoomMode = "private-race";
+export type RoomMode = "private-race" | "elimination";
 
 export type RoomCategory = {
   slug: string;
@@ -87,11 +87,12 @@ export type RoomSubmissionResult =
       answer: RoomAcceptedAnswer;
     }
   | { status: "invalid"; serverNow: string }
+  | { status: "already-taken"; serverNow: string }
   | { status: "rate-limited"; serverNow: string }
   | { status: "round-ended"; serverNow: string; game: RoomGame };
 
 export type RoomApi = {
-  create(displayName: string): Promise<RoomPayload>;
+  create(displayName: string, mode: RoomMode): Promise<RoomPayload>;
   getStatus(roomCode: string): Promise<RoomPayload>;
   join(roomCode: string, displayName: string): Promise<RoomPayload>;
   start(roomCode: string): Promise<RoomPayload>;

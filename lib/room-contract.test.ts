@@ -73,8 +73,12 @@ describe("room API contracts", () => {
       ...roomPayload,
       room: { ...roomPayload.room, capacity: 99 },
     })).toThrow("Invalid room capacity");
-    expect(parseCreateRoomRequest({ displayName: "  Room   Host " })).toEqual({ displayName: "Room Host" });
-    expect(parseCreateRoomRequest({ displayName: "<script>" })).toBeNull();
+    expect(parseCreateRoomRequest({ displayName: "  Room   Host ", mode: "elimination" })).toEqual({
+      displayName: "Room Host",
+      mode: "elimination",
+    });
+    expect(parseCreateRoomRequest({ displayName: "<script>", mode: "private-race" })).toBeNull();
+    expect(parseCreateRoomRequest({ displayName: "Room Host", mode: "winner-takes-all" })).toBeNull();
   });
 
   it("keeps active opponent answers absent and validates completed reveals", () => {
@@ -121,6 +125,10 @@ describe("room API contracts", () => {
   it("parses narrow answer outcomes and rejects an early forged reveal", () => {
     expect(parseRoomSubmissionResult({ status: "invalid", serverNow: roomPayload.serverNow })).toEqual({
       status: "invalid",
+      serverNow: roomPayload.serverNow,
+    });
+    expect(parseRoomSubmissionResult({ status: "already-taken", serverNow: roomPayload.serverNow })).toEqual({
+      status: "already-taken",
       serverNow: roomPayload.serverNow,
     });
     expect(() => parseRoomSubmissionResult({

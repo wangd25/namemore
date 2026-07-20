@@ -9,7 +9,7 @@ export async function POST(request: Request) {
   const input = parseCreateRoomRequest(await readJsonBody(request));
   if (!input) return invalidRoomRequest();
   try {
-    return roomSuccess(await createRoom(input.displayName));
+    return roomSuccess(await createRoom(input.displayName, input.mode));
   } catch (error) {
     return roomError(error);
   }

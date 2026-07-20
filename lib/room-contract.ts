@@ -17,7 +17,7 @@ import type {
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const roomCodePattern = /^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{8}$/;
 const statuses = new Set<RoomStatus>(["waiting", "active", "completed", "cancelled"]);
-const modes = new Set<RoomMode>(["private-race"]);
+const modes = new Set<RoomMode>(["private-race", "elimination"]);
 const teamCodes = new Set<string>(nbaTeamCodes);
 const controlCharacters = /[\u0000-\u001f\u007f]/;
 
@@ -223,7 +223,7 @@ export function parseRoomSubmissionResult(value: unknown): RoomSubmissionResult 
   if (!isRecord(value)) throw new Error("Invalid room submission.");
   const status = readString(value, "status");
   const serverNow = readString(value, "serverNow");
-  if (status === "invalid" || status === "rate-limited") return { status, serverNow };
+  if (status === "invalid" || status === "already-taken" || status === "rate-limited") return { status, serverNow };
   if (status === "round-ended") return { status, serverNow, game: parseRoomGame(value.game) };
   if (status === "accepted" || status === "duplicate") {
     return {
@@ -236,14 +236,18 @@ export function parseRoomSubmissionResult(value: unknown): RoomSubmissionResult 
   throw new Error("Invalid room submission status.");
 }
 
-export function parseCreateRoomRequest(value: unknown): { displayName: string } | null {
-  if (!isRecord(value) || typeof value.displayName !== "string") return null;
+export function parseCreateRoomRequest(value: unknown): { displayName: string; mode: RoomMode } | null {
+  if (!isRecord(value) || typeof value.displayName !== "string" || typeof value.mode !== "string") return null;
   const displayName = normalizeDisplayName(value.displayName);
-  return displayName ? { displayName } : null;
+  return displayName && modes.has(value.mode as RoomMode)
+    ? { displayName, mode: value.mode as RoomMode }
+    : null;
 }
 
 export function parseJoinRoomRequest(value: unknown): { displayName: string } | null {
-  return parseCreateRoomRequest(value);
+  if (!isRecord(value) || typeof value.displayName !== "string") return null;
+  const displayName = normalizeDisplayName(value.displayName);
+  return displayName ? { displayName } : null;
 }
 
 export function parseRoomSubmitRequest(value: unknown): { answer: string } | null {

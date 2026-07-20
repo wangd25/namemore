@@ -7,6 +7,7 @@ function CheckIcon() {
 }
 
 export function RoomResults({ game }: { game: RoomGame }) {
+  const isElimination = game.mode === "elimination";
   return (
     <section className="game-board room-board room-results-board" aria-labelledby="room-results-title">
       <header className="board-header">
@@ -17,7 +18,7 @@ export function RoomResults({ game }: { game: RoomGame }) {
       <main className="room-results-content">
         <div className="room-results-heading">
           <h1 id="room-results-title">Round complete</h1>
-          <p>All answers are now revealed.</p>
+          <p>{isElimination ? "Every claimed answer is now revealed." : "All answers are now revealed."}</p>
         </div>
 
         <ol className="room-rank-rail" aria-label="Private room results">
@@ -35,8 +36,8 @@ export function RoomResults({ game }: { game: RoomGame }) {
           {game.players.map((player) => (
             <section className="room-reveal-column" key={player.id} aria-labelledby={`answers-${player.id}`}>
               <header>
-                <h2 id={`answers-${player.id}`}>{player.id === game.membership.playerId ? "Your answers" : `${player.displayName}’s answers`}</h2>
-                <span>{player.score} accepted</span>
+                <h2 id={`answers-${player.id}`}>{player.id === game.membership.playerId ? (isElimination ? "Your claims" : "Your answers") : `${player.displayName}’s ${isElimination ? "claims" : "answers"}`}</h2>
+                <span>{player.score} {isElimination ? "claimed" : "accepted"}</span>
               </header>
               {player.answers && player.answers.length > 0 ? (
                 <ol>
@@ -55,7 +56,7 @@ export function RoomResults({ game }: { game: RoomGame }) {
         </div>
       </main>
 
-      <footer className="board-footer"><span>Private result · server verified</span></footer>
+      <footer className="board-footer"><span>{isElimination ? "Elimination" : "Private race"} result · server verified</span></footer>
     </section>
   );
 }

@@ -18,8 +18,8 @@ async function request<T>(path: string, init: RequestInit, parser: (value: unkno
 }
 
 export const roomApi: RoomApi = {
-  create(displayName) {
-    return request("/api/rooms", { method: "POST", body: JSON.stringify({ displayName }) }, parseRoomPayload);
+  create(displayName, mode) {
+    return request("/api/rooms", { method: "POST", body: JSON.stringify({ displayName, mode }) }, parseRoomPayload);
   },
   getStatus(roomCode) {
     return request(`/api/rooms/${encodeURIComponent(roomCode)}`, { method: "GET" }, parseRoomPayload);

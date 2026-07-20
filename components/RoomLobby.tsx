@@ -110,6 +110,7 @@ export function RoomLobby({ roomCode, api = roomApi }: RoomLobbyProps) {
   const isMember = room.membership !== null;
   const isHost = room.membership?.isHost === true;
   const emptySlots = Math.max(0, room.capacity - room.participants.length);
+  const isElimination = room.mode === "elimination";
 
   return (
     <section className="game-board room-board room-lobby-board" aria-labelledby="room-title">
@@ -120,7 +121,7 @@ export function RoomLobby({ roomCode, api = roomApi }: RoomLobbyProps) {
 
       <div className="room-lobby-content">
         <div className="room-lobby-heading">
-          <span className="room-eyebrow">{room.status === "waiting" ? "Waiting lobby" : "Room locked"}</span>
+          <span className="room-eyebrow">{room.status === "waiting" ? `${isElimination ? "Elimination" : "Private race"} lobby` : "Room locked"}</span>
           <h1 id="room-title">Private room</h1>
           <p>{room.category.prompt}</p>
           <button className="room-code-pill" type="button" onClick={() => void copyInvite()}>
@@ -141,7 +142,7 @@ export function RoomLobby({ roomCode, api = roomApi }: RoomLobbyProps) {
         ) : (
           <>
             <div className="room-player-surface">
-              <div className="room-player-meta"><span>{room.playerCount} / {room.capacity} players</span><span>{room.category.timeLimitSeconds} second private race</span></div>
+              <div className="room-player-meta"><span>{room.playerCount} / {room.capacity} players</span><span>{room.category.timeLimitSeconds} second {isElimination ? "elimination" : "private race"}</span></div>
               <ol className="room-player-list">
                 {room.participants.map((participant, index) => (
                   <li className={`room-player-row${participant.connected ? "" : " is-disconnected"}`} key={participant.id}>
@@ -178,7 +179,7 @@ export function RoomLobby({ roomCode, api = roomApi }: RoomLobbyProps) {
       </div>
 
       <footer className="board-footer">
-        <span>{room.status === "waiting" ? "Private lobby · invite only" : "Private room · server clock active"}</span>
+        <span>{room.status === "waiting" ? `${isElimination ? "Elimination" : "Private race"} · invite only` : `${isElimination ? "Elimination" : "Private race"} · server clock active`}</span>
         <Link href="/room">Leave lobby</Link>
       </footer>
     </section>

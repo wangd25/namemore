@@ -114,4 +114,15 @@ describe("RoomLobby", () => {
     expect(screen.queryByText("Guest Player")).not.toBeInTheDocument();
     expect(screen.getByText("2 of 8 spots are taken.")).toBeInTheDocument();
   });
+
+  it("labels elimination rooms before the host starts", async () => {
+    const eliminationPayload: RoomPayload = {
+      ...waitingPayload,
+      room: { ...waitingPayload.room, mode: "elimination" },
+    };
+    render(<RoomLobby roomCode="K7M4Q2PX" api={makeApi({ getStatus: vi.fn().mockResolvedValue(eliminationPayload) })} />);
+
+    expect(await screen.findByText("Elimination lobby")).toBeInTheDocument();
+    expect(screen.getByText("90 second elimination")).toBeInTheDocument();
+  });
 });

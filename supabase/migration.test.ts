@@ -46,6 +46,10 @@ const roomRealtimeFixMigration = readFileSync(
   resolve(process.cwd(), "supabase/migrations/20260720182937_fix_room_realtime_authorization_boundary.sql"),
   "utf8",
 );
+const eliminationMigration = readFileSync(
+  resolve(process.cwd(), "supabase/migrations/20260720193052_add_phase6_atomic_elimination.sql"),
+  "utf8",
+);
 
 describe("server-authoritative daily migration", () => {
   it("keeps the answer bank private and exposes only narrow RPCs", () => {
@@ -182,5 +186,22 @@ describe("server-authoritative daily migration", () => {
     expect(roomRealtimeFixMigration).toContain("and (not p_write or topic_player.user_id = auth.uid())");
     expect(roomRealtimeFixMigration).toContain("drop function private.room_realtime_authorized");
     expect(roomRealtimeFixMigration).not.toContain("grant usage on schema private");
+  });
+
+  it("uses one database-owned canonical claim per elimination room", () => {
+    expect(eliminationMigration).toContain("mode in ('private_race', 'elimination')");
+    expect(eliminationMigration).toContain("create table public.room_answer_claims");
+    expect(eliminationMigration).toContain("primary key (room_id, answer_id)");
+    expect(eliminationMigration).toContain("on conflict (room_id, answer_id) do nothing");
+    expect(eliminationMigration).toContain("claim_owner_id is distinct from current_player.id");
+    expect(eliminationMigration).toContain("'status', 'already-taken'");
+  });
+
+  it("keeps claims deny-all and preserves private-race creation", () => {
+    expect(eliminationMigration).toContain("alter table public.room_answer_claims enable row level security");
+    expect(eliminationMigration).toContain("revoke all on table public.room_answer_claims from public, anon, authenticated");
+    expect(eliminationMigration).toContain("created_payload := public.room_create(p_display_name)");
+    expect(eliminationMigration).toContain("grant execute on function public.room_create(text, text) to authenticated");
+    expect(eliminationMigration).not.toMatch(/grant\s+(select|insert|update|delete)\s+on\s+(table\s+)?public\.room_answer_claims/i);
   });
 });

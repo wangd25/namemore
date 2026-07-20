@@ -9,6 +9,7 @@
     "test:hostile-client": "node scripts/hostile-client-check.mjs",
     "test:room-hostile-client": "node scripts/room-hostile-client-check.mjs",
     "test:room-game-hostile-client": "node scripts/room-game-hostile-client-check.mjs",
+    "test:elimination-hostile-client": "node scripts/elimination-hostile-client-check.mjs",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",

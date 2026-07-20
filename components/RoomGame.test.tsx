@@ -81,4 +81,24 @@ describe("RoomGame", () => {
     expect(screen.getByText("LeBron James")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Play again" })).toHaveAttribute("href", "/room");
   });
+
+  it("shows an answer-free already-taken result in elimination mode", async () => {
+    const eliminationPayload: RoomGamePayload = {
+      ...activePayload,
+      game: { ...activePayload.game, mode: "elimination" },
+    };
+    const api = makeApi(eliminationPayload);
+    api.submit = vi.fn().mockResolvedValue({
+      status: "already-taken",
+      serverNow: "2026-07-20T12:00:11.000Z",
+    });
+    render(<RoomGame roomCode="K7M4Q2PX" api={api} realtimeConnector={null} />);
+
+    const input = await screen.findByRole("textbox", { name: "Type an NBA player’s name" });
+    fireEvent.change(input, { target: { value: "Stephen Curry" } });
+
+    expect(await screen.findByText("Already taken — another player claimed that name first.")).toBeInTheDocument();
+    expect(input).toHaveValue("");
+    expect(screen.queryByText("Stephen Curry")).not.toBeInTheDocument();
+  });
 });

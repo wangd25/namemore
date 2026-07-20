@@ -7,7 +7,7 @@ import { type FormEvent, useState } from "react";
 import { normalizeDisplayName } from "@/lib/display-name";
 import { roomApi } from "@/lib/room-api";
 import { normalizeRoomCode } from "@/lib/room-contract";
-import type { RoomApi } from "@/lib/room-types";
+import type { RoomApi, RoomMode } from "@/lib/room-types";
 
 type RoomEntryProps = { api?: RoomApi };
 
@@ -15,6 +15,7 @@ export function RoomEntry({ api = roomApi }: RoomEntryProps) {
   const router = useRouter();
   const [displayName, setDisplayName] = useState("");
   const [roomCode, setRoomCode] = useState("");
+  const [mode, setMode] = useState<RoomMode>("private-race");
   const [pendingAction, setPendingAction] = useState<"create" | "join" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,7 +30,7 @@ export function RoomEntry({ api = roomApi }: RoomEntryProps) {
     setPendingAction("create");
     setError(null);
     try {
-      const payload = await api.create(normalizedName);
+      const payload = await api.create(normalizedName, mode);
       router.push(`/room/${payload.room.code}`);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Private rooms are temporarily unavailable.");
@@ -85,6 +86,20 @@ export function RoomEntry({ api = roomApi }: RoomEntryProps) {
             />
           </label>
 
+          <fieldset className="room-mode-picker" disabled={pendingAction !== null}>
+            <legend>Game mode</legend>
+            <div>
+              <label className={mode === "private-race" ? "is-selected" : ""}>
+                <input type="radio" name="room-mode" value="private-race" checked={mode === "private-race"} onChange={() => setMode("private-race")} />
+                <span><strong>Private race</strong><small>Everyone can score the same name.</small></span>
+              </label>
+              <label className={mode === "elimination" ? "is-selected" : ""}>
+                <input type="radio" name="room-mode" value="elimination" checked={mode === "elimination"} onChange={() => setMode("elimination")} />
+                <span><strong>Elimination</strong><small>First claim owns each name.</small></span>
+              </label>
+            </div>
+          </fieldset>
+
           <button
             className="room-primary-action"
             type="button"
@@ -122,7 +137,7 @@ export function RoomEntry({ api = roomApi }: RoomEntryProps) {
       </div>
 
       <footer className="board-footer">
-        <span>Private race · 90 seconds · up to 8 players</span>
+        <span>{mode === "elimination" ? "Elimination" : "Private race"} · 90 seconds · up to 8 players</span>
         <Link href="/">Play Daily</Link>
       </footer>
     </section>

@@ -1610,6 +1610,75 @@ button {
   color: #a2aab5;
 }
 
+.room-mode-picker {
+  padding: 0;
+  margin: 17px 0 0;
+  border: 0;
+}
+
+.room-mode-picker legend {
+  margin-bottom: 9px;
+  color: #697483;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.room-mode-picker > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.room-mode-picker label {
+  position: relative;
+  display: flex;
+  min-height: 76px;
+  align-items: center;
+  padding: 12px 13px;
+  border: 1px solid rgba(129, 156, 194, 0.32);
+  border-radius: 17px;
+  background: rgba(255, 255, 255, 0.52);
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
+}
+
+.room-mode-picker label.is-selected {
+  border-color: rgba(34, 111, 244, 0.7);
+  background: rgba(235, 245, 255, 0.82);
+  box-shadow: inset 0 0 0 1px rgba(34, 111, 244, 0.08);
+}
+
+.room-mode-picker input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+}
+
+.room-mode-picker input:focus-visible + span {
+  outline: 3px solid rgba(34, 111, 244, 0.22);
+  outline-offset: 5px;
+  border-radius: 8px;
+}
+
+.room-mode-picker span {
+  display: grid;
+  gap: 4px;
+}
+
+.room-mode-picker strong {
+  color: #15181d;
+  font-size: 0.78rem;
+}
+
+.room-mode-picker small {
+  color: #7d8794;
+  font-size: 0.64rem;
+  line-height: 1.35;
+}
+
 .room-primary-action,
 .room-secondary-action,
 .room-copy-action {
@@ -2046,7 +2115,21 @@ button {
   padding: 12px 0 16px;
 }
 
-.room-live-content > h1 {
+.room-live-heading {
+  text-align: center;
+}
+
+.room-live-heading > span {
+  display: block;
+  margin-bottom: 9px;
+  color: #6f7d90;
+  font-size: 0.68rem;
+  font-weight: 720;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.room-live-heading > h1 {
   margin: 0;
   color: #0a0b0d;
   font-size: clamp(2.2rem, 4vw, 4.2rem);
@@ -2326,6 +2409,14 @@ button {
   margin: 0;
 }
 
+.room-live-status.is-already-taken {
+  color: #b36b19;
+}
+
+.room-live-status.is-accepted {
+  color: #198b50;
+}
+
 .room-realtime-dot {
   width: 7px;
   height: 7px;
@@ -2532,6 +2623,14 @@ button {
   .room-join-card {
     padding: 20px;
     border-radius: 24px;
+  }
+
+  .room-mode-picker > div {
+    grid-template-columns: 1fr;
+  }
+
+  .room-mode-picker label {
+    min-height: 62px;
   }
 
   .room-join-row {
