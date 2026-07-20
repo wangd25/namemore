@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "NameMore — NBA Recall Game",
+  title: "NameMore — How many can you name?",
   description:
-    "Race the clock and name as many current NBA players as you can.",
+    "Choose a reviewed recall category, race the clock, and name as many as you can.",
 };
 
 export default function RootLayout({

@@ -1,12 +1,12 @@
 # NameMore
 
-NameMore is a fast-paced, category-first recall platform where players try to name as many valid answers as possible before a timer expires. NBA players are the current manually curated proof of concept, not the permanent identity of the product. The current preview includes a secure single-player daily challenge plus live private-race and atomic elimination multiplayer; editable category discovery comes next.
+NameMore is a fast-paced, category-first recall platform where players try to name as many valid answers as possible before a timer expires. NBA players are the current manually curated proof of concept, not the permanent identity of the product. The current development branch adds the first category-discovery and private-draft foundation around the secure daily, private-race, and atomic elimination games.
 
 ## Current Status
 
-Phases 1–6 are complete. **Phase 6: Atomic Elimination Mode** passed its implementation, non-production Supabase, hostile-client concurrency, RLS/grant, advisor, build, bundle, GitHub publication, protected Preview smoke, two-browser gameplay, desktop/mobile visual, and verified ownership-reveal gates.
+Phases 1–6 are complete. **Phase 7A: Category Discovery Foundation** is implemented and locally/non-production verified; its publication and protected Preview gates remain open.
 
-**Current branch:** `codex/phase-6-atomic-elimination`, created from the completed live-private-race branch. `main` has not been changed or merged.
+**Current branch:** `codex/phase-7-category-discovery`, created from the completed atomic-elimination branch. `main` has not been changed or merged.
 
 The focused post–Phase 3 polish verifies that the non-production database has an active current-UTC challenge and a continuous schedule through 2026-12-31. A single transient empty status now triggers one automatic recovery check before the safe unavailable state appears. The ready dwell uses a damped charge and squash-and-stretch launch instead of a linear loading treatment, and competitive automatic answer checks begin after a 180ms pause instead of 420ms with a small in-board pending cue. No answer data or scoring authority moved into the browser.
 
@@ -24,7 +24,9 @@ Phase 5 application commit `cba8380e8b93d65383b9c0342aa6fc172b5e73c3` (`Build li
 
 Phase 6 application commit `1781efe1ca641d26f2607103b1b833d5ceb5d8ab` (`Build atomic elimination mode`) is pushed to `origin/codex/phase-6-atomic-elimination`. Git-integrated protected Preview `dpl_GDCbaEUg19nSxAGdKBPKzkPfg6HU` at `https://namemore-l33tucael-namemore.vercel.app` was verified `READY`, `target: preview`, and sourced from that exact commit. Protected homepage, room, and current-daily status checks returned HTTP 200; the 2026-07-20 UTC challenge was available; runtime error and 5xx scans were empty. Separate in-app and Chrome sessions proved exactly one winner for a simultaneous claim, answer-free `already-taken` feedback, independent later claims, active answer secrecy, and verified ownership reveal. Production and `main` remain untouched.
 
-Supabase project `namemore` (`hutmxxlicxeaovoeqbwg`) was explicitly confirmed non-production. Anonymous sign-in is enabled. Twelve repository migrations now provide the private immutable category/alias bank, a UTC schedule through 2026-12-31, deny-all RLS daily/room/submission/claim tables, attempt/submission/room/player/claim constraints and indexes, immutable display names, strict control-character rejection, answer-check burst control, private per-player Realtime topics, and twelve narrow gameplay/status RPC signatures plus one Realtime authorization helper. Vercel contains only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, scoped to Preview; Production variables were not changed.
+Phase 7A moves the trusted daily game to `/daily` and makes `/` an accessible editable category combobox. Its debounced no-store discovery endpoint returns only curated catalog entries, versioned answer-bank status, and real aggregate cards. The current NBA category is the only playable reviewed entry; Countries in Europe and Chemical elements are honestly labeled as answer banks still in review. `/category/new` saves bounded private drafts containing prompt, provenance, and coverage notes; database constraints force them to remain unreviewed, practice-only, and competitively ineligible. No draft text enters public recommendations.
+
+Supabase project `namemore` (`hutmxxlicxeaovoeqbwg`) was explicitly confirmed non-production. Anonymous sign-in is enabled. Thirteen repository migrations now provide the private immutable category/alias bank, a UTC schedule through 2026-12-31, deny-all RLS daily/room/submission/claim/discovery/draft tables, immutable display names, strict control-character rejection, answer-check and draft-creation burst controls, private per-player Realtime topics, fourteen narrow gameplay/status/discovery RPC signatures plus one Realtime authorization helper. Vercel contains only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, scoped to Preview; Production variables were not changed.
 
 Implemented:
 
@@ -66,20 +68,23 @@ Implemented:
 - Equal liquid-glass player boards at desktop and stacked mobile sizes, local wet-ink answers, restrained score motion, reconnect fallback, tie-aware verified results, replay, and reduced-motion-safe behavior.
 - An accessible private-race/elimination mode picker, explicit first-claim feedback, and claim-specific result language while preserving private race as the default.
 - Database-atomic elimination ownership through a unique `(room_id, answer_id)` claim key. Concurrent losers receive an answer-free `already-taken` response; claims remain hidden during play and reveal only through the existing completed-room projection.
+- A category-first homepage with a multiline editable ARIA combobox, 180ms server search, keyboard/touch selection, explicit reviewed/in-review states, and a trusted `/daily` handoff. In-review prompts cannot start a round.
+- Sparse liquid-glass activity cards backed only by the verified current-daily best, a minimum-three-round popularity aggregate, and recent waiting/active room counts. Missing metrics disappear rather than falling back to fabricated values.
+- A separate `/category/new` practice-draft workspace and bounded no-store API. Private deny-all storage records prompt, provenance, and coverage boundaries; ownership, hourly limits, control-character rejection, and permanent unreviewed/noncompetitive state are database-enforced.
 - A deterministic 300-answer/561-alias seed plus 168 scheduled UTC challenge dates from 2026-07-17 through 2026-12-31.
-- Ninety-four passing unit, dataset, contract, session, request-boundary, migration, Realtime, and component tests across sixteen test files, plus direct publishable-key daily, room-lobby, room-game, and elimination hostile-client scripts.
+- One hundred three passing unit, dataset, contract, session, request-boundary, migration, Realtime, and component tests across nineteen test files, plus direct publishable-key daily, room-lobby, room-game, and elimination hostile-client scripts.
 
 Not implemented yet:
 
 - Global aggregates or production launch hardening.
 - CAPTCHA. A broader unprotected preview requires a product choice and credentials for hCaptcha or Cloudflare Turnstile; the current preview remains protected by Vercel team authentication.
-- The editable prompt composer, community-derived recommendations, general custom-category workflow, ambient popular-prompt/high-score/lobby cards, and category-agnostic result metrics.
+- Generalized non-NBA gameplay/result contracts, completed reviewed answer banks for unrelated categories, public category correction/moderation workflows, draft editing/publishing, and broader discovery abuse reporting.
 
 ## Product Direction Beyond NBA
 
-The ready-state question is intended to become the product's main category composer. A player will be able to edit the large prompt, search reviewed categories, and receive keyboard-accessible suggestions based on moderated aggregate usage. Selecting a trusted existing category should start quickly; entering a new idea should open a separate category-creation flow rather than silently pretending that an exhaustive answer bank already exists.
+The homepage question is now the product's category composer. A player can edit the large prompt, search the curated catalog, select the trusted NBA daily, or enter a separate private draft flow. The next Phase 7 slice will complete reviewed unrelated answer banks and category-agnostic practice gameplay rather than pretending incomplete banks are exhaustive.
 
-The surrounding ready screen may carry a sparse atmospheric layer of slowly drifting liquid-glass cards: popular prompts, verified high scores, active public lobbies, or tiny aggregate trend traces. They should fade gently, remain secondary to the prompt, disappear under reduced-motion or constrained mobile conditions, and never turn the homepage into a dense dashboard. Until real server-authoritative aggregates exist, the product must not fabricate community activity, scores, or charts.
+The surrounding ready screen now carries a sparse atmospheric layer of slowly drifting liquid-glass cards for real verified highs, minimum-sample popularity, and recent room activity. They remain secondary to the prompt, stop for reduced motion, collapse to one card on mobile, and disappear when trusted data is absent.
 
 Universal category and answer contracts will eventually treat icons, colors, teams, eras, franchises, artists, flags, or other marks as optional category-provided metadata. The existing NBA team slot is the first renderer for that general visual area.
 
@@ -115,7 +120,7 @@ pnpm build
 Verification snapshot from 2026-07-20 UTC:
 
 - `git diff --check`, `pnpm lint`, `pnpm typecheck`, and the Next.js production build pass.
-- `pnpm test` passes 94 tests in 16 test files.
+- `pnpm test` passes 103 tests in 19 test files.
 - The hostile-client script passes directly against Supabase using only the public URL/publishable key and anonymous identities. It additionally proves display-name validation/normalization/immutability, active-attempt exclusion, top-ten limiting, deterministic tie order, safe projection keys, no UUID/answer leakage, direct leaderboard insertion denial, concurrent idempotent finish, and the 40-per-10-second burst guard.
 - A rollback-only live database deadline test returned `round-ended` and `expired` without accepting a late answer. Migration history, 300 answers, 561 aliases, 168 scheduled challenges through 2026-12-31, RLS, grants, constraints, and indexes were inspected live.
 - Supabase security advisors report only intentional deny-all/no-policy tables, the intentionally callable authenticated security-definer operations, anonymous Realtime access constrained by membership policies, and leaked-password protection for the deferred permanent-account path. Performance advisors report only expected unused indexes on the fresh schema; all reported missing foreign-key indexes were fixed.
@@ -124,10 +129,11 @@ Verification snapshot from 2026-07-20 UTC:
 - The elimination hostile-client suite proves unsigned and direct-claim denial, exactly one owner under simultaneous submissions, idempotent winner retry, answer-free loser responses, cross-room isolation, unchanged private-race scoring, late-answer rejection, and verified ownership reveal.
 - `pnpm audit:client-bundle` audits the page’s manifest-referenced browser chunks and finds no NBA answer-bank markers. HTML inspection also found no canonical answer leakage before acceptance.
 - Local and protected deployed browser QA at 1440×1000 and 390×844 completed the real Next.js/Supabase flow: malicious-name rejection, normalized name, named start, accepted answer, duplicate without score change, refresh/resume at the original deadline, finish, leaderboard, forced local offline/error and retry recovery, deterministic ties, HTTP 200/204 route responses, no application or runtime errors, no answer-bank leakage, and no horizontal overflow.
+- Phase 7A local QA at 1440×1000 and 390×844 loaded the three-entry curated catalog and real 11-name/23-round/2-room aggregate snapshot, filtered `chem` through the debounced endpoint, blocked the in-review category from play, opened the separate draft workspace, preserved `/daily`, produced no application console errors, and had no horizontal overflow.
 
 ## Roadmap Remaining
 
-Phases 1–6 are complete. **2 later product phases remain**: general category studio/discovery and production hardening/launch.
+Phases 1–6 are complete. **Phase 7 is in progress**; category-agnostic gameplay and full reviewed multi-category banks remain before Phase 8 production hardening/launch.
 
 In Codex desktop, the shell may not include `node` on its default `PATH`. Use the bundled workspace Node runtime when that occurs; do not treat a missing shell executable as an application failure.
 
@@ -135,13 +141,18 @@ In Codex desktop, the shell may not include `node` on its default `PATH`. Use th
 
 ```text
 app/
+  api/categories/        No-store curated discovery and private-draft Route Handlers
   api/daily/             No-store status/named-start/submit/finish/leaderboard Route Handlers
   api/rooms/             No-store create/status/join/start/game/submit Route Handlers
+  category/new/          Separate private practice-draft workspace
+  daily/                 Trusted server-authoritative daily route
   room/                  Private-room entry, lobby, live game, and results routes
   globals.css            White liquid-glass, clean answer-surface, ripple, and responsive rules
   layout.tsx             Root layout and NameMore metadata
   page.tsx               Server-rendered NameMore homepage shell
 components/
+  CategoryDiscovery.tsx  Editable catalog combobox and real ambient activity cards
+  CategoryDraftForm.tsx  Bounded private provenance/coverage draft form
   DailyGameBoard.tsx     Narrow server-authoritative timer/input Client Component
   DailyGameResults.tsx   Verified accepted-answer timeline and team coverage
   DailyLeaderboard.tsx   Safe top-ten loading/empty/error/tie projection
@@ -152,6 +163,7 @@ components/
   RoomGame.tsx           Live server-authoritative private-race boards and input
   RoomResults.tsx        Verified ranks and deadline-gated answer reveal
 lib/
+  category-discovery-*   Safe discovery/draft types, contracts, routes, and RPC service
   categories.ts          Versioned 300-player NBA dataset
   category-types.ts      Category and submission domain types
   daily-*.ts             Safe contracts, browser API, Route helpers, and trusted RPC service
@@ -173,7 +185,7 @@ AGENTS.md                 Repository-wide product, security, and coding rules
 plan.md                   Eight-phase implementation plan and live status
 ```
 
-There is no permanent account, aggregate community analytics, CAPTCHA integration, or production deployment.
+There is no permanent account, general analytics dashboard, CAPTCHA integration, or production deployment.
 
 ## Security Boundary
 

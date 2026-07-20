@@ -50,6 +50,10 @@ const eliminationMigration = readFileSync(
   resolve(process.cwd(), "supabase/migrations/20260720193052_add_phase6_atomic_elimination.sql"),
   "utf8",
 );
+const categoryDiscoveryMigration = readFileSync(
+  resolve(process.cwd(), "supabase/migrations/20260720200748_add_phase7_category_discovery.sql"),
+  "utf8",
+);
 
 describe("server-authoritative daily migration", () => {
   it("keeps the answer bank private and exposes only narrow RPCs", () => {
@@ -203,5 +207,32 @@ describe("server-authoritative daily migration", () => {
     expect(eliminationMigration).toContain("created_payload := public.room_create(p_display_name)");
     expect(eliminationMigration).toContain("grant execute on function public.room_create(text, text) to authenticated");
     expect(eliminationMigration).not.toMatch(/grant\s+(select|insert|update|delete)\s+on\s+(table\s+)?public\.room_answer_claims/i);
+  });
+
+  it("keeps discovery and draft storage private behind narrow authenticated RPCs", () => {
+    expect(categoryDiscoveryMigration).toContain("alter table private.category_discovery_items enable row level security");
+    expect(categoryDiscoveryMigration).toContain("alter table private.category_drafts enable row level security");
+    expect(categoryDiscoveryMigration).toContain("revoke all on table private.category_drafts from public, anon, authenticated");
+    expect(categoryDiscoveryMigration.match(/security definer\nset search_path = ''/g)).toHaveLength(2);
+    expect(categoryDiscoveryMigration).toContain("grant execute on function public.category_discover(text) to authenticated");
+    expect(categoryDiscoveryMigration).toContain("grant execute on function public.category_create_draft(text, text, text) to authenticated");
+    expect(categoryDiscoveryMigration).not.toMatch(/grant\s+(select|insert|update|delete)\s+on\s+(table\s+)?private\./i);
+  });
+
+  it("uses only reviewed banks for play and only real thresholded ambient metrics", () => {
+    expect(categoryDiscoveryMigration).toContain("review_status = 'reviewed' and category_version_id is not null");
+    expect(categoryDiscoveryMigration).toContain("availability <> 'daily' or (review_status = 'reviewed' and competitive_eligible)");
+    expect(categoryDiscoveryMigration).toContain("having count(*) >= 3");
+    expect(categoryDiscoveryMigration).toContain("attempt.status in ('completed', 'expired')");
+    expect(categoryDiscoveryMigration).toContain("room.deadline_at > v_now");
+    expect(categoryDiscoveryMigration).not.toContain("raw_answer");
+  });
+
+  it("forces created categories to remain bounded private unreviewed drafts", () => {
+    expect(categoryDiscoveryMigration).toContain("review_status text not null default 'unreviewed' check (review_status = 'unreviewed')");
+    expect(categoryDiscoveryMigration).toContain("competitive_eligible boolean not null default false check (not competitive_eligible)");
+    expect(categoryDiscoveryMigration).toContain("recent_draft.created_at > v_now - interval '1 hour'");
+    expect(categoryDiscoveryMigration).toContain(") >= 5 then");
+    expect(categoryDiscoveryMigration).toContain("p_prompt ~ '[[:cntrl:]]'");
   });
 });
