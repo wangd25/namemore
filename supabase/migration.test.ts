@@ -58,6 +58,10 @@ const reviewedElementsMigration = readFileSync(
   resolve(process.cwd(), "supabase/migrations/20260720222224_add_phase7b_reviewed_elements_practice.sql"),
   "utf8",
 );
+const privateDraftReviewMigration = readFileSync(
+  resolve(process.cwd(), "supabase/migrations/20260720225651_add_phase7c_private_draft_review.sql"),
+  "utf8",
+);
 
 describe("server-authoritative daily migration", () => {
   it("keeps the answer bank private and exposes only narrow RPCs", () => {
@@ -250,5 +254,21 @@ describe("server-authoritative daily migration", () => {
     expect(reviewedElementsMigration).toContain("Expected 118 chemical elements.");
     expect(reviewedElementsMigration).toContain("Expected 240 chemical element aliases.");
     expect(reviewedElementsMigration).not.toMatch(/grant\s+(select|insert|update|delete)/i);
+  });
+
+  it("keeps draft editing owner-only and review requests noncompetitive", () => {
+    expect(privateDraftReviewMigration).toContain("status in ('draft', 'review-requested')");
+    expect(privateDraftReviewMigration).toContain("review_status in ('unreviewed', 'pending')");
+    expect(privateDraftReviewMigration).toContain("and draft.user_id = current_user_id");
+    expect(privateDraftReviewMigration).toContain("and draft.status = 'draft'");
+    expect(privateDraftReviewMigration).toContain("status = 'review-requested'");
+    expect(privateDraftReviewMigration).toContain("review_status = 'pending'");
+    expect(privateDraftReviewMigration).toContain("limit 50");
+    expect(privateDraftReviewMigration.match(/security definer\nset search_path = ''/g)).toHaveLength(4);
+    expect(privateDraftReviewMigration).toContain("grant execute on function public.category_list_drafts() to authenticated");
+    expect(privateDraftReviewMigration).toContain("grant execute on function public.category_update_draft(uuid, text, text, text) to authenticated");
+    expect(privateDraftReviewMigration).toContain("grant execute on function public.category_submit_draft(uuid) to authenticated");
+    expect(privateDraftReviewMigration).not.toMatch(/grant\s+(select|insert|update|delete)/i);
+    expect(privateDraftReviewMigration).not.toContain("competitive_eligible = true");
   });
 });

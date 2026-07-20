@@ -5,9 +5,17 @@ import {
   invalidCategoryRequest,
   readCategoryJsonBody,
 } from "@/lib/category-discovery-route";
-import { createCategoryDraft } from "@/lib/category-discovery-server";
+import { createCategoryDraft, listCategoryDrafts } from "@/lib/category-discovery-server";
 
 export const dynamic = "force-dynamic";
+
+export async function GET() {
+  try {
+    return categorySuccess(await listCategoryDrafts());
+  } catch (error) {
+    return categoryError(error);
+  }
+}
 
 export async function POST(request: Request) {
   const input = parseCategoryDraftRequest(await readCategoryJsonBody(request));

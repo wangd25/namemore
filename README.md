@@ -1,12 +1,12 @@
 # NameMore
 
-NameMore is a fast-paced, category-first recall platform where players try to name as many valid answers as possible before a timer expires. NBA players remain the first competitive proof of concept, while a reviewed Chemical Elements bank now proves that local practice, visuals, and results are not tied to sports. The current development branch extends category discovery into the first unrelated playable practice category without weakening the secure daily, private-race, or atomic elimination games.
+NameMore is a fast-paced, category-first recall platform where players try to name as many valid answers as possible before a timer expires. NBA players remain the first competitive proof of concept, while a reviewed Chemical Elements bank proves that local practice, visuals, and results are not tied to sports. The current development branch adds an owner-only private draft workspace and an explicit, irreversible review-request boundary without weakening the secure daily, private-race, or atomic elimination games.
 
 ## Current Status
 
-Phases 1–6, **Phase 7A: Category Discovery Foundation**, and **Phase 7B: Reviewed General Practice** are complete. Phase 7 remains in progress toward moderation and category lifecycle workflows.
+Phases 1–6, **Phase 7A: Category Discovery Foundation**, **Phase 7B: Reviewed General Practice**, and **Phase 7C1: Private Draft Review Boundary** are complete locally. Phase 7 remains in progress toward reviewer authority, moderation, publishing, and category lifecycle workflows.
 
-**Current branch:** `codex/phase-7b-general-practice`, created from the completed Phase 7A branch. `main` has not been changed or merged.
+**Current branch:** `codex/phase-7c-draft-review`, created from the completed Phase 7B branch. `main` has not been changed or merged.
 
 The focused post–Phase 3 polish verifies that the non-production database has an active current-UTC challenge and a continuous schedule through 2026-12-31. A single transient empty status now triggers one automatic recovery check before the safe unavailable state appears. The ready dwell uses a damped charge and squash-and-stretch launch instead of a linear loading treatment, and competitive automatic answer checks begin after a 180ms pause instead of 420ms with a small in-board pending cue. No answer data or scoring authority moved into the browser.
 
@@ -30,7 +30,9 @@ Phase 7A application commit `5db1edf90674a484daa74fb6a02e6328874d2c3f` (`Build c
 
 Phase 7B adds a manually reviewed 118-element IUPAC snapshot, symbol aliases, four documented regional/historical aliases, period coverage metadata, and a static `/practice/chemical-elements` route. Category visuals, input copy, source labels, coverage summaries, results, and spoiler-safe sharing are now data-driven; NBA team metadata remains an optional adapter for the existing daily and room games. The discovery catalog exposes Chemical Elements as reviewed local practice while keeping Countries in Europe honestly in review and all custom drafts noncompetitive. Application commit `88610dc9925e1622d85e43b216c32059bbcc1709` (`Build reviewed chemical elements practice`) is pushed to `origin/codex/phase-7b-general-practice`. Exact-source protected Preview `dpl_9NM5LRnJUnmnPwQYyd7EoaxDRWyF` at `https://namemore-nffpbzsml-namemore.vercel.app` was verified `READY` with `target: preview`; the homepage, practice route, and discovery API passed protected HTTP smoke checks, the API returned reviewed/practice/noncompetitive/118, and runtime error/fatal logs were empty. Production has zero deployments; `main` remains untouched.
 
-Supabase project `namemore` (`hutmxxlicxeaovoeqbwg`) was explicitly confirmed non-production. Anonymous sign-in is enabled. Fourteen repository migrations now provide 418 private canonical answers and 801 aliases across the immutable NBA and Chemical Elements versions, a UTC schedule through 2026-12-31, deny-all RLS daily/room/submission/claim/discovery/draft tables, immutable display names, strict control-character rejection, answer-check and draft-creation burst controls, private per-player Realtime topics, fourteen narrow gameplay/status/discovery RPC signatures plus one Realtime authorization helper. Vercel contains only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, scoped to Preview; Production variables were not changed.
+Phase 7C1 replaces the one-shot draft form with a responsive three-region workspace: an owner-only draft rail, editable prompt/provenance/coverage fields, and an honest review-boundary panel. Owners can list, create, edit, and save their private drafts, then submit one for review. Submission is a database-enforced irreversible transition to `review-requested`/`pending`, locks editing, and still does not create an answer bank, publish the prompt, or grant practice or competitive eligibility. Cross-owner access, direct-table access, post-submission edits, and a sixth creation inside the existing five-per-hour window are rejected by the non-production database.
+
+Supabase project `namemore` (`hutmxxlicxeaovoeqbwg`) was explicitly confirmed non-production. Anonymous sign-in is enabled. Fifteen repository migrations now provide 418 private canonical answers and 801 aliases across the immutable NBA and Chemical Elements versions, a UTC schedule through 2026-12-31, deny-all RLS daily/room/submission/claim/discovery/draft tables, immutable display names, strict control-character rejection, answer-check and draft-creation burst controls, private per-player Realtime topics, seventeen narrow gameplay/status/discovery/draft RPC signatures plus one Realtime authorization helper. Vercel contains only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, scoped to Preview; Production variables were not changed.
 
 Implemented:
 
@@ -76,15 +78,15 @@ Implemented:
 - A reviewed Chemical Elements local-practice route containing all 118 IUPAC element names in atomic-number order, symbol aliases, documented alternate spellings/names, and seven period coverage groups. It is explicitly unranked and noncompetitive.
 - Category-neutral practice contracts for input labels, placeholders, source notes, compact answer visuals, coverage groups, result summaries, timelines, and spoiler-free sharing. NBA colors, marks, and team coverage are optional category metadata rather than universal fields.
 - Sparse liquid-glass activity cards backed only by the verified current-daily best, a minimum-three-round popularity aggregate, and recent waiting/active room counts. Missing metrics disappear rather than falling back to fabricated values.
-- A separate `/category/new` practice-draft workspace and bounded no-store API. Private deny-all storage records prompt, provenance, and coverage boundaries; ownership, hourly limits, control-character rejection, and permanent unreviewed/noncompetitive state are database-enforced.
+- A separate `/category/new` private-draft workspace with an owner-only rail, editable prompt/provenance/coverage fields, save state, and an explicit review boundary. Bounded no-store list/create/update/submit routes call narrow authenticated RPCs; submission locks the draft while preserving its unreviewed, unpublished, noncompetitive state.
 - A deterministic 300-answer/561-alias seed plus 168 scheduled UTC challenge dates from 2026-07-17 through 2026-12-31.
-- One hundred ten passing unit, dataset, contract, session, request-boundary, migration, Realtime, and component tests across twenty test files, plus direct publishable-key daily, room-lobby, room-game, and elimination hostile-client scripts.
+- One hundred fourteen passing unit, dataset, contract, session, request-boundary, migration, Realtime, and component tests across twenty test files, plus direct publishable-key daily, room-lobby, room-game, elimination, and category-draft hostile-client scripts.
 
 Not implemented yet:
 
 - Global aggregates or production launch hardening.
 - CAPTCHA. A broader unprotected preview requires a product choice and credentials for hCaptcha or Cloudflare Turnstile; the current preview remains protected by Vercel team authentication.
-- Public category correction/moderation workflows, draft editing/review/publishing, provenance administration, and broader discovery abuse reporting.
+- Reviewer/admin decisions, public category correction and publishing workflows, provenance administration, and broader discovery abuse reporting.
 
 ## Product Direction Beyond NBA
 
@@ -126,7 +128,7 @@ pnpm build
 Verification snapshot from 2026-07-20 UTC:
 
 - `git diff --check`, `pnpm lint`, `pnpm typecheck`, and the Next.js production build pass.
-- `pnpm test` passes 110 tests in 20 test files.
+- `pnpm test` passes 114 tests in 20 test files.
 - The hostile-client script passes directly against Supabase using only the public URL/publishable key and anonymous identities. It additionally proves display-name validation/normalization/immutability, active-attempt exclusion, top-ten limiting, deterministic tie order, safe projection keys, no UUID/answer leakage, direct leaderboard insertion denial, concurrent idempotent finish, and the 40-per-10-second burst guard.
 - A rollback-only live database deadline test returned `round-ended` and `expired` without accepting a late answer. Migration history, 418 answers, 801 aliases, 168 scheduled challenges through 2026-12-31, RLS, grants, constraints, and indexes were inspected live. The Chemical Elements version has exactly 118 canonical answers and 240 accepted exact/symbol/alternate aliases, no team codes, and direct public-table reads remain denied.
 - Supabase security advisors report only intentional deny-all/no-policy tables, the intentionally callable authenticated security-definer operations, anonymous Realtime access constrained by membership policies, and leaked-password protection for the deferred permanent-account path. Performance advisors report only expected unused indexes on the fresh schema; all reported missing foreign-key indexes were fixed.
@@ -138,10 +140,11 @@ Verification snapshot from 2026-07-20 UTC:
 - Phase 7A local and protected Preview QA loaded the three-entry curated catalog and real 11-name/23-round/2-room aggregate snapshot, filtered `chem` through the debounced endpoint, blocked the in-review category from play, opened the separate draft workspace, preserved `/daily`, produced no application or runtime errors, and had no horizontal overflow at 1440×1000 and 390×844.
 - Phase 7B local QA selected the now-reviewed Chemical Elements entry, accepted full names, symbols, and the `Aluminum` alias, rendered symbol tiles and period coverage, produced category-neutral results/share text, and had no application console errors or horizontal overflow at 1440×1000 and 390×844.
 - Phase 7B protected Preview QA returned HTTP 200 for the homepage and Chemical Elements route, projected the correct reviewed/practice/noncompetitive 118-answer catalog entry, produced no runtime error/fatal logs, and confirmed the exact Git commit with `target: preview`.
+- Phase 7C1 local browser QA created, edited, saved, submitted, and locked an owner draft at desktop and 390×844 mobile widths with no console warnings/errors or horizontal overflow. Its public-key hostile-client suite proves authentication, owner isolation, direct-table denial, five-per-hour limiting, input normalization, irreversible submission, and discovery privacy.
 
 ## Roadmap Remaining
 
-Phases 1–6 are complete. **Phase 7 is in progress**; moderation, draft review/publishing, corrections/versioning, and abuse reporting remain before Phase 8 production hardening/launch.
+Phases 1–6 are complete. **Phase 7 is in progress**; Phase 7C1 now provides private editing and review requests, while reviewer authority, publishing, corrections/versioning, and abuse reporting remain before Phase 8 production hardening/launch.
 
 In Codex desktop, the shell may not include `node` on its default `PATH`. Use the bundled workspace Node runtime when that occurs; do not treat a missing shell executable as an application failure.
 

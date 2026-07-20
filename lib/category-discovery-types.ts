@@ -40,10 +40,24 @@ export type CategoryDiscoveryPayload = {
   };
 };
 
+export type CategoryDraftStatus = "draft" | "review-requested";
+
+export type CategoryDraftReviewStatus = "unreviewed" | "pending";
+
 export type CategoryDraftPayload = {
   id: string;
-  status: "draft";
-  reviewStatus: "unreviewed";
+  prompt: string;
+  sourceNotes: string;
+  coverageNotes: string;
+  status: CategoryDraftStatus;
+  reviewStatus: CategoryDraftReviewStatus;
   competitiveEligible: false;
   createdAt: string;
+  updatedAt: string;
+  submittedAt: string | null;
+};
+
+export type CategoryDraftListPayload = {
+  serverNow: string;
+  drafts: CategoryDraftPayload[];
 };

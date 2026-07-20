@@ -3,6 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
   normalizeDiscoveryQuery,
   parseCategoryDiscoveryPayload,
+  parseCategoryDraftId,
+  parseCategoryDraftListPayload,
+  parseCategoryDraftPayload,
   parseCategoryDraftRequest,
 } from "@/lib/category-discovery-contract";
 
@@ -59,5 +62,41 @@ describe("category discovery contracts", () => {
       sourceNotes: "Official\nsource",
       coverageNotes: "Clear coverage boundary",
     })).toBeNull();
+  });
+
+  it("accepts only coherent private draft lifecycle projections", () => {
+    const draft = {
+      id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      prompt: "How many European capitals can you name?",
+      sourceNotes: "Official geographic source",
+      coverageNotes: "Sovereign national capitals only",
+      status: "draft",
+      reviewStatus: "unreviewed",
+      competitiveEligible: false,
+      createdAt: "2026-07-20T20:00:00.000Z",
+      updatedAt: "2026-07-20T20:01:00.000Z",
+      submittedAt: null,
+    };
+
+    expect(parseCategoryDraftPayload(draft)).toEqual(draft);
+    expect(parseCategoryDraftListPayload({
+      serverNow: "2026-07-20T20:02:00.000Z",
+      drafts: [draft],
+    }).drafts).toEqual([draft]);
+    expect(() => parseCategoryDraftPayload({
+      ...draft,
+      status: "review-requested",
+      reviewStatus: "unreviewed",
+    })).toThrow("lifecycle");
+    expect(() => parseCategoryDraftPayload({
+      ...draft,
+      competitiveEligible: true,
+    })).toThrow("eligibility");
+  });
+
+  it("accepts only canonical UUID draft identifiers", () => {
+    expect(parseCategoryDraftId("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"))
+      .toBe("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
+    expect(parseCategoryDraftId("not-a-draft-id")).toBeNull();
   });
 });

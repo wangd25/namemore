@@ -2,7 +2,10 @@ import type {
   CategoryAvailability,
   CategoryDiscoveryEntry,
   CategoryDiscoveryPayload,
+  CategoryDraftListPayload,
   CategoryDraftPayload,
+  CategoryDraftReviewStatus,
+  CategoryDraftStatus,
   CategoryReviewStatus,
 } from "@/lib/category-discovery-types";
 
@@ -37,6 +40,16 @@ function readBoolean(record: Record<string, unknown>, key: string): boolean {
   const value = record[key];
   if (typeof value !== "boolean") throw new Error(`Invalid ${key}.`);
   return value;
+}
+
+function readTimestamp(record: Record<string, unknown>, key: string): string {
+  const value = readString(record, key);
+  if (Number.isNaN(Date.parse(value))) throw new Error(`Invalid ${key}.`);
+  return value;
+}
+
+function readNullableTimestamp(record: Record<string, unknown>, key: string): string | null {
+  return record[key] === null ? null : readTimestamp(record, key);
 }
 
 function parseCategory(value: unknown): CategoryDiscoveryEntry {
@@ -103,17 +116,49 @@ export function parseCategoryDiscoveryPayload(value: unknown): CategoryDiscovery
 export function parseCategoryDraftPayload(value: unknown): CategoryDraftPayload {
   if (!isRecord(value)) throw new Error("Invalid category draft payload.");
   const id = readString(value, "id");
-  if (!uuidPattern.test(id) || value.status !== "draft" || value.reviewStatus !== "unreviewed") {
+  const status = readString(value, "status");
+  const reviewStatus = readString(value, "reviewStatus");
+  if (
+    !uuidPattern.test(id)
+    || !(new Set<CategoryDraftStatus>(["draft", "review-requested"]) as Set<string>).has(status)
+    || !(new Set<CategoryDraftReviewStatus>(["unreviewed", "pending"]) as Set<string>).has(reviewStatus)
+  ) {
     throw new Error("Invalid category draft state.");
   }
   if (value.competitiveEligible !== false) throw new Error("Invalid draft eligibility.");
+  const submittedAt = readNullableTimestamp(value, "submittedAt");
+  if (
+    (status === "draft" && (reviewStatus !== "unreviewed" || submittedAt !== null))
+    || (status === "review-requested" && (reviewStatus !== "pending" || submittedAt === null))
+  ) {
+    throw new Error("Invalid category draft lifecycle.");
+  }
   return {
     id,
-    status: "draft",
-    reviewStatus: "unreviewed",
+    prompt: readString(value, "prompt"),
+    sourceNotes: readString(value, "sourceNotes"),
+    coverageNotes: readString(value, "coverageNotes"),
+    status: status as CategoryDraftStatus,
+    reviewStatus: reviewStatus as CategoryDraftReviewStatus,
     competitiveEligible: false,
-    createdAt: readString(value, "createdAt"),
+    createdAt: readTimestamp(value, "createdAt"),
+    updatedAt: readTimestamp(value, "updatedAt"),
+    submittedAt,
   };
+}
+
+export function parseCategoryDraftListPayload(value: unknown): CategoryDraftListPayload {
+  if (!isRecord(value) || !Array.isArray(value.drafts)) {
+    throw new Error("Invalid category draft list payload.");
+  }
+  return {
+    serverNow: readTimestamp(value, "serverNow"),
+    drafts: value.drafts.map(parseCategoryDraftPayload),
+  };
+}
+
+export function parseCategoryDraftId(value: unknown): string | null {
+  return typeof value === "string" && uuidPattern.test(value) ? value : null;
 }
 
 export function normalizeDiscoveryQuery(value: unknown): string | null {
