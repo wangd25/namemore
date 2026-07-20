@@ -4,7 +4,7 @@ NameMore is a fast-paced, category-first recall platform where players try to na
 
 ## Current Status
 
-Phases 1–6 are complete. **Phase 7A: Category Discovery Foundation** is implemented and locally/non-production verified; its publication and protected Preview gates remain open.
+Phases 1–6 and **Phase 7A: Category Discovery Foundation** are complete. Phase 7 remains in progress toward category-agnostic gameplay and reviewed multi-category banks.
 
 **Current branch:** `codex/phase-7-category-discovery`, created from the completed atomic-elimination branch. `main` has not been changed or merged.
 
@@ -25,6 +25,8 @@ Phase 5 application commit `cba8380e8b93d65383b9c0342aa6fc172b5e73c3` (`Build li
 Phase 6 application commit `1781efe1ca641d26f2607103b1b833d5ceb5d8ab` (`Build atomic elimination mode`) is pushed to `origin/codex/phase-6-atomic-elimination`. Git-integrated protected Preview `dpl_GDCbaEUg19nSxAGdKBPKzkPfg6HU` at `https://namemore-l33tucael-namemore.vercel.app` was verified `READY`, `target: preview`, and sourced from that exact commit. Protected homepage, room, and current-daily status checks returned HTTP 200; the 2026-07-20 UTC challenge was available; runtime error and 5xx scans were empty. Separate in-app and Chrome sessions proved exactly one winner for a simultaneous claim, answer-free `already-taken` feedback, independent later claims, active answer secrecy, and verified ownership reveal. Production and `main` remain untouched.
 
 Phase 7A moves the trusted daily game to `/daily` and makes `/` an accessible editable category combobox. Its debounced no-store discovery endpoint returns only curated catalog entries, versioned answer-bank status, and real aggregate cards. The current NBA category is the only playable reviewed entry; Countries in Europe and Chemical elements are honestly labeled as answer banks still in review. `/category/new` saves bounded private drafts containing prompt, provenance, and coverage notes; database constraints force them to remain unreviewed, practice-only, and competitively ineligible. No draft text enters public recommendations.
+
+Phase 7A application commit `5db1edf90674a484daa74fb6a02e6328874d2c3f` (`Build category discovery foundation`) is pushed to `origin/codex/phase-7-category-discovery`. Exact-source protected Preview `dpl_J7QnKCxwXBEL3Z44FEWnLwvVxaam` at `https://namemore-3bs4tw16l-namemore.vercel.app` was verified `READY` with `target: preview`. Its protected mobile discovery/search/draft/daily flow returned the real catalog and aggregate data, blocked in-review play, preserved the trusted daily entry, had no horizontal overflow, and produced no runtime error/fatal logs. Production has zero deployments; `main` remains untouched.
 
 Supabase project `namemore` (`hutmxxlicxeaovoeqbwg`) was explicitly confirmed non-production. Anonymous sign-in is enabled. Thirteen repository migrations now provide the private immutable category/alias bank, a UTC schedule through 2026-12-31, deny-all RLS daily/room/submission/claim/discovery/draft tables, immutable display names, strict control-character rejection, answer-check and draft-creation burst controls, private per-player Realtime topics, fourteen narrow gameplay/status/discovery RPC signatures plus one Realtime authorization helper. Vercel contains only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, scoped to Preview; Production variables were not changed.
 
@@ -129,7 +131,7 @@ Verification snapshot from 2026-07-20 UTC:
 - The elimination hostile-client suite proves unsigned and direct-claim denial, exactly one owner under simultaneous submissions, idempotent winner retry, answer-free loser responses, cross-room isolation, unchanged private-race scoring, late-answer rejection, and verified ownership reveal.
 - `pnpm audit:client-bundle` audits the page’s manifest-referenced browser chunks and finds no NBA answer-bank markers. HTML inspection also found no canonical answer leakage before acceptance.
 - Local and protected deployed browser QA at 1440×1000 and 390×844 completed the real Next.js/Supabase flow: malicious-name rejection, normalized name, named start, accepted answer, duplicate without score change, refresh/resume at the original deadline, finish, leaderboard, forced local offline/error and retry recovery, deterministic ties, HTTP 200/204 route responses, no application or runtime errors, no answer-bank leakage, and no horizontal overflow.
-- Phase 7A local QA at 1440×1000 and 390×844 loaded the three-entry curated catalog and real 11-name/23-round/2-room aggregate snapshot, filtered `chem` through the debounced endpoint, blocked the in-review category from play, opened the separate draft workspace, preserved `/daily`, produced no application console errors, and had no horizontal overflow.
+- Phase 7A local and protected Preview QA loaded the three-entry curated catalog and real 11-name/23-round/2-room aggregate snapshot, filtered `chem` through the debounced endpoint, blocked the in-review category from play, opened the separate draft workspace, preserved `/daily`, produced no application or runtime errors, and had no horizontal overflow at 1440×1000 and 390×844.
 
 ## Roadmap Remaining
 
