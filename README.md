@@ -1,12 +1,12 @@
 # NameMore
 
-NameMore is a fast-paced, category-first recall platform where players try to name as many valid answers as possible before a timer expires. NBA players are the current manually curated proof of concept, not the permanent identity of the product. The planned first release is a secure single-player daily challenge; editable category discovery, private multiplayer, and elimination modes come later.
+NameMore is a fast-paced, category-first recall platform where players try to name as many valid answers as possible before a timer expires. NBA players are the current manually curated proof of concept, not the permanent identity of the product. The current preview includes a secure single-player daily challenge and live private-race multiplayer; editable category discovery and elimination mode come later.
 
 ## Current Status
 
-Phases 1–4 are complete. **Phase 4: Secure Private Room Lobby** passed its implementation, non-production Supabase, hostile-client, advisor, build, bundle, GitHub publication, protected Preview, two-session desktop/mobile browser, and runtime-log gates.
+Phases 1–5 are complete. **Phase 5: Live Private-Race Multiplayer** passed its implementation, non-production Supabase, hostile-client, private-Realtime, advisor, build, bundle, GitHub publication, protected Preview smoke, two-browser gameplay, desktop/mobile visual, and post-round reveal gates.
 
-**Current branch:** `codex/phase-4-secure-room-lobby`, created from the completed daily-polish branch. `main` has not been changed or merged.
+**Current branch:** `codex/phase-5-live-private-race`, created from the completed secure-room-lobby branch. `main` has not been changed or merged.
 
 The focused post–Phase 3 polish verifies that the non-production database has an active current-UTC challenge and a continuous schedule through 2026-12-31. A single transient empty status now triggers one automatic recovery check before the safe unavailable state appears. The ready dwell uses a damped charge and squash-and-stretch launch instead of a linear loading treatment, and competitive automatic answer checks begin after a 180ms pause instead of 420ms with a small in-board pending cue. No answer data or scoring authority moved into the browser.
 
@@ -20,7 +20,9 @@ Focused polish application commit `49d1687c65e05a3d060983b39693363490ef134a` (`P
 
 Phase 4 application commit `84731004b12b151c22eff3b1e34a31ddbf3db3e8` (`Build secure private room lobby`) is pushed to `origin/codex/phase-4-secure-room-lobby`. Git-integrated protected Preview `dpl_9NjNPMpW3bshp43RPdQYWA6FRDCr` at `https://namemore-dtntgcegv-namemore.vercel.app` was verified `READY`, `target: preview`, and sourced from that exact commit. A fresh desktop host and 390px mobile guest created, joined, refreshed, synchronized, and host-started the same room with no browser errors, framework overlays, or horizontal overflow; deployment logs contained only 200/204 responses and no error/fatal entries. Production and `main` remain untouched.
 
-Supabase project `namemore` (`hutmxxlicxeaovoeqbwg`) was explicitly confirmed non-production. Anonymous sign-in is enabled. Eight repository migrations now provide the private immutable category/alias bank, a UTC schedule through 2026-12-31, deny-all RLS daily and room tables, attempt/submission/room/player constraints and indexes, immutable display names, strict control-character rejection, answer-check burst control, and nine narrowly granted authenticated RPCs: five daily operations plus room create/status/join/start. Vercel contains only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, scoped to Preview; Production variables were not changed.
+Phase 5 application commit `cba8380e8b93d65383b9c0342aa6fc172b5e73c3` (`Build live private race multiplayer`) is pushed to `origin/codex/phase-5-live-private-race`. Git-integrated protected Preview `dpl_ADAE2bevosLdTLLMof3LKp478QvE` at `https://namemore-ri2n5f37t-namemore.vercel.app` was verified `READY`, `target: preview`, sourced from that exact commit, and passed protected homepage/room smoke checks with no runtime error logs. Separate in-app and Chrome sessions created, joined, synchronized, scored, preserved active-round answer secrecy, and revealed both verified answer lists after the server deadline. Production and `main` remain untouched.
+
+Supabase project `namemore` (`hutmxxlicxeaovoeqbwg`) was explicitly confirmed non-production. Anonymous sign-in is enabled. Eleven repository migrations now provide the private immutable category/alias bank, a UTC schedule through 2026-12-31, deny-all RLS daily/room/submission tables, attempt/submission/room/player constraints and indexes, immutable display names, strict control-character rejection, answer-check burst control, private per-player Realtime topics, and eleven narrow gameplay/status RPCs plus one Realtime authorization helper. Vercel contains only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, scoped to Preview; Production variables were not changed.
 
 Implemented:
 
@@ -57,12 +59,15 @@ Implemented:
 - Competitive automatic checks begin after a 180ms typing pause and expose a small pending verification cue; the private answer bank and trusted match remain server-side.
 - A `/room` entry and `/room/[roomCode]` liquid-glass lobby for private races, with eight-character non-ambiguous invite codes, real participant rows, eight visible capacity slots, copyable invite URLs, safe refresh recovery, stale-participant display, and host-only start controls.
 - Database-authoritative room creation, status, join/rejoin, and start operations. Membership is unique per room/user, capacity races lock at eight, display names are immutable membership data, outsiders receive category/status/count but no participant names, late joins are denied, and the database owns start/deadline timestamps.
+- Live private-race gameplay with a server clock, server-normalized answer submissions, per-player canonical uniqueness, verified scores, bounded answer checks, automatic deadline completion, and post-round reveal.
+- Private per-player Supabase Realtime channels use Presence only for connectivity and Broadcast only for coarse typing state and empty board-change notifications. Active opponents receive counts and synthetic bars but never answer text; the receiver derives player identity from the authorized channel topic instead of trusting payload identity.
+- Equal liquid-glass player boards at desktop and stacked mobile sizes, local wet-ink answers, restrained score motion, reconnect fallback, tie-aware verified results, replay, and reduced-motion-safe behavior.
 - A deterministic 300-answer/561-alias seed plus 168 scheduled UTC challenge dates from 2026-07-17 through 2026-12-31.
-- Seventy-eight passing unit, dataset, contract, session, request-boundary, migration, and component tests across thirteen test files, plus direct publishable-key daily and room hostile-client scripts.
+- Eighty-nine passing unit, dataset, contract, session, request-boundary, migration, Realtime, and component tests across fifteen test files, plus direct publishable-key daily, room-lobby, and room-game hostile-client scripts.
 
 Not implemented yet:
 
-- Live room gameplay, Realtime presence/typing, opponent boards, answer reveal, elimination mode, global aggregates, or production launch hardening.
+- Elimination mode, global aggregates, or production launch hardening.
 - CAPTCHA. A broader unprotected preview requires a product choice and credentials for hCaptcha or Cloudflare Turnstile; the current preview remains protected by Vercel team authentication.
 - The editable prompt composer, community-derived recommendations, general custom-category workflow, ambient popular-prompt/high-score/lobby cards, and category-agnostic result metrics.
 
@@ -106,17 +111,18 @@ pnpm build
 Verification snapshot from 2026-07-20 UTC:
 
 - `git diff --check`, `pnpm lint`, `pnpm typecheck`, and the Next.js production build pass.
-- `pnpm test` passes 78 tests in 13 test files.
+- `pnpm test` passes 89 tests in 15 test files.
 - The hostile-client script passes directly against Supabase using only the public URL/publishable key and anonymous identities. It additionally proves display-name validation/normalization/immutability, active-attempt exclusion, top-ten limiting, deterministic tie order, safe projection keys, no UUID/answer leakage, direct leaderboard insertion denial, concurrent idempotent finish, and the 40-per-10-second burst guard.
 - A rollback-only live database deadline test returned `round-ended` and `expired` without accepting a late answer. Migration history, 300 answers, 561 aliases, 168 scheduled challenges through 2026-12-31, RLS, grants, constraints, and indexes were inspected live.
-- Supabase security advisors report only intentional deny-all/no-policy tables, the nine intentionally callable authenticated security-definer RPCs, and leaked-password protection for the deferred permanent-account path. Performance advisors report only expected unused indexes on the fresh schema; all reported missing foreign-key indexes were fixed.
+- Supabase security advisors report only intentional deny-all/no-policy tables, the intentionally callable authenticated security-definer operations, anonymous Realtime access constrained by membership policies, and leaked-password protection for the deferred permanent-account path. Performance advisors report only expected unused indexes on the fresh schema; all reported missing foreign-key indexes were fixed.
 - The room hostile-client suite uses isolated anonymous sessions to prove safe outsider projection, stable rejoin, immutable membership names, direct table/status/deadline denial, non-host start denial, an atomic eight-player capacity race, host-set 90-second timestamps, and late-join rejection. The room host foreign-key advisor issue was fixed forward-only; remaining room index notices are expected on fresh QA data.
+- The room-game hostile-client suite proves unsigned/outsider/direct-table denial, independent per-player scoring for the same canonical answer, duplicate and invalid handling, active opponent-answer secrecy, private topic membership, own-topic-only publish rights, safe Presence/Broadcast payloads, automatic deadline completion, and post-round reveal.
 - `pnpm audit:client-bundle` audits the page’s manifest-referenced browser chunks and finds no NBA answer-bank markers. HTML inspection also found no canonical answer leakage before acceptance.
 - Local and protected deployed browser QA at 1440×1000 and 390×844 completed the real Next.js/Supabase flow: malicious-name rejection, normalized name, named start, accepted answer, duplicate without score change, refresh/resume at the original deadline, finish, leaderboard, forced local offline/error and retry recovery, deterministic ties, HTTP 200/204 route responses, no application or runtime errors, no answer-bank leakage, and no horizontal overflow.
 
 ## Roadmap Remaining
 
-Phases 1–4 are complete. **4 later product phases remain**: live private-race multiplayer, elimination mode, general category studio/discovery, and production hardening/launch.
+Phases 1–5 are complete. **3 later product phases remain**: elimination mode, general category studio/discovery, and production hardening/launch.
 
 In Codex desktop, the shell may not include `node` on its default `PATH`. Use the bundled workspace Node runtime when that occurs; do not treat a missing shell executable as an application failure.
 
@@ -125,8 +131,8 @@ In Codex desktop, the shell may not include `node` on its default `PATH`. Use th
 ```text
 app/
   api/daily/             No-store status/named-start/submit/finish/leaderboard Route Handlers
-  api/rooms/             No-store create/status/join/start Route Handlers
-  room/                  Private-room entry and shareable lobby routes
+  api/rooms/             No-store create/status/join/start/game/submit Route Handlers
+  room/                  Private-room entry, lobby, live game, and results routes
   globals.css            White liquid-glass, clean answer-surface, ripple, and responsive rules
   layout.tsx             Root layout and NameMore metadata
   page.tsx               Server-rendered NameMore homepage shell
@@ -137,7 +143,9 @@ components/
   GameBoard.tsx          Ready dwell, clean answer field, delight feedback, timer, and local state
   GameResults.tsx        Detailed local timeline, metrics, coverage, sharing, and replay UI
   RoomEntry.tsx          Create/join private-room entry surface
-  RoomLobby.tsx          Safe participant lobby, invite, refresh, and host-start UI
+  RoomLobby.tsx          Safe participant lobby, invite, refresh, and game handoff
+  RoomGame.tsx           Live server-authoritative private-race boards and input
+  RoomResults.tsx        Verified ranks and deadline-gated answer reveal
 lib/
   categories.ts          Versioned 300-player NBA dataset
   category-types.ts      Category and submission domain types
@@ -151,6 +159,7 @@ scripts/
   audit-client-bundle.mjs      Manifest-scoped answer-bank leak audit
   hostile-client-check.mjs     Direct public-key daily authorization/concurrency checks
   room-hostile-client-check.mjs Direct public-key room authorization/capacity checks
+  room-game-hostile-client-check.mjs Direct live-game/Realtime/privacy checks
 supabase/
   config.toml             Anonymous-auth local configuration
   migrations/             Schema/seed, schedule, RPC correction, and index migrations
@@ -158,10 +167,10 @@ AGENTS.md                 Repository-wide product, security, and coding rules
 plan.md                   Eight-phase implementation plan and live status
 ```
 
-There is no live multiplayer gameplay, Realtime feature, permanent account, aggregate community analytics, CAPTCHA integration, or production deployment.
+There is no elimination mode, permanent account, aggregate community analytics, CAPTCHA integration, or production deployment.
 
 ## Security Boundary
 
-The daily answer bank is private database data and is absent from competitive browser JavaScript, HTML, RSC payloads, and public API responses. Anonymous users receive the `authenticated` role, but direct table access remains denied by explicit grants and RLS; only nine narrow daily/room RPCs are executable. The leaderboard RPC exposes no UUIDs, answers, guesses, auth metadata, attempt IDs, or ordering timestamps; outsider room status exposes no participant identities. Browser-visible configuration contains only the Supabase project URL and publishable key. Never introduce a service-role key into this application path or weaken the deny-by-default boundary.
+The answer bank is private database data and is absent from competitive browser JavaScript, HTML, RSC payloads, and public API responses. Anonymous users receive the `authenticated` role, but direct application-table access remains denied by explicit grants and RLS; only narrow ownership-checking operations are executable. During a live room, members receive safe counts and per-player private Realtime activity while opponent answer arrays remain absent; complete answer lists are projected only after the server deadline. The leaderboard exposes no UUIDs, answers, guesses, auth metadata, attempt IDs, or ordering timestamps, and outsider room status exposes no participant identities. Browser-visible configuration contains only the Supabase project URL and publishable key. Never introduce a service-role key into this application path or weaken the deny-by-default boundary.
 
-The future multiplayer visual direction uses equal player and opponent liquid-glass boards. Opponent typing will look live through synthetic blurred placeholders based only on safe typing status and a coarse length bucket. Raw opponent letters or answers must never be sent to the browser during an active round.
+The live multiplayer presentation uses equal player and opponent liquid-glass boards. Opponent typing looks live through synthetic blurred placeholders based only on safe typing status and a coarse length bucket. Raw opponent letters or answers are never sent to another player during an active round.
