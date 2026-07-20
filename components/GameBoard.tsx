@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   type CSSProperties,
   type ChangeEvent,
@@ -16,7 +17,7 @@ import {
 } from "react";
 
 import { GameResults } from "@/components/GameResults";
-import type { Category, NbaTeamCode } from "@/lib/category-types";
+import type { Category, CategoryAnswer } from "@/lib/category-types";
 import {
   buildAnswerLookup,
   evaluateAnswerSubmission,
@@ -66,49 +67,15 @@ const delayedAutomaticMatchMilliseconds = 420;
 const acceptedCelebrationMilliseconds = 700;
 const quickPairDisplayMilliseconds = 3_200;
 
-const nbaTeamColors = {
-  ATL: ["#E03A3E", "#C1D32F"],
-  BOS: ["#007A33", "#BA9653"],
-  BKN: ["#000000", "#777777"],
-  CHA: ["#1D1160", "#00788C"],
-  CHI: ["#CE1141", "#111111"],
-  CLE: ["#860038", "#FDBB30"],
-  DAL: ["#00538C", "#B8C4CA"],
-  DEN: ["#0E2240", "#FEC524"],
-  DET: ["#C8102E", "#1D42BA"],
-  GSW: ["#1D428A", "#FFC72C"],
-  HOU: ["#CE1141", "#C4CED4"],
-  IND: ["#002D62", "#FDBB30"],
-  LAC: ["#C8102E", "#1D428A"],
-  LAL: ["#552583", "#FDB927"],
-  MEM: ["#5D76A9", "#12173F"],
-  MIA: ["#98002E", "#F9A01B"],
-  MIL: ["#00471B", "#EEE1C6"],
-  MIN: ["#0C2340", "#78BE20"],
-  NOP: ["#0C2340", "#C8102E"],
-  NYK: ["#006BB6", "#F58426"],
-  OKC: ["#007AC1", "#EF3B24"],
-  ORL: ["#0077C0", "#C4CED4"],
-  PHI: ["#006BB6", "#ED174C"],
-  PHX: ["#1D1160", "#E56020"],
-  POR: ["#E03A3E", "#000000"],
-  SAC: ["#5A2D81", "#63727A"],
-  SAS: ["#000000", "#C4CED4"],
-  TOR: ["#CE1141", "#000000"],
-  UTA: ["#002B5C", "#F9A01B"],
-  WAS: ["#002B5C", "#E31837"],
-} as const satisfies Record<NbaTeamCode, readonly [string, string]>;
-
 type TeamAccentStyle = CSSProperties & {
   "--team-primary": string;
   "--team-secondary": string;
 };
 
-function getTeamAccentStyle(teamCode: NbaTeamCode): TeamAccentStyle {
-  const [primary, secondary] = nbaTeamColors[teamCode];
+function getAnswerAccentStyle(answer: CategoryAnswer): TeamAccentStyle {
   return {
-    "--team-primary": primary,
-    "--team-secondary": secondary,
+    "--team-primary": answer.visual?.primaryColor ?? "#1463ff",
+    "--team-secondary": answer.visual?.secondaryColor ?? "#dbe6ff",
   };
 }
 
@@ -228,8 +195,9 @@ export function GameBoard({ category }: GameBoardProps) {
         startedAtMs: roundStartedAtMs ?? 0,
         endedAtMs: roundEndedAtMs ?? roundStartedAtMs ?? 0,
         duplicateCount,
+        coverage: category.coverage,
       }),
-    [acceptedEvents, duplicateCount, roundEndedAtMs, roundStartedAtMs],
+    [acceptedEvents, category.coverage, duplicateCount, roundEndedAtMs, roundStartedAtMs],
   );
 
   const playFeedback = useCallback((cue: FeedbackCue) => {
@@ -657,7 +625,7 @@ export function GameBoard({ category }: GameBoardProps) {
         if (shouldReportInvalid && rawAnswer.trim().length > 0) {
           setFeedback({
             kind: "invalid",
-            message: "No match yet — keep typing or try another player.",
+            message: "No match yet — keep typing or try another answer.",
           });
         }
         break;
@@ -736,7 +704,13 @@ export function GameBoard({ category }: GameBoardProps) {
     const shareText = buildSpoilerFreeShareText({
       categoryTitle: category.title,
       score: practiceStats.answerCount,
-      representedTeamCount: practiceStats.representedTeamCodes.length,
+      coverageSummary: practiceStats.coverage
+        ? {
+            represented: practiceStats.coverage.representedGroupIds.length,
+            total: practiceStats.coverage.groups.length,
+            itemLabel: practiceStats.coverage.itemLabel,
+          }
+        : undefined,
     });
 
     try {
@@ -776,11 +750,12 @@ export function GameBoard({ category }: GameBoardProps) {
     <section
       className={`game-board is-${phase}${isUrgent ? " is-urgent-round" : ""}`}
       aria-labelledby="game-prompt"
+      data-category-slug={category.slug}
     >
       <header className="board-header">
-        <div className="brand" aria-label="NameMore">
+        <Link className="brand" href="/" aria-label="NameMore home">
           NameMore
-        </div>
+        </Link>
         <div className="header-controls">
           <div className="game-hud" aria-label="Round status">
             <time
@@ -882,7 +857,7 @@ export function GameBoard({ category }: GameBoardProps) {
               <span
                 className="team-color-flash"
                 key={freshAcceptedAnswer.id}
-                style={getTeamAccentStyle(freshAcceptedAnswer.teamCode)}
+                style={getAnswerAccentStyle(freshAcceptedAnswer)}
                 aria-hidden="true"
               />
             ) : null}
@@ -925,15 +900,18 @@ export function GameBoard({ category }: GameBoardProps) {
                     className={`${answer.id === freshAnswerId ? "is-fresh" : ""}${answer.id === highlightedDuplicateId ? " is-duplicate-target" : ""}`.trim()}
                     data-answer-id={answer.id}
                     data-team-code={answer.teamCode}
+                    data-group-ids={answer.groupIds?.join(" ")}
                     data-testid={`answer-row-${answer.id}`}
                     key={answer.id}
-                    style={getTeamAccentStyle(answer.teamCode)}
+                    style={getAnswerAccentStyle(answer)}
                   >
                     <AcceptedIcon />
                     <strong>{answer.canonicalText}</strong>
-                    <AnswerIconSlot accessibleLabel={`Team ${answer.teamCode}`}>
-                      {answer.teamCode}
-                    </AnswerIconSlot>
+                    {answer.visual ? (
+                      <AnswerIconSlot accessibleLabel={answer.visual.accessibleLabel}>
+                        {answer.visual.label}
+                      </AnswerIconSlot>
+                    ) : null}
                   </li>
                 ))}
               </ol>
@@ -942,7 +920,7 @@ export function GameBoard({ category }: GameBoardProps) {
             {phase === "playing" ? (
               <form className="note-entry" onSubmit={handleSubmit}>
                 <label className="sr-only" htmlFor="answer-input">
-                  Type an NBA player’s name
+                  {category.inputLabel}
                 </label>
                 <input
                   ref={inputRef}
@@ -955,7 +933,7 @@ export function GameBoard({ category }: GameBoardProps) {
                     isComposingRef.current = true;
                   }}
                   onCompositionEnd={handleCompositionEnd}
-                  placeholder="Type a full name or unique last name…"
+                  placeholder={category.inputPlaceholder}
                   autoComplete="off"
                   autoCapitalize="words"
                   spellCheck="false"
@@ -965,7 +943,7 @@ export function GameBoard({ category }: GameBoardProps) {
                   <span
                     className="entry-success"
                     key={freshAcceptedAnswer.id}
-                    style={getTeamAccentStyle(freshAcceptedAnswer.teamCode)}
+                    style={getAnswerAccentStyle(freshAcceptedAnswer)}
                     aria-hidden="true"
                   >
                     <AcceptedIcon />
@@ -998,14 +976,14 @@ export function GameBoard({ category }: GameBoardProps) {
 
       <footer className="board-footer">
         <span>
-          {phase === "finished" ? "Local practice · not ranked" : "NBA roster · July 15, 2026"}
+          {phase === "finished" ? "Local practice · not ranked" : category.sourceLabel}
         </span>
         {phase === "playing" ? (
           <button type="button" onClick={finishRound}>
             End round
           </button>
         ) : phase === "finished" ? (
-          <span>NBA roster · July 15, 2026</span>
+          <span>{category.sourceLabel}</span>
         ) : null}
       </footer>
     </section>

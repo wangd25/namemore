@@ -1,4 +1,6 @@
-import { nbaTeamCodes, type Category } from "@/lib/category-types";
+import type { CSSProperties } from "react";
+
+import type { Category, CategoryAnswer } from "@/lib/category-types";
 import type { PracticeStats } from "@/lib/practice-game";
 
 type GameResultsProps = {
@@ -34,6 +36,13 @@ function formatElapsed(seconds: number): string {
   return `${String(minutes).padStart(2, "0")}:${String(remainingSeconds).padStart(2, "0")}`;
 }
 
+function getAnswerAccentStyle(answer: CategoryAnswer): CSSProperties {
+  return {
+    "--team-primary": answer.visual?.primaryColor ?? "#1463ff",
+    "--team-secondary": answer.visual?.secondaryColor ?? "#dbe6ff",
+  } as CSSProperties;
+}
+
 function formatDuration(milliseconds: number | null): string {
   return milliseconds === null ? "—" : `${(milliseconds / 1_000).toFixed(1)}s`;
 }
@@ -62,7 +71,8 @@ export function GameResults({
   onPlayAgain,
   onShare,
 }: GameResultsProps) {
-  const representedTeams = new Set(stats.representedTeamCodes);
+  const coverage = stats.coverage;
+  const representedGroups = new Set(coverage?.representedGroupIds ?? []);
 
   return (
     <main className="results-layout" aria-labelledby="game-prompt">
@@ -96,10 +106,8 @@ export function GameResults({
             <dd>{stats.duplicateCount}</dd>
           </div>
           <div>
-            <dt>Teams</dt>
-            <dd>
-              <span>{stats.representedTeamCodes.length}</span> / 30
-            </dd>
+            <dt>{coverage?.itemLabel ?? "Coverage"}</dt>
+            <dd>{coverage ? <><span>{coverage.representedGroupIds.length}</span> / {coverage.groups.length}</> : "—"}</dd>
           </div>
         </dl>
 
@@ -125,7 +133,7 @@ export function GameResults({
         </p>
       </section>
 
-      <section className="results-sheet" aria-label="Detailed round results">
+      <section className="results-sheet practice-results-sheet" aria-label="Detailed round results">
         <div className="result-timeline-panel">
           <div className="results-section-heading">
             <h2>Accepted names</h2>
@@ -142,6 +150,15 @@ export function GameResults({
                   </time>
                   <CheckIcon />
                   <strong>{entry.answer.canonicalText}</strong>
+                  {entry.answer.visual ? (
+                    <span
+                      className="answer-icon-slot result-answer-visual"
+                      aria-label={entry.answer.visual.accessibleLabel}
+                      style={getAnswerAccentStyle(entry.answer)}
+                    >
+                      {entry.answer.visual.label}
+                    </span>
+                  ) : null}
                 </li>
               ))}
             </ol>
@@ -150,37 +167,42 @@ export function GameResults({
           )}
         </div>
 
-        <div className="team-coverage-panel">
-          <div className="results-section-heading">
-            <h2>Team coverage</h2>
-            <span>{stats.representedTeamCodes.length} / 30</span>
+        {coverage ? (
+          <div className="team-coverage-panel coverage-panel">
+            <div className="results-section-heading">
+              <h2>{coverage.title}</h2>
+              <span>{coverage.representedGroupIds.length} / {coverage.groups.length}</span>
+            </div>
+
+            <ul className="team-coverage-grid coverage-grid" aria-label={coverage.title}>
+              {coverage.groups.map((group) => {
+                const isRepresented = representedGroups.has(group.id);
+
+                return (
+                  <li
+                    className={isRepresented ? "is-covered" : "is-missed"}
+                    key={group.id}
+                  >
+                    <span>{group.label}</span>
+                    <span className="sr-only">
+                      {isRepresented ? "represented" : "missed"}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+
+            <p className="missed-team-copy">
+              <strong>Missed</strong>
+              {coverage.missedGroupIds.length > 0
+                ? coverage.groups
+                    .filter((group) => coverage.missedGroupIds.includes(group.id))
+                    .map((group) => group.label)
+                    .join(" · ")
+                : "None — complete coverage"}
+            </p>
           </div>
-
-          <ul className="team-coverage-grid" aria-label="NBA team coverage">
-            {nbaTeamCodes.map((teamCode) => {
-              const isRepresented = representedTeams.has(teamCode);
-
-              return (
-                <li
-                  className={isRepresented ? "is-covered" : "is-missed"}
-                  key={teamCode}
-                >
-                  <span>{teamCode}</span>
-                  <span className="sr-only">
-                    {isRepresented ? "represented" : "missed"}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-
-          <p className="missed-team-copy">
-            <strong>Missed</strong>
-            {stats.missedTeamCodes.length > 0
-              ? stats.missedTeamCodes.join(" · ")
-              : "None — complete league coverage"}
-          </p>
-        </div>
+        ) : null}
       </section>
 
       <h1 className="sr-only" id="game-prompt">

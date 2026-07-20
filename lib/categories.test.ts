@@ -19,6 +19,9 @@ describe("current NBA players category", () => {
     const teamCounts = new Map<string, number>();
 
     for (const answer of answers) {
+      if (!answer.teamCode) {
+        throw new Error(`Expected NBA team metadata for ${answer.id}.`);
+      }
       teamCounts.set(answer.teamCode, (teamCounts.get(answer.teamCode) ?? 0) + 1);
     }
 
@@ -52,5 +55,16 @@ describe("current NBA players category", () => {
     expect(
       answers.find((answer) => answer.canonicalText === "LeBron James"),
     ).toMatchObject({ teamCode: "LAL" });
+  });
+
+  it("adapts NBA teams into optional visual and coverage metadata", () => {
+    const curry = answers.find((answer) => answer.canonicalText === "Stephen Curry");
+
+    expect(curry).toMatchObject({
+      teamCode: "GSW",
+      groupIds: ["GSW"],
+      visual: { kind: "text", label: "GSW", accessibleLabel: "Team GSW" },
+    });
+    expect(currentNbaPlayersCategory.coverage?.groups).toHaveLength(30);
   });
 });

@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { GameBoard } from "@/components/GameBoard";
 import { currentNbaPlayersCategory } from "@/lib/categories";
+import { chemicalElementsCategory } from "@/lib/chemical-elements";
 import {
   feedbackPreferenceStorageKey,
   getPracticeBestStorageKey,
@@ -49,6 +50,33 @@ function finishTransition() {
 }
 
 describe("GameBoard", () => {
+  it("plays and summarizes a reviewed category without NBA metadata", () => {
+    vi.useFakeTimers();
+    render(<GameBoard category={chemicalElementsCategory} />);
+
+    expect(
+      screen.getByRole("heading", {
+        name: "How many chemical elements can you name?",
+      }),
+    ).toBeInTheDocument();
+    startRound();
+
+    const input = screen.getByLabelText("Type a chemical element");
+    expect(input).toHaveAttribute("placeholder", "Type an element name or symbol…");
+    fireEvent.change(input, { target: { value: "Na" } });
+
+    expect(screen.getByText("Sodium")).toBeInTheDocument();
+    expect(screen.getByLabelText("Na, Sodium element symbol")).toHaveTextContent("Na");
+    expect(screen.queryByText("Team coverage")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "End round" }));
+    finishTransition();
+
+    expect(screen.getByText("Period coverage")).toBeInTheDocument();
+    expect(screen.getByText("1", { selector: ".result-metrics dd span" })).toBeInTheDocument();
+    expect(screen.getByText("IUPAC periodic table · May 4, 2022")).toBeInTheDocument();
+  });
+
   it("starts in the ready state and begins a focused round", () => {
     render(<GameBoard category={currentNbaPlayersCategory} />);
 

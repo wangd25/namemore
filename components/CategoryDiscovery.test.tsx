@@ -21,16 +21,16 @@ const payload = {
     },
     {
       slug: "chemical-elements",
-      version: null,
+      version: 1,
       title: "Chemical elements",
       prompt: "How many chemical elements can you name?",
       summary: "A finite science prompt.",
-      reviewStatus: "in-review",
-      availability: "practice-planned",
+      reviewStatus: "reviewed",
+      availability: "practice",
       competitiveEligible: false,
-      answerCount: null,
-      sourceLabel: "Planned IUPAC review",
-      coverageNote: "Names, symbols, and aliases require review.",
+      answerCount: 118,
+      sourceLabel: "IUPAC periodic table dated 2022-05-04",
+      coverageNote: "All 118 named elements with symbols and documented spelling aliases.",
     },
   ],
   ambient: {
@@ -59,14 +59,17 @@ describe("CategoryDiscovery", () => {
     expect(screen.getByText("2 rooms")).toBeInTheDocument();
   });
 
-  it("debounces typed catalog queries and keeps in-review prompts out of play", async () => {
+  it("debounces typed catalog queries and links reviewed practice outside daily play", async () => {
     mockDiscovery();
     render(<CategoryDiscovery />);
     await screen.findByRole("option", { name: /Chemical elements/ });
 
     fireEvent.click(screen.getByRole("option", { name: /Chemical elements/ }));
     expect(screen.getByLabelText("Choose a category prompt")).toHaveValue("How many chemical elements can you name?");
-    expect(screen.getByRole("button", { name: "Practice bank in review" })).toBeDisabled();
+    expect(screen.getByRole("link", { name: /Play local practice/ })).toHaveAttribute(
+      "href",
+      "/practice/chemical-elements",
+    );
 
     fireEvent.change(screen.getByLabelText("Choose a category prompt"), { target: { value: "chem" } });
     await waitFor(() => {

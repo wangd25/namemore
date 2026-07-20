@@ -66,6 +66,7 @@ describe("practice game helpers", () => {
       startedAtMs: 1_000,
       endedAtMs: 11_000,
       duplicateCount: 2,
+      coverage: currentNbaPlayersCategory.coverage,
     });
 
     expect(stats.answerCount).toBe(3);
@@ -75,6 +76,7 @@ describe("practice game helpers", () => {
     expect(stats.duplicateCount).toBe(2);
     expect(stats.representedTeamCodes).toEqual(["BOS", "DEN", "GSW"]);
     expect(stats.missedTeamCodes).toHaveLength(27);
+    expect(stats.coverage?.representedGroupIds).toEqual(["BOS", "DEN", "GSW"]);
     expect(stats.timeline.map((entry) => entry.elapsedSeconds)).toEqual([
       1, 4.5, 8,
     ]);
@@ -134,7 +136,7 @@ describe("practice game helpers", () => {
     const shareText = buildSpoilerFreeShareText({
       categoryTitle: "Current NBA Players",
       score: 13,
-      representedTeamCount: 8,
+      coverageSummary: { represented: 8, total: 30, itemLabel: "NBA teams" },
     });
 
     expect(shareText).toContain("13 names · 8/30 NBA teams");

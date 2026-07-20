@@ -54,6 +54,10 @@ const categoryDiscoveryMigration = readFileSync(
   resolve(process.cwd(), "supabase/migrations/20260720200748_add_phase7_category_discovery.sql"),
   "utf8",
 );
+const reviewedElementsMigration = readFileSync(
+  resolve(process.cwd(), "supabase/migrations/20260720222224_add_phase7b_reviewed_elements_practice.sql"),
+  "utf8",
+);
 
 describe("server-authoritative daily migration", () => {
   it("keeps the answer bank private and exposes only narrow RPCs", () => {
@@ -234,5 +238,17 @@ describe("server-authoritative daily migration", () => {
     expect(categoryDiscoveryMigration).toContain("recent_draft.created_at > v_now - interval '1 hour'");
     expect(categoryDiscoveryMigration).toContain(") >= 5 then");
     expect(categoryDiscoveryMigration).toContain("p_prompt ~ '[[:cntrl:]]'");
+  });
+
+  it("adds a reviewed 118-element practice bank without widening table access", () => {
+    expect(reviewedElementsMigration).toContain("alter column team_code drop not null");
+    expect(reviewedElementsMigration).toContain("add column visual_label text");
+    expect(reviewedElementsMigration).toContain("add column group_ids text[]");
+    expect(reviewedElementsMigration).toContain("availability in ('daily', 'practice', 'practice-planned')");
+    expect(reviewedElementsMigration).toContain("'chemical-elements'");
+    expect(reviewedElementsMigration).toContain("'2022-05-04'::date");
+    expect(reviewedElementsMigration).toContain("Expected 118 chemical elements.");
+    expect(reviewedElementsMigration).toContain("Expected 240 chemical element aliases.");
+    expect(reviewedElementsMigration).not.toMatch(/grant\s+(select|insert|update|delete)/i);
   });
 });

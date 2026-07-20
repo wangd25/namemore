@@ -2,6 +2,7 @@ import {
   nbaTeamCodes,
   type Category,
   type CategoryAnswer,
+  type CategoryCoverage,
   type NbaTeamCode,
 } from "@/lib/category-types";
 
@@ -27,6 +28,13 @@ export type PracticeStats = {
   longestPauseMs: number;
   representedTeamCodes: readonly NbaTeamCode[];
   missedTeamCodes: readonly NbaTeamCode[];
+  coverage: {
+    title: string;
+    itemLabel: string;
+    representedGroupIds: readonly string[];
+    missedGroupIds: readonly string[];
+    groups: CategoryCoverage["groups"];
+  } | null;
   timeline: readonly PracticeTimelineEntry[];
 };
 
@@ -168,15 +176,18 @@ export function calculatePracticeStats({
   startedAtMs,
   endedAtMs,
   duplicateCount,
+  coverage,
 }: {
   acceptedEvents: readonly AcceptedAnswerEvent[];
   startedAtMs: number;
   endedAtMs: number;
   duplicateCount: number;
+  coverage?: CategoryCoverage;
 }): PracticeStats {
   const safeEndMs = Math.max(startedAtMs, endedAtMs);
   const durationMs = Math.max(1_000, safeEndMs - startedAtMs);
   const representedTeams = new Set<NbaTeamCode>();
+  const representedGroups = new Set<string>();
   const timeline: PracticeTimelineEntry[] = [];
   const pauses: number[] = [];
   const answerGaps: number[] = [];
@@ -194,7 +205,12 @@ export function calculatePracticeStats({
       answerGaps.push(pause);
     }
 
-    representedTeams.add(event.answer.teamCode);
+    if (event.answer.teamCode) {
+      representedTeams.add(event.answer.teamCode);
+    }
+    for (const groupId of event.answer.groupIds ?? []) {
+      representedGroups.add(groupId);
+    }
     timeline.push({
       ...event,
       acceptedAtMs: safeAcceptedAtMs,
@@ -211,6 +227,10 @@ export function calculatePracticeStats({
   const missedTeamCodes = nbaTeamCodes.filter(
     (teamCode) => !representedTeams.has(teamCode),
   );
+  const representedCoverageGroups =
+    coverage?.groups.filter((group) => representedGroups.has(group.id)) ?? [];
+  const missedCoverageGroups =
+    coverage?.groups.filter((group) => !representedGroups.has(group.id)) ?? [];
 
   return {
     answerCount: acceptedEvents.length,
@@ -221,6 +241,15 @@ export function calculatePracticeStats({
     longestPauseMs: Math.max(...pauses),
     representedTeamCodes,
     missedTeamCodes,
+    coverage: coverage
+      ? {
+          title: coverage.title,
+          itemLabel: coverage.itemLabel,
+          representedGroupIds: representedCoverageGroups.map((group) => group.id),
+          missedGroupIds: missedCoverageGroups.map((group) => group.id),
+          groups: coverage.groups,
+        }
+      : null,
     timeline,
   };
 }
@@ -228,19 +257,27 @@ export function calculatePracticeStats({
 export function buildSpoilerFreeShareText({
   categoryTitle,
   score,
-  representedTeamCount,
+  coverageSummary,
 }: {
   categoryTitle: string;
   score: number;
-  representedTeamCount: number;
+  coverageSummary?: {
+    represented: number;
+    total: number;
+    itemLabel: string;
+  };
 }): string {
   const fiveAnswerDrops = "◆".repeat(Math.floor(score / 5));
   const singleAnswerDrops = "•".repeat(score % 5);
   const scorePattern = `${fiveAnswerDrops}${singleAnswerDrops}` || "—";
 
+  const coverageLine = coverageSummary
+    ? ` · ${coverageSummary.represented}/${coverageSummary.total} ${coverageSummary.itemLabel}`
+    : "";
+
   return [
     `NameMore — ${categoryTitle}`,
-    `${score} ${score === 1 ? "name" : "names"} · ${representedTeamCount}/30 NBA teams`,
+    `${score} ${score === 1 ? "name" : "names"}${coverageLine}`,
     scorePattern,
     "Local practice · not ranked",
   ].join("\n");

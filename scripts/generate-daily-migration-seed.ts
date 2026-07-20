@@ -25,6 +25,9 @@ function stableUuid(value: string): string {
 function buildSeedSql(): string {
   const category = currentNbaPlayersCategory;
   const answerRows = category.answers.map((answer, index) => {
+    if (!answer.teamCode) {
+      throw new Error(`Expected NBA team metadata for ${answer.id}.`);
+    }
     const answerId = stableUuid(`${category.slug}:${category.version}:${answer.id}`);
     return `  ('${answerId}', '${categoryVersionId}', ${sqlString(answer.id)}, ${sqlString(answer.canonicalText)}, ${sqlString(answer.teamCode)}, ${index})`;
   });

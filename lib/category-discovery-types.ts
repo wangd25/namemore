@@ -1,6 +1,6 @@
 export type CategoryReviewStatus = "reviewed" | "in-review";
 
-export type CategoryAvailability = "daily" | "practice-planned";
+export type CategoryAvailability = "daily" | "practice" | "practice-planned";
 
 export type CategoryDiscoveryEntry = {
   slug: string;

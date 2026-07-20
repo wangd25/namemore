@@ -243,6 +243,8 @@ export function CategoryDiscovery({
             </p>
             {selected.availability === "daily" ? (
               <Link className="composer-primary-action" href="/daily">Play reviewed category <ArrowIcon /></Link>
+            ) : selected.availability === "practice" ? (
+              <Link className="composer-primary-action" href={`/practice/${selected.slug}`}>Play local practice <ArrowIcon /></Link>
             ) : (
               <button className="composer-primary-action" type="button" disabled>Practice bank in review</button>
             )}

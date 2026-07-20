@@ -33,11 +33,32 @@ export const nbaTeamCodes = [
 
 export type NbaTeamCode = (typeof nbaTeamCodes)[number];
 
+export type AnswerVisual = {
+  kind: "text";
+  label: string;
+  accessibleLabel: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+};
+
+export type CategoryCoverageGroup = {
+  id: string;
+  label: string;
+};
+
+export type CategoryCoverage = {
+  title: string;
+  itemLabel: string;
+  groups: readonly CategoryCoverageGroup[];
+};
+
 export type CategoryAnswer = {
   id: string;
   canonicalText: string;
   aliases: readonly string[];
-  teamCode: NbaTeamCode;
+  visual?: AnswerVisual;
+  groupIds?: readonly string[];
+  teamCode?: NbaTeamCode;
 };
 
 export type Category = {
@@ -47,6 +68,10 @@ export type Category = {
   title: string;
   prompt: string;
   timeLimitSeconds: number;
+  inputLabel: string;
+  inputPlaceholder: string;
+  sourceLabel: string;
+  coverage?: CategoryCoverage;
   answers: readonly CategoryAnswer[];
 };
 

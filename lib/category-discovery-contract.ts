@@ -46,7 +46,7 @@ function parseCategory(value: unknown): CategoryDiscoveryEntry {
   if (!(new Set<CategoryReviewStatus>(["reviewed", "in-review"]) as Set<string>).has(reviewStatus)) {
     throw new Error("Invalid review status.");
   }
-  if (!(new Set<CategoryAvailability>(["daily", "practice-planned"]) as Set<string>).has(availability)) {
+  if (!(new Set<CategoryAvailability>(["daily", "practice", "practice-planned"]) as Set<string>).has(availability)) {
     throw new Error("Invalid availability.");
   }
   const entry: CategoryDiscoveryEntry = {
