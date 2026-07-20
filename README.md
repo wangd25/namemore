@@ -6,7 +6,9 @@ NameMore is a fast-paced, category-first recall platform where players try to na
 
 Phases 1–3 are complete. **Phase 3: Daily Leaderboard and Preview Release** passed its implementation, non-production Supabase, hostile-client, advisor, build, bundle, GitHub publication, protected Preview, desktop/mobile browser, and runtime-log gates.
 
-**Current branch:** `codex/phase-3-daily-leaderboard-preview`, created exactly from verified Phase 2 head `50bf03304884170f86ef9c432b23840e6030dec4`. `main` has not been changed or merged.
+**Current branch:** `codex/daily-ready-spring-latency`, created from the completed Phase 3 preview branch for a focused daily-availability, ready-motion, and answer-latency polish pass. `main` has not been changed or merged.
+
+The focused post–Phase 3 polish verifies that the non-production database has an active current-UTC challenge and a continuous schedule through 2026-12-31. A single transient empty status now triggers one automatic recovery check before the safe unavailable state appears. The ready dwell uses a damped charge and squash-and-stretch launch instead of a linear loading treatment, and competitive automatic answer checks begin after a 180ms pause instead of 420ms with a small in-board pending cue. No answer data or scoring authority moved into the browser.
 
 Vercel CLI authentication is established as `wangd25`. GitHub repository `wangd25/namemore` is connected to Vercel project `namemore` (`prj_w1Py6yIeo5YUcGGpduA32VdgFeSH`) in team `namemore`, and `main` is the configured production branch. Preview deployment `dpl_678tmSyH761zXoqfTnfdqsRg9hLh` at `https://namemore-5t10gmiq8-namemore.vercel.app` was verified `Ready` with `target: preview`, returned HTTP 200 with the expected page, and passed the deployed smoke check. Production has zero deployments.
 
@@ -26,7 +28,7 @@ Implemented:
 - Exact alias matching, unique-surname matching, and alias-collision protection.
 - Shared domain types for categories and answer-submission results.
 - A responsive true-white NameMore homepage using the Apple system font stack and one nearly full-viewport liquid-glass game board across ready, playing, ending, and finished states.
-- A hover/focus/press-and-hold ready zone instead of a conventional Start button.
+- A hover/focus/press-and-hold ready zone instead of a conventional Start button, with damped spring charging, squash-and-stretch launch feedback, and a reduced-motion-safe handoff while the verified round opens.
 - A clean translucent whiteboard with borderless in-board typing, automatically accepted exact names, explicit aliases, and unique last names, plus a compact score without a visible Submit button. Prefix-conflicting matches pause briefly so longer names can be completed.
 - Pointer-following liquid-droplet ripples on the ready zone and writing board, with keyboard, touch, and reduced-motion-safe behavior preserved.
 - A near-edge-to-edge game shell and unruled writing surface with compact answer typography. The mouse treatment is a small 46px desktop/36px mobile liquid lens that follows the pointer without looping or appearing from keyboard focus alone.
@@ -47,8 +49,10 @@ Implemented:
 - A safe current-UTC top-ten result projection containing only deterministic rank, plain-text display name, verified score, and equal-score tie state. Completed/expired named attempts are eligible; active and legacy unnamed attempts are excluded.
 - Deterministic leaderboard order: score descending, verified completion ascending, attempt creation ascending, then internal ID as an unexposed final fallback. Equal scores are marked tied even though the earlier verified result receives the earlier displayed position.
 - A database-enforced per-attempt burst guard of 40 answer checks per 10 seconds. Database ownership, deadline, uniqueness, and derived-score constraints remain the final authority.
+- One automatic recovery check for a transient empty daily-status response, plus a safe manual retry if the current UTC schedule remains unavailable.
+- Competitive automatic checks begin after a 180ms typing pause and expose a small pending verification cue; the private answer bank and trusted match remain server-side.
 - A deterministic 300-answer/561-alias seed plus 168 scheduled UTC challenge dates from 2026-07-17 through 2026-12-31.
-- Sixty-six passing unit, dataset, contract, session, request-boundary, migration, and component tests across eleven test files, plus a direct publishable-key hostile-client script.
+- Sixty-nine passing unit, dataset, contract, session, request-boundary, migration, and component tests across eleven test files, plus a direct publishable-key hostile-client script.
 
 Not implemented yet:
 

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { DailyGameBoard } from "@/components/DailyGameBoard";
@@ -82,6 +82,7 @@ function deferred<T>() {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.useRealTimers();
   window.localStorage.clear();
 });
 
@@ -112,6 +113,46 @@ describe("DailyGameBoard", () => {
     });
     expect(await screen.findByText("Stephen Curry")).toBeInTheDocument();
     expect(screen.getByTestId("score-value")).toHaveTextContent("01");
+  });
+
+  it("keeps the spring launch visible while the verified round opens", async () => {
+    const pendingStart = deferred<DailyStatusPayload>();
+    const api = mockApi({ start: vi.fn().mockReturnValue(pendingStart.promise) });
+    render(<DailyGameBoard api={api} />);
+
+    await enterDisplayName();
+    fireEvent.keyDown(await screen.findByRole("button", { name: /Move here when you’re ready/ }), { key: "Enter" });
+
+    const launchButton = screen.getByRole("button", { name: /Go!/ });
+    expect(launchButton).toHaveClass("is-launching");
+    expect(launchButton).toHaveAttribute("aria-busy", "true");
+    expect(screen.getByText("Opening your verified board…")).toBeInTheDocument();
+
+    pendingStart.resolve(activeStatus);
+    expect(await screen.findByLabelText("Type an NBA player’s name")).toBeInTheDocument();
+  });
+
+  it("starts secure automatic checking after a short 180ms pause and exposes pending state", async () => {
+    vi.useFakeTimers();
+    const pending = deferred<DailySubmissionResult>();
+    const submit = vi.fn().mockReturnValue(pending.promise);
+    const api = mockApi({ getStatus: vi.fn().mockResolvedValue(activeStatus), submit });
+    render(<DailyGameBoard api={api} />);
+    await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+
+    const input = screen.getByLabelText("Type an NBA player’s name");
+    fireEvent.change(input, { target: { value: "Curry" } });
+    await act(async () => { await vi.advanceTimersByTimeAsync(179); });
+    expect(submit).not.toHaveBeenCalled();
+
+    await act(async () => { await vi.advanceTimersByTimeAsync(1); });
+    expect(submit).toHaveBeenCalledWith(activeAttempt.id, "Curry");
+    expect(input.closest("form")).toHaveAttribute("aria-busy", "true");
+    expect(screen.getByText("Checking securely…")).toBeInTheDocument();
+
+    pending.resolve({ status: "invalid", serverNow: readyStatus.serverNow });
+    await act(async () => { await pending.promise; });
+    expect(input.closest("form")).toHaveAttribute("aria-busy", "false");
   });
 
   it("resumes the existing server attempt without creating another", async () => {
@@ -181,12 +222,32 @@ describe("DailyGameBoard", () => {
     await waitFor(() => expect(api.start).toHaveBeenCalledWith("Daily Player"));
   });
 
-  it("offers a safe retry when no daily challenge exists", async () => {
+  it("automatically retries one transient empty daily response", async () => {
+    vi.useFakeTimers();
+    const emptyStatus = { serverNow: readyStatus.serverNow, challenge: null, attempt: null };
+    const getStatus = vi.fn().mockResolvedValueOnce(emptyStatus).mockResolvedValueOnce(readyStatus);
+    const api = mockApi({ getStatus });
+    render(<DailyGameBoard api={api} />);
+    await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+
+    expect(screen.getByRole("heading", { name: "Double-checking today’s challenge…" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Checking again/ })).toBeDisabled();
+
+    await act(async () => { await vi.advanceTimersByTimeAsync(900); });
+    expect(getStatus).toHaveBeenCalledTimes(2);
+    expect(screen.getByRole("heading", { name: "Choose your daily display name" })).toBeInTheDocument();
+  });
+
+  it("offers a manual retry when the confirmed UTC schedule is still empty", async () => {
+    vi.useFakeTimers();
     const api = mockApi({ getStatus: vi.fn().mockResolvedValue({ serverNow: readyStatus.serverNow, challenge: null, attempt: null }) });
     render(<DailyGameBoard api={api} />);
+    await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(900); });
 
-    expect(await screen.findByRole("heading", { name: "Today’s challenge isn’t available yet." })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Today’s challenge isn’t available yet." })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Retry/ }));
-    await waitFor(() => expect(api.getStatus).toHaveBeenCalledTimes(2));
+    await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+    expect(api.getStatus).toHaveBeenCalledTimes(3);
   });
 });

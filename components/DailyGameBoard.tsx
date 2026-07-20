@@ -50,7 +50,8 @@ type ShareStatus = "idle" | "copied" | "shared" | "error";
 type DailyGameBoardProps = { api?: DailyGameApi };
 
 const readyDwellMilliseconds = 900;
-const automaticSubmitMilliseconds = 420;
+const automaticSubmitMilliseconds = 180;
+const unavailableRetryMilliseconds = 900;
 const duplicateHighlightMilliseconds = 800;
 const acceptedCelebrationMilliseconds = 700;
 const milestoneDisplayMilliseconds = 1_100;
@@ -125,6 +126,8 @@ export function DailyGameBoard({ api = dailyGameApi }: DailyGameBoardProps) {
   const [quickPairMessage, setQuickPairMessage] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [isReadyIntentActive, setIsReadyIntentActive] = useState(false);
+  const [isAnswerChecking, setIsAnswerChecking] = useState(false);
+  const [isScheduleRetryPending, setIsScheduleRetryPending] = useState(false);
   const [isFeedbackEnabled, setIsFeedbackEnabled] = useState(true);
   const [shareStatus, setShareStatus] = useState<ShareStatus>("idle");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -133,6 +136,8 @@ export function DailyGameBoard({ api = dailyGameApi }: DailyGameBoardProps) {
   const finishPendingRef = useRef(false);
   const requestSequenceRef = useRef(0);
   const leaderboardSequenceRef = useRef(0);
+  const pendingAnswerChecksRef = useRef(0);
+  const unavailableRetryCountRef = useRef(0);
   const inFlightAnswersRef = useRef(new Set<string>());
   const audioContextRef = useRef<AudioContext | null>(null);
   const readyTimeoutRef = useRef<number | null>(null);
@@ -180,11 +185,13 @@ export function DailyGameBoard({ api = dailyGameApi }: DailyGameBoardProps) {
     setInputValue("");
     inputValueRef.current = "";
     setFeedback(null);
+    setIsScheduleRetryPending(!payload.challenge && unavailableRetryCountRef.current === 0);
     finishPendingRef.current = false;
     if (!payload.challenge) setPhase("unavailable");
     else if (!payload.attempt || (payload.attempt.status === "active" && !payload.attempt.displayName)) setPhase("name");
     else if (payload.attempt.status === "active" && Date.parse(payload.attempt.deadlineAt) > Date.parse(payload.serverNow)) setPhase("playing");
     else setPhase("finished");
+    if (payload.challenge) unavailableRetryCountRef.current = 0;
   }, []);
 
   const loadLeaderboard = useCallback(async () => {
@@ -221,6 +228,12 @@ export function DailyGameBoard({ api = dailyGameApi }: DailyGameBoardProps) {
     const id = window.setTimeout(() => void loadStatus(), 0);
     return () => window.clearTimeout(id);
   }, [loadStatus]);
+  useEffect(() => {
+    if (phase !== "unavailable" || unavailableRetryCountRef.current > 0) return;
+    unavailableRetryCountRef.current += 1;
+    const id = window.setTimeout(() => void loadStatus(), unavailableRetryMilliseconds);
+    return () => window.clearTimeout(id);
+  }, [loadStatus, phase]);
   useEffect(() => {
     if (phase !== "finished") return;
     const id = window.setTimeout(() => void loadLeaderboard(), 0);
@@ -347,6 +360,8 @@ export function DailyGameBoard({ api = dailyGameApi }: DailyGameBoardProps) {
     const requestKey = submitted.toLocaleLowerCase();
     if (inFlightAnswersRef.current.has(requestKey)) return;
     inFlightAnswersRef.current.add(requestKey);
+    pendingAnswerChecksRef.current += 1;
+    setIsAnswerChecking(true);
     try {
       const result = await api.submit(attempt.id, submitted);
       setClockOffsetMs(Date.parse(result.serverNow) - Date.now());
@@ -396,6 +411,8 @@ export function DailyGameBoard({ api = dailyGameApi }: DailyGameBoardProps) {
       setFeedback({ kind: "error", message: "That answer couldn’t be checked. Your verified score is safe; try again." });
     } finally {
       inFlightAnswersRef.current.delete(requestKey);
+      pendingAnswerChecksRef.current = Math.max(0, pendingAnswerChecksRef.current - 1);
+      if (pendingAnswerChecksRef.current === 0) setIsAnswerChecking(false);
     }
   }
 
@@ -418,6 +435,12 @@ export function DailyGameBoard({ api = dailyGameApi }: DailyGameBoardProps) {
     const next = !isFeedbackEnabled;
     setIsFeedbackEnabled(next);
     writeFeedbackPreference(window.localStorage, next);
+  }
+
+  function retryStatus() {
+    unavailableRetryCountRef.current = 0;
+    setIsScheduleRetryPending(false);
+    void loadStatus();
   }
 
   async function shareResult() {
@@ -451,10 +474,10 @@ export function DailyGameBoard({ api = dailyGameApi }: DailyGameBoardProps) {
         </div>
       </header>
 
-      {phase === "loading" || phase === "starting" ? (
-        <div className="ready-state" aria-live="polite"><div className="ready-copy"><h1 id="game-prompt">{phase === "starting" ? "Starting your verified round…" : "Loading today’s challenge…"}</h1><p>The server is preparing your daily board.</p></div></div>
+      {phase === "loading" ? (
+        <div className="ready-state" aria-live="polite"><div className="ready-copy"><h1 id="game-prompt">Loading today’s challenge…</h1><p>The server is preparing your daily board.</p></div></div>
       ) : phase === "unavailable" || phase === "error" ? (
-        <div className="ready-state"><div className="ready-copy"><h1 id="game-prompt">{phase === "unavailable" ? "Today’s challenge isn’t available yet." : "We couldn’t reach the daily challenge."}</h1><p>{feedback?.message ?? "Try again in a moment."}</p></div><button className="ready-zone" type="button" onClick={() => void loadStatus()}><strong>Retry</strong><span>Your score and timer remain server-authoritative.</span></button></div>
+        <div className="ready-state"><div className="ready-copy"><h1 id="game-prompt">{phase === "unavailable" ? (isScheduleRetryPending ? "Double-checking today’s challenge…" : "Today’s challenge isn’t available yet.") : "We couldn’t reach the daily challenge."}</h1><p>{isScheduleRetryPending ? "The UTC schedule returned empty once, so NameMore is checking again automatically." : feedback?.message ?? "Try again in a moment."}</p></div><button className="ready-zone" type="button" onClick={retryStatus} disabled={isScheduleRetryPending}><strong>{isScheduleRetryPending ? "Checking again…" : "Retry"}</strong><span>Your score and timer remain server-authoritative.</span></button></div>
       ) : phase === "name" && challenge ? (
         <div className="ready-state name-state">
           <div className="ready-copy">
@@ -481,11 +504,11 @@ export function DailyGameBoard({ api = dailyGameApi }: DailyGameBoardProps) {
             <p id="display-name-error" className="display-name-error" role="alert">{nameError}</p>
           </form>
         </div>
-      ) : phase === "ready" && challenge ? (
+      ) : (phase === "ready" || phase === "starting") && challenge ? (
         <div className="ready-state">
-          <div className="ready-copy"><h1 id="game-prompt">{prompt}</h1><p>{challenge.category.timeLimitSeconds} seconds as {confirmedName}. The server starts the one-attempt clock and verifies every name.</p></div>
-          <button className={`ready-zone ripple-surface${isReadyIntentActive ? " is-activating" : ""}`} type="button" aria-describedby="ready-instructions" onPointerEnter={(event) => { if (event.pointerType === "mouse") beginReadyIntent(); }} onPointerLeave={clearReadyIntent} onPointerDown={(event) => { if (event.pointerType !== "mouse") beginReadyIntent(); }} onPointerUp={clearReadyIntent} onPointerCancel={clearReadyIntent} onPointerMove={handleRipplePointerMove} onFocus={beginReadyIntent} onBlur={clearReadyIntent} onKeyDown={handleReadyKeyDown}>
-            <LiquidRipple /><span className="ready-ring" aria-hidden="true"><svg viewBox="0 0 120 120"><circle className="ready-ring-track" cx="60" cy="60" r="53" /><circle className="ready-ring-progress" cx="60" cy="60" r="53" /></svg><span className="ready-dot" /></span><strong>Move here when you’re ready</strong><span id="ready-instructions">Focus or press and hold also works.</span>
+          <div className="ready-copy"><h1 id="game-prompt">{prompt}</h1><p>{phase === "starting" ? `Locked in as ${confirmedName}. Your verified board is opening now.` : `${challenge.category.timeLimitSeconds} seconds as ${confirmedName}. The server starts the one-attempt clock and verifies every name.`}</p></div>
+          <button className={`ready-zone ripple-surface${isReadyIntentActive ? " is-activating" : ""}${phase === "starting" ? " is-launching" : ""}`} type="button" aria-describedby="ready-instructions" aria-busy={phase === "starting"} disabled={phase === "starting"} onPointerEnter={(event) => { if (event.pointerType === "mouse") beginReadyIntent(); }} onPointerLeave={clearReadyIntent} onPointerDown={(event) => { if (event.pointerType !== "mouse") beginReadyIntent(); }} onPointerUp={clearReadyIntent} onPointerCancel={clearReadyIntent} onPointerMove={handleRipplePointerMove} onFocus={beginReadyIntent} onBlur={clearReadyIntent} onKeyDown={handleReadyKeyDown}>
+            <LiquidRipple /><span className="ready-ring" aria-hidden="true"><svg viewBox="0 0 120 120"><circle className="ready-ring-track" cx="60" cy="60" r="53" /><circle className="ready-ring-progress" cx="60" cy="60" r="53" /></svg><span className="ready-dot" /></span><strong>{phase === "starting" ? "Go!" : "Move here when you’re ready"}</strong><span id="ready-instructions">{phase === "starting" ? "Opening your verified board…" : "Focus or press and hold also works."}</span>
           </button>
         </div>
       ) : phase === "finished" && challenge && attempt ? (
@@ -509,9 +532,9 @@ export function DailyGameBoard({ api = dailyGameApi }: DailyGameBoardProps) {
             {milestoneScore ? <span className="milestone-wave-label" aria-hidden="true">{milestoneScore} names</span> : null}
             <h2 className="sr-only">Your verified answers</h2>
             {acceptedAnswers.length > 0 ? <ol className="answers-list">{acceptedAnswers.map((answer) => <li className={`${answer.id === freshAnswerId ? "is-fresh" : ""}${answer.id === highlightedDuplicateId ? " is-duplicate-target" : ""}`.trim()} data-answer-id={answer.id} data-team-code={answer.teamCode} data-testid={`answer-row-${answer.id}`} key={answer.id} style={getTeamAccentStyle(answer.teamCode)}><AcceptedIcon /><strong>{answer.canonicalText}</strong><span className="answer-icon-slot" aria-label={`Team ${answer.teamCode}`}>{answer.teamCode}</span></li>)}</ol> : null}
-            {phase === "playing" ? <form className="note-entry" onSubmit={handleSubmit}><label className="sr-only" htmlFor="answer-input">Type an NBA player’s name</label><input ref={inputRef} id="answer-input" name="answer" type="text" value={inputValue} onChange={handleInputChange} placeholder="Type a full name or unique last name…" autoComplete="off" autoCapitalize="words" spellCheck="false" maxLength={80} />{freshAnswer ? <span className="entry-success" style={getTeamAccentStyle(freshAnswer.teamCode)} aria-hidden="true"><AcceptedIcon /></span> : null}</form> : <div className="ink-freeze" aria-hidden="true"><span /></div>}
+            {phase === "playing" ? <form className={`note-entry${isAnswerChecking ? " is-checking" : ""}`} aria-busy={isAnswerChecking} onSubmit={handleSubmit}><label className="sr-only" htmlFor="answer-input">Type an NBA player’s name</label><input ref={inputRef} id="answer-input" name="answer" type="text" value={inputValue} onChange={handleInputChange} placeholder="Type a full name or unique last name…" autoComplete="off" autoCapitalize="words" spellCheck="false" maxLength={80} />{freshAnswer ? <span className="entry-success" style={getTeamAccentStyle(freshAnswer.teamCode)} aria-hidden="true"><AcceptedIcon /></span> : isAnswerChecking ? <span className="entry-checking" aria-hidden="true"><span /></span> : null}</form> : <div className="ink-freeze" aria-hidden="true"><span /></div>}
           </section>
-          <div className={`feedback${feedback ? ` is-${feedback.kind}` : ""}`} role="status" aria-live="polite" aria-atomic="true">{feedback?.kind === "accepted" ? <AcceptedIcon /> : null}<span>{feedback?.message ?? (phase === "playing" ? "Names are checked securely as you type." : "Finishing your verified board…")}</span></div>
+          <div className={`feedback${feedback ? ` is-${feedback.kind}` : ""}`} role="status" aria-live="polite" aria-atomic="true">{feedback?.kind === "accepted" ? <AcceptedIcon /> : null}<span>{feedback?.message ?? (phase === "playing" ? (isAnswerChecking ? "Checking securely…" : "Names are checked securely as you type.") : "Finishing your verified board…")}</span></div>
         </div>
       )}
 
