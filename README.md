@@ -4,7 +4,7 @@ NameMore is a fast-paced, category-first recall platform where players try to na
 
 ## Current Status
 
-Phases 1–7 are complete and Preview-verified. **Phase 8A: Room Abuse Foundation** is in progress on non-production infrastructure; Production remains untouched.
+Phases 1–7 and **Phase 8A: Room Abuse Foundation** are complete and Preview-verified. Phase 8 production hardening remains in progress; Production is untouched.
 
 **Current branch:** `codex/phase-8a-abuse-foundation`, created from the completed Phase 7C7 branch. `main` has not been changed or merged.
 
@@ -59,6 +59,8 @@ Phase 7C7 adds a bounded “Report a category problem” dialog to reviewed prac
 Phase 7C7 application commit `32865ed0d2e70f6dbdd6b08d4eedd316e777de50` (`Build private category moderation`) is pushed to `origin/codex/phase-7c7-category-moderation`. Exact-source protected Git Preview `dpl_hVFLHCabetfByj2EdQiSaPJKRZgw` at `https://namemore-3aez7s8vh-namemore.vercel.app` was verified `READY`, source `git`, target null, and sourced from that exact commit. The safe ordinary-user moderation API returned HTTP 200 with `authorized: false`; build-error, runtime-error, and 5xx scans were empty. The protected HTML routes remain behind Vercel Authentication. Production and `main` are untouched.
 
 Phase 8A adds a private, RLS-enabled, deny-all action-event ledger and transaction-safe rolling limits of five room creations per hour and thirty valid room-join requests per ten minutes per anonymous identity. Join failures return a committed internal rejection payload so missing-code guesses count even when no room exists; the Next.js boundary converts that payload into the existing safe 404/403/409 contracts or a new HTTP 429. Events older than 24 hours self-prune during bounded actions. The existing room hostile-client suite and a dedicated abuse suite pass against the non-production database, and all disposable rooms, identities linked to the test events, and event rows were removed after reviewed counts restored the 17-room/35-player baseline.
+
+Phase 8A application commit `950b485c855c500485b042747dbef553a32336a9` (`Harden anonymous room request limits`) is pushed to `origin/codex/phase-8a-abuse-foundation`. Exact-source protected Git Preview `dpl_Dnzw28ABusDiN8S2uB9qHTKJ7M2a` at `https://namemore-fbpkbqadw-namemore.vercel.app` is `READY`, `target: preview`, and sourced from that commit. Protected homepage, room, and daily-status requests returned HTTP 200; runtime error/fatal/5xx scans were empty; the Vercel project still has zero Production deployments.
 
 Supabase project `namemore` (`hutmxxlicxeaovoeqbwg`) was explicitly confirmed non-production. Anonymous sign-in is enabled. Twenty-three repository migrations now provide 418 private canonical answers and 801 aliases across the immutable NBA and Chemical Elements versions, empty deny-all versioned bank/review/publication/correction/moderation/abuse-event tables after QA, a UTC schedule through 2026-12-31, immutable display names, strict control-character rejection, answer-check/draft-creation/report/room-action burst controls, private per-player Realtime topics, thirty-six narrow gameplay/status/discovery/draft/review/bank/publishing/moderation RPC signatures plus one Realtime authorization helper. Vercel contains only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, scoped to Preview; Production variables were not changed.
 
