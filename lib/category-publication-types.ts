@@ -1,4 +1,5 @@
 import type { CategoryBankPayload } from "@/lib/category-bank-types";
+import type { CategoryReportReason } from "@/lib/category-moderation-types";
 
 export type CategoryPublisherStatusPayload = {
   serverNow: string;
@@ -39,6 +40,13 @@ export type CategoryPublicationCorrection = {
   successorPublished: boolean;
 };
 
+export type CategoryPublicationModerationEscalation = {
+  reportId: string;
+  reason: CategoryReportReason;
+  summary: string;
+  decidedAt: string;
+};
+
 export type CategoryPublicationRelease = {
   publicationId: string;
   draftId: string;
@@ -63,6 +71,7 @@ export type CategoryPublicationRelease = {
   availability: "practice";
   competitiveEligible: false;
   correctionRequest: CategoryPublicationCorrection | null;
+  moderationEscalation: CategoryPublicationModerationEscalation | null;
 };
 
 export type CategoryPublicationCorrectionInput = {

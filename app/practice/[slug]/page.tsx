@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { GameBoard } from "@/components/GameBoard";
+import { CategoryReportDialog } from "@/components/CategoryReportDialog";
 import {
   getPracticeCategory,
 } from "@/lib/chemical-elements";
@@ -23,6 +24,7 @@ export default async function PracticeCategoryPage({
   return (
     <main className="arena-shell">
       <GameBoard category={category} />
+      <CategoryReportDialog categorySlug={category.slug} categoryTitle={category.title} />
     </main>
   );
 }

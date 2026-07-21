@@ -322,6 +322,14 @@ function PublishedRelease({
         <EvidenceRow label="Answer bank" value={`${release.answerCount} canonical answers · ${release.acceptedNameCount} accepted names`} />
         <EvidenceRow label="Competitive eligibility" value="Not eligible · Practice only" />
       </section>
+      {release.moderationEscalation ? <section className="release-moderation-escalation">
+        <span aria-hidden="true">!</span>
+        <div>
+          <h3>Moderator review requested</h3>
+          <p>{release.moderationEscalation.summary}</p>
+          <small>The live category is unchanged. Use the separate correction request below if a new reviewed version is needed.</small>
+        </div>
+      </section> : null}
       {release.current ? <section className="release-correction">
         <h3>Request a correction</h3>
         <p>The current practice stays live while a new revision is independently reviewed.</p>

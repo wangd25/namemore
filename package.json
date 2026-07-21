@@ -13,6 +13,7 @@
     "test:category-draft-hostile-client": "node scripts/category-draft-hostile-client-check.mjs",
     "test:category-review-hostile-client": "node scripts/category-review-hostile-client-check.mjs",
     "test:category-bank-hostile-client": "node scripts/category-bank-hostile-client-check.mjs",
+    "test:category-moderation-hostile-client": "node scripts/category-moderation-hostile-client-check.mjs",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",

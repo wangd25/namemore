@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   parseCategoryPublicationPayload,
+  parseCategoryPublicationRelease,
   parseCategoryPublicationQueuePayload,
   parseCategoryPublicationCorrectionRequest,
   parseCategoryPublicationRequest,
@@ -99,5 +100,48 @@ describe("category publication contracts", () => {
     expect(parseCategoryPublicationPayload(payload)).toEqual(payload);
     expect(() => parseCategoryPublicationPayload({ ...payload, competitiveEligible: true })).toThrow("publication");
     expect(() => parseCategoryPublicationPayload({ ...payload, acceptedNameCount: 3 })).toThrow("count");
+  });
+
+  it("accepts only a sanitized moderation escalation on a release", () => {
+    const release = {
+      publicationId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      draftId: approvedBank.draftId,
+      bankRevision: 2,
+      slug: "european-capitals",
+      title: "European capitals",
+      prompt: approvedBank.prompt,
+      summary: "A reviewed local-practice bank for European capitals.",
+      coverageNote: "Sovereign national capitals only.",
+      categoryVersion: 1,
+      snapshotDate: "2026-07-21",
+      timeLimitSeconds: 90,
+      sourceLabel: "United Nations geographic names",
+      sourceUrl: "https://example.org/source",
+      versionNote: "Corrected reviewed snapshot.",
+      answerCount: 2,
+      acceptedNameCount: 4,
+      publishedAt: "2026-07-21T18:02:00.000Z",
+      current: true,
+      supersedesPublicationId: null,
+      supersededByPublicationId: null,
+      availability: "practice",
+      competitiveEligible: false,
+      correctionRequest: null,
+      moderationEscalation: {
+        reportId: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+        reason: "coverage-or-wording",
+        summary: "Check the report against the cited source before preparing a correction.",
+        decidedAt: "2026-07-21T18:04:00.000Z",
+      },
+    };
+    expect(parseCategoryPublicationRelease(release).moderationEscalation).toEqual(release.moderationEscalation);
+    expect(() => parseCategoryPublicationRelease({
+      ...release,
+      moderationEscalation: { ...release.moderationEscalation, reporterUserId: "private" },
+    })).toThrow("escalation");
+    expect(() => parseCategoryPublicationRelease({
+      ...release,
+      moderationEscalation: { ...release.moderationEscalation, reason: "hide-category" },
+    })).toThrow("escalation");
   });
 });

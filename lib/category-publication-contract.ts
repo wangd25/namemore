@@ -7,11 +7,19 @@ import type {
   CategoryPublicationRelease,
   CategoryPublisherStatusPayload,
 } from "@/lib/category-publication-types";
+import type { CategoryReportReason } from "@/lib/category-moderation-types";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const controlCharacters = /[\u0000-\u001f\u007f]/;
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+const reportReasons = new Set([
+  "answer-bank-accuracy",
+  "coverage-or-wording",
+  "provenance-or-copyright",
+  "offensive-or-unsafe",
+  "other",
+]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -141,6 +149,24 @@ export function parseCategoryPublicationRelease(value: unknown): CategoryPublica
       successorPublished: value.correctionRequest.successorPublished,
     };
   }
+  let moderationEscalation = null;
+  if (value.moderationEscalation !== null) {
+    if (!isRecord(value.moderationEscalation)
+      || "reporterUserId" in value.moderationEscalation
+      || "moderatorUserId" in value.moderationEscalation
+      || typeof value.moderationEscalation.reportId !== "string"
+      || !uuidPattern.test(value.moderationEscalation.reportId)
+      || typeof value.moderationEscalation.reason !== "string"
+      || !reportReasons.has(value.moderationEscalation.reason)) {
+      throw new Error("Invalid moderation escalation.");
+    }
+    moderationEscalation = {
+      reportId: value.moderationEscalation.reportId,
+      reason: value.moderationEscalation.reason as CategoryReportReason,
+      summary: readBoundedString(value.moderationEscalation, "summary", 12, 600),
+      decidedAt: readTimestamp(value.moderationEscalation.decidedAt),
+    };
+  }
   const bankRevision = readInteger(value.bankRevision, 1);
   const categoryVersion = readInteger(value.categoryVersion, 1);
   const answerCount = readInteger(value.answerCount, 2);
@@ -168,6 +194,7 @@ export function parseCategoryPublicationRelease(value: unknown): CategoryPublica
     availability: "practice",
     competitiveEligible: false,
     correctionRequest,
+    moderationEscalation,
   };
 }
 

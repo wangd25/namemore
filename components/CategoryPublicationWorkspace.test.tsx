@@ -63,6 +63,7 @@ const release = {
   availability: "practice" as const,
   competitiveEligible: false as const,
   correctionRequest: null,
+  moderationEscalation: null,
 };
 
 describe("CategoryPublicationWorkspace", () => {
@@ -119,6 +120,25 @@ describe("CategoryPublicationWorkspace", () => {
     expect(await screen.findByText("Correction pending")).toBeInTheDocument();
     expect(screen.getByText(/current practice release remains live/)).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(`/api/categories/banks/publications/${release.publicationId}/corrections`, expect.objectContaining({ method: "POST" }));
+  });
+
+  it("shows only the moderator's sanitized publisher summary", () => {
+    render(<CategoryPublicationWorkspace initialPayload={{
+      ...payload,
+      banks: [],
+      releases: [{
+        ...release,
+        moderationEscalation: {
+          reportId: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+          reason: "answer-bank-accuracy",
+          summary: "Check the documented spelling before preparing a replacement revision.",
+          decidedAt: "2026-07-21T18:04:00.000Z",
+        },
+      }],
+    }} />);
+    expect(screen.getByRole("heading", { name: "Moderator review requested" })).toBeInTheDocument();
+    expect(screen.getByText(/documented spelling/)).toBeInTheDocument();
+    expect(screen.getByText(/live category is unchanged/)).toBeInTheDocument();
   });
 
   it("fails closed for ordinary users", () => {
