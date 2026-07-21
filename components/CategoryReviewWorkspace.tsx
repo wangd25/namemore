@@ -141,6 +141,7 @@ export function CategoryReviewWorkspace({
             ))}
           </div>
           {payload.drafts.length === 0 ? <p className="review-queue-empty">No drafts are pending review.</p> : null}
+          <Link className="bank-back-link" href="/review/banks">Build approved banks</Link>
         </aside>
 
         <section className="review-detail">

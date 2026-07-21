@@ -66,6 +66,14 @@ const reviewerAuthorityMigration = readFileSync(
   resolve(process.cwd(), "supabase/migrations/20260721061214_add_phase7c2_reviewer_authority.sql"),
   "utf8",
 );
+const answerBankVersionsMigration = readFileSync(
+  resolve(process.cwd(), "supabase/migrations/20260721172046_add_phase7c3_versioned_answer_banks.sql"),
+  "utf8",
+);
+const answerBankIndexMigration = readFileSync(
+  resolve(process.cwd(), "supabase/migrations/20260721173323_add_phase7c3_bank_foreign_key_indexes.sql"),
+  "utf8",
+);
 
 describe("server-authoritative daily migration", () => {
   it("keeps the answer bank private and exposes only narrow RPCs", () => {
@@ -305,5 +313,42 @@ describe("server-authoritative daily migration", () => {
     expect(reviewerAuthorityMigration).toContain("grant execute on function public.category_review_queue() to authenticated");
     expect(reviewerAuthorityMigration).toContain("grant execute on function public.category_review_decide(uuid, text, text) to authenticated");
     expect(reviewerAuthorityMigration).toContain("revoke all on function public.category_review_decide(uuid, text, text) from public, anon, authenticated");
+  });
+
+  it("adds deny-all versioned bank storage with immutable review-ready snapshots", () => {
+    expect(answerBankVersionsMigration).toContain("create table private.category_answer_bank_versions");
+    expect(answerBankVersionsMigration).toContain("create table private.category_answer_bank_answers");
+    expect(answerBankVersionsMigration).toContain("create table private.category_answer_bank_aliases");
+    expect(answerBankVersionsMigration).toContain("unique (category_draft_id, revision)");
+    expect(answerBankVersionsMigration).toContain("where status = 'editing'");
+    expect(answerBankVersionsMigration).toContain("status = 'review-ready', updated_at = v_now, submitted_at = v_now");
+    expect(answerBankVersionsMigration).toContain("competitive_eligible boolean not null default false check (not competitive_eligible)");
+    expect(answerBankVersionsMigration).not.toMatch(/grant\s+(select|insert|update|delete)/i);
+  });
+
+  it("normalizes and collision-checks all canonical answers and aliases on the server", () => {
+    expect(answerBankVersionsMigration).toContain("create extension if not exists unaccent with schema extensions");
+    expect(answerBankVersionsMigration).toContain("create function private.category_bank_normalize(p_value text)");
+    expect(answerBankVersionsMigration).toContain("normalize(p_value, NFKD)");
+    expect(answerBankVersionsMigration).toContain("normalized_value = any(seen_values)");
+    expect(answerBankVersionsMigration).toContain("primary key (bank_version_id, normalized_alias)");
+    expect(answerBankVersionsMigration).toContain("jsonb_array_length(p_answers) not between 1 and 500");
+    expect(answerBankVersionsMigration).toContain("jsonb_array_length(answer_value -> 'aliases') > 20");
+  });
+
+  it("requires reviewer authority and approved non-owned scope for narrow bank RPCs", () => {
+    expect(answerBankVersionsMigration.match(/security definer\nset search_path = ''/g)).toHaveLength(5);
+    expect(answerBankVersionsMigration.match(/where reviewer\.user_id = current_user_id and reviewer\.active/g)).toHaveLength(5);
+    expect(answerBankVersionsMigration).toContain("draft.user_id <> current_user_id");
+    expect(answerBankVersionsMigration).toContain("draft.review_status = 'scope-approved'");
+    expect(answerBankVersionsMigration).toContain("grant execute on function public.category_bank_queue() to authenticated");
+    expect(answerBankVersionsMigration).toContain("grant execute on function public.category_bank_save(uuid, date, integer, text, text, text, jsonb) to authenticated");
+    expect(answerBankVersionsMigration).not.toContain("competitive_eligible = true");
+    expect(answerBankVersionsMigration).not.toMatch(/insert into private\.category_(versions|answers|answer_aliases|discovery_items)/i);
+  });
+
+  it("covers the answer-bank foreign keys used by revision copying and ownership cleanup", () => {
+    expect(answerBankIndexMigration).toContain("category_answer_bank_aliases_answer_idx");
+    expect(answerBankIndexMigration).toContain("category_answer_bank_versions_editor_idx");
   });
 });

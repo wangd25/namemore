@@ -1229,6 +1229,361 @@ button {
   outline-offset: 3px;
 }
 
+.bank-workspace {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  width: calc(100% - 36px);
+  min-height: calc(100svh - 102px);
+  grid-template-columns: minmax(220px, 0.78fr) minmax(560px, 2.08fr) minmax(240px, 0.88fr);
+  margin: 0 18px 18px;
+  overflow: hidden;
+  border: 1px solid #d9e1eb;
+  border-radius: 22px;
+  background: #ffffff;
+}
+
+.bank-rail,
+.bank-detail,
+.bank-boundary {
+  min-width: 0;
+  padding: clamp(25px, 2.8vw, 40px);
+}
+
+.bank-rail {
+  padding-right: 18px;
+  padding-left: 18px;
+  border-right: 1px solid #e0e6ee;
+}
+
+.bank-rail h1,
+.bank-detail h2,
+.bank-boundary h2 {
+  margin: 0;
+  color: #101319;
+  font-weight: 680;
+  letter-spacing: -0.045em;
+}
+
+.bank-rail h1,
+.bank-boundary h2 {
+  font-size: 1.08rem;
+}
+
+.bank-rail-list {
+  display: grid;
+  gap: 6px;
+  margin-top: 22px;
+}
+
+.bank-rail-list button {
+  position: relative;
+  display: grid;
+  width: 100%;
+  min-height: 72px;
+  grid-template-columns: minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 10px 11px 15px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #202631;
+  text-align: left;
+}
+
+.bank-rail-list button::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  border-radius: 3px;
+  background: transparent;
+  content: "";
+}
+
+.bank-rail-list button:hover,
+.bank-rail-list button.is-selected {
+  border-color: #cbdcf4;
+  background: #f4f8fd;
+}
+
+.bank-rail-list button.is-selected::before {
+  background: #126ff4;
+}
+
+.bank-rail-list button > span {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.bank-rail-list strong {
+  overflow: hidden;
+  font-size: 0.8rem;
+  font-weight: 620;
+  letter-spacing: -0.025em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bank-rail-list small,
+.bank-empty {
+  color: #7f8998;
+  font-size: 0.66rem;
+}
+
+.bank-rail-list button.is-selected small {
+  color: #5378ac;
+}
+
+.bank-rail-list svg {
+  width: 16px;
+  fill: none;
+  stroke: #8a94a2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.4;
+}
+
+.bank-empty {
+  margin: 24px 8px 0;
+  line-height: 1.5;
+}
+
+.bank-back-link {
+  display: inline-block;
+  margin: 28px 8px 0;
+  color: #126ff4;
+  font-size: 0.69rem;
+  font-weight: 650;
+  text-underline-offset: 4px;
+}
+
+.bank-detail {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  padding-right: clamp(32px, 4vw, 60px);
+  padding-left: clamp(32px, 4vw, 60px);
+}
+
+.bank-detail h2 {
+  font-size: clamp(2rem, 3vw, 3rem);
+  line-height: 1.02;
+}
+
+.bank-form {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 30px;
+}
+
+.bank-form label {
+  display: grid;
+  gap: 7px;
+  color: #262e3a;
+  font-size: 0.73rem;
+  font-weight: 650;
+}
+
+.bank-form input,
+.bank-form textarea {
+  width: 100%;
+  padding: 11px 13px;
+  border: 1px solid #cfd8e4;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #11151b;
+  font: inherit;
+  font-size: 0.79rem;
+  font-weight: 470;
+  line-height: 1.45;
+  outline: none;
+}
+
+.bank-form textarea {
+  min-height: 70px;
+  resize: vertical;
+}
+
+.bank-form .bank-answer-editor {
+  min-height: 178px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  line-height: 1.65;
+}
+
+.bank-form input:focus,
+.bank-form textarea:focus {
+  border-color: #126ff4;
+  box-shadow: 0 0 0 4px rgba(18, 111, 244, 0.09);
+}
+
+.bank-form input[readonly],
+.bank-form textarea[readonly],
+.bank-form input:disabled {
+  background: #f7f9fc;
+  color: #465261;
+  opacity: 1;
+}
+
+.bank-field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.bank-helper,
+.bank-validation {
+  color: #7b8695;
+  font-size: 0.67rem;
+  font-weight: 470;
+  line-height: 1.45;
+}
+
+.bank-helper {
+  margin-top: -4px;
+}
+
+.bank-validation {
+  margin-top: -8px;
+}
+
+.bank-validation {
+  padding: 10px 12px;
+  border: 1px solid #d7e4f5;
+  border-radius: 9px;
+  background: #f6faff;
+  color: #3c679b;
+}
+
+.bank-validation.has-errors {
+  border-color: #efc4c8;
+  background: #fff8f8;
+  color: #a6323d;
+}
+
+.bank-validation ul {
+  margin: 7px 0 0;
+  padding-left: 18px;
+}
+
+.bank-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 18px;
+  border-top: 1px solid #e0e6ee;
+}
+
+.bank-actions.is-ready {
+  grid-template-columns: minmax(210px, 0.5fr);
+  justify-content: end;
+}
+
+.bank-actions button,
+.bank-start button {
+  min-height: 48px;
+  border: 1px solid #aebfd5;
+  border-radius: 11px;
+  background: #ffffff;
+  color: #126ff4;
+  font-size: 0.75rem;
+  font-weight: 650;
+  transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+}
+
+.bank-actions .bank-freeze,
+.bank-start button {
+  border-color: #126ff4;
+  background: #126ff4;
+  color: #ffffff;
+  box-shadow: 0 10px 22px rgba(18, 111, 244, 0.17);
+}
+
+.bank-actions button:disabled,
+.bank-start button:disabled {
+  opacity: 0.56;
+}
+
+.bank-start {
+  display: grid;
+  min-height: 460px;
+  place-content: center;
+  text-align: center;
+}
+
+.bank-start h3 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.bank-start p {
+  max-width: 410px;
+  margin: 12px auto 0;
+  color: #657183;
+  font-size: 0.8rem;
+  line-height: 1.55;
+}
+
+.bank-start button {
+  min-width: 150px;
+  justify-self: center;
+  margin-top: 24px;
+}
+
+.bank-boundary {
+  border-left: 1px solid #e0e6ee;
+}
+
+.bank-boundary p {
+  margin: 22px 0 0;
+  color: #566172;
+  font-size: 0.76rem;
+  line-height: 1.6;
+}
+
+.bank-boundary ul {
+  display: grid;
+  gap: 19px;
+  margin: 32px 0 0;
+  padding: 28px 0 0;
+  border-top: 1px solid #d9e1eb;
+  list-style: none;
+}
+
+.bank-boundary li {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  color: #424c5a;
+  font-size: 0.68rem;
+  line-height: 1.4;
+}
+
+.bank-boundary li span {
+  display: grid;
+  width: 21px;
+  height: 21px;
+  place-items: center;
+  border: 1px solid #8290a2;
+  border-radius: 50%;
+  color: #435169;
+  font-size: 0.63rem;
+}
+
+.bank-rail-list button:focus-visible,
+.bank-actions button:focus-visible,
+.bank-start button:focus-visible,
+.bank-back-link:focus-visible {
+  outline: 3px solid rgba(18, 111, 244, 0.19);
+  outline-offset: 3px;
+}
+
 @media (max-width: 1080px) {
   .ambient-card-2,
   .ambient-card-3 {
@@ -1293,6 +1648,34 @@ button {
     grid-template-columns: 1fr 1fr;
     gap: 12px 18px;
     margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .bank-workspace {
+    grid-template-columns: minmax(210px, 0.7fr) minmax(500px, 1.7fr);
+  }
+
+  .bank-boundary {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 180px minmax(0, 1fr) minmax(360px, 1.2fr);
+    align-items: start;
+    gap: 22px;
+    padding-top: 26px;
+    padding-bottom: 26px;
+    border-top: 1px solid #e0e6ee;
+    border-left: 0;
+  }
+
+  .bank-boundary p,
+  .bank-boundary ul {
+    margin: 0;
+  }
+
+  .bank-boundary ul {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 18px;
     padding: 0;
     border: 0;
   }
@@ -1549,6 +1932,88 @@ button {
     margin-top: 24px;
     padding-top: 22px;
     border-top: 1px solid rgba(129, 158, 198, 0.34);
+  }
+
+  .bank-workspace {
+    width: calc(100% - 16px);
+    min-height: 0;
+    grid-template-columns: 1fr;
+    margin: 0 8px 8px;
+    overflow: visible;
+    border-radius: 17px;
+  }
+
+  .bank-rail,
+  .bank-detail,
+  .bank-boundary {
+    padding: 22px 18px;
+  }
+
+  .bank-rail {
+    border-right: 0;
+    border-bottom: 1px solid #e0e6ee;
+  }
+
+  .bank-rail-list {
+    display: flex;
+    margin-top: 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .bank-rail-list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .bank-rail-list button {
+    min-width: min(250px, 76vw);
+  }
+
+  .bank-detail h2 {
+    max-width: 335px;
+    font-size: clamp(2rem, 9vw, 3rem);
+  }
+
+  .bank-form {
+    margin-top: 30px;
+  }
+
+  .bank-field-grid,
+  .bank-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .bank-freeze {
+    order: 1;
+  }
+
+  .bank-validate {
+    order: 2;
+  }
+
+  .bank-save {
+    order: 3;
+  }
+
+  .bank-actions.is-ready {
+    grid-template-columns: 1fr;
+  }
+
+  .bank-boundary {
+    grid-column: auto;
+    display: block;
+    border-left: 0;
+  }
+
+  .bank-boundary p {
+    margin-top: 17px;
+  }
+
+  .bank-boundary ul {
+    grid-template-columns: 1fr;
+    margin-top: 24px;
+    padding-top: 22px;
+    border-top: 1px solid #d9e1eb;
   }
 }
 
