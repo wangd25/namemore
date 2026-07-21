@@ -28,6 +28,15 @@ function todayUtc() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function getBankStatusLabel(bank: CategoryBankPayload | null, fallback: "not-started" | "editing" | "review-ready") {
+  if (!bank || fallback === "not-started") return "Not started";
+  if (bank.status === "editing") return "Editing";
+  if (bank.reviewStatus === "pending") return "Awaiting decision";
+  if (bank.reviewStatus === "changes-requested") return "Correction requested";
+  if (bank.reviewStatus === "approved") return "Bank approved";
+  return "Bank rejected";
+}
+
 export function CategoryBankWorkspace({ initialPayload }: { initialPayload: CategoryBankQueuePayload | null }) {
   const [payload, setPayload] = useState(initialPayload);
   const [selectedId, setSelectedId] = useState(initialPayload?.drafts[0]?.draftId ?? null);
@@ -75,7 +84,7 @@ export function CategoryBankWorkspace({ initialPayload }: { initialPayload: Cate
         ...draft,
         revision: nextBank.revision,
         status: nextBank.status,
-        available: true,
+        available: nextBank.status === "editing" || nextBank.reviewStatus === "changes-requested",
         bank: nextBank,
       } : draft),
     } : current);
@@ -196,13 +205,13 @@ export function CategoryBankWorkspace({ initialPayload }: { initialPayload: Cate
           <div className="bank-rail-list">
             {payload.drafts.map((draft) => (
               <button key={draft.draftId} type="button" className={draft.draftId === selectedId ? "is-selected" : undefined} onClick={() => selectDraft(draft.draftId)} aria-current={draft.draftId === selectedId ? "true" : undefined}>
-                <span><strong>{getDraftLabel(draft.prompt)}</strong><small>{draft.revision ? `Revision ${draft.revision} · ${draft.status === "editing" ? "Editing" : "Ready for review"}` : "Not started"}</small></span>
+                <span><strong>{getDraftLabel(draft.prompt)}</strong><small>{draft.revision ? `Revision ${draft.revision} · ${getBankStatusLabel(draft.bank, draft.status)}` : "Not started"}</small></span>
                 <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 4 6 6-6 6" /></svg>
               </button>
             ))}
           </div>
           {payload.drafts.length === 0 ? <p className="bank-empty">No scope-approved categories are waiting for bank work.</p> : null}
-          <Link className="bank-back-link" href="/review">Return to review queue</Link>
+          <div className="bank-rail-links"><Link className="bank-back-link" href="/review/banks/decisions">Review frozen banks</Link><Link className="bank-back-link" href="/review">Return to scope queue</Link></div>
         </aside>
 
         <section className="bank-detail">
@@ -227,7 +236,7 @@ export function CategoryBankWorkspace({ initialPayload }: { initialPayload: Cate
                   <button className="bank-save" type="submit" disabled={operation !== null}>{operation === "saving" ? "Saving…" : "Save draft"}</button>
                   <button className="bank-validate" type="button" disabled={operation !== null} onClick={() => setValidationVisible(true)}>Validate bank</button>
                   <button className="bank-freeze" type="button" disabled={operation !== null} onClick={() => void freezeDraft()}>{operation === "freezing" ? "Freezing…" : "Freeze for review"}</button>
-                </div> : <div className="bank-actions is-ready"><button className="bank-freeze" type="button" disabled={operation !== null} onClick={() => void postBank(`/api/categories/banks/${selected.draftId}/revisions`, "revising")}>{operation === "revising" ? "Starting…" : "Start correction revision"}</button></div>}
+                </div> : bank.reviewStatus === "changes-requested" && selected.available ? <div className="bank-review-outcome is-changes-requested"><h3>Correction requested</h3><p>{bank.latestReview?.note}</p><button className="bank-freeze" type="button" disabled={operation !== null} onClick={() => void postBank(`/api/categories/banks/${selected.draftId}/revisions`, "revising")}>{operation === "revising" ? "Starting…" : "Start correction revision"}</button></div> : <BankReviewOutcome bank={bank} />}
               </form>
             ) : (
               <div className="bank-start"><h3>{selected.available ? "Start the first versioned bank." : "This bank is already being edited."}</h3><p>{selected.available ? "The approved prompt stays fixed while you add provenance, canonical answers, and explicit aliases." : "Another authorized reviewer owns the current editing revision."}</p>{selected.available ? <button type="button" disabled={operation !== null} onClick={() => void postBank(`/api/categories/banks/${selected.draftId}/open`, "opening")}>{operation === "opening" ? "Opening…" : "Begin bank"}</button> : null}</div>
@@ -250,4 +259,11 @@ export function CategoryBankWorkspace({ initialPayload }: { initialPayload: Cate
 
 function BankHeader() {
   return <header className="discovery-header"><Link className="brand" href="/">NameMore</Link><nav aria-label="Primary navigation"><Link href="/daily">Daily</Link><Link href="/room">Private rooms</Link></nav></header>;
+}
+
+function BankReviewOutcome({ bank }: { bank: CategoryBankPayload }) {
+  if (bank.reviewStatus === "pending") return <div className="bank-review-outcome is-pending"><h3>Awaiting independent decision</h3><p>This frozen revision cannot be edited while another reviewer checks its evidence and every answer.</p></div>;
+  if (bank.reviewStatus === "approved") return <div className="bank-review-outcome is-approved"><h3>Bank approved</h3><p>{bank.latestReview?.note}</p><small>Approval does not publish this category or make it playable.</small></div>;
+  if (bank.reviewStatus === "rejected") return <div className="bank-review-outcome is-rejected"><h3>Bank rejected</h3><p>{bank.latestReview?.note}</p><small>The frozen revision remains private and unplayable.</small></div>;
+  return <div className="bank-review-outcome is-changes-requested"><h3>Correction assigned to another editor</h3><p>The frozen revision remains unchanged while its original editor prepares a correction.</p></div>;
 }

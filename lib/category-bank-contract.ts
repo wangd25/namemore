@@ -4,6 +4,8 @@ import type {
   CategoryBankPayload,
   CategoryBankQueueItem,
   CategoryBankQueuePayload,
+  CategoryBankReviewDecision,
+  CategoryBankReviewStatus,
   CategoryBankSaveInput,
   CategoryBankStatus,
   CategoryBankTextValidation,
@@ -13,6 +15,8 @@ const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 const controlCharacters = /[\u0000-\u001f\u007f]/;
 const statuses = new Set<CategoryBankStatus>(["editing", "review-ready"]);
+const reviewStatuses = new Set<CategoryBankReviewStatus>(["unreviewed", "pending", "changes-requested", "approved", "rejected"]);
+const reviewDecisions = new Set<CategoryBankReviewDecision>(["request-correction", "reject", "approve"]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -59,16 +63,36 @@ function parseAnswer(value: unknown): CategoryBankAnswer {
   return { canonicalText, aliases };
 }
 
+function parseLatestReview(value: unknown, revision: number) {
+  if (value === null) return null;
+  if (!isRecord(value)) throw new Error("Invalid bank review.");
+  const decision = readString(value, "decision");
+  const reviewRevision = readPositiveInteger(value, "revision");
+  const note = readString(value, "note");
+  if (!reviewDecisions.has(decision as CategoryBankReviewDecision) || reviewRevision !== revision || note.length > 600) {
+    throw new Error("Invalid bank review.");
+  }
+  return {
+    decision: decision as CategoryBankReviewDecision,
+    note,
+    revision: reviewRevision,
+    decidedAt: readTimestamp(value, "decidedAt"),
+  };
+}
+
 export function parseCategoryBankPayload(value: unknown): CategoryBankPayload {
   if (!isRecord(value) || !Array.isArray(value.answers) || value.competitiveEligible !== false) {
     throw new Error("Invalid category bank payload.");
   }
   const draftId = readString(value, "draftId");
   const status = readString(value, "status");
+  const reviewStatus = readString(value, "reviewStatus");
+  const revision = readPositiveInteger(value, "revision");
   const snapshotDate = readNullableString(value, "snapshotDate");
   const submittedAt = value.submittedAt === null ? null : readTimestamp(value, "submittedAt");
   const timeLimitSeconds = value.timeLimitSeconds;
-  if (!uuidPattern.test(draftId) || !statuses.has(status as CategoryBankStatus)) {
+  if (!uuidPattern.test(draftId) || !statuses.has(status as CategoryBankStatus)
+    || !reviewStatuses.has(reviewStatus as CategoryBankReviewStatus)) {
     throw new Error("Invalid category bank payload.");
   }
   if (snapshotDate !== null && (!datePattern.test(snapshotDate) || Number.isNaN(Date.parse(`${snapshotDate}T00:00:00Z`)))) {
@@ -77,14 +101,29 @@ export function parseCategoryBankPayload(value: unknown): CategoryBankPayload {
   if (timeLimitSeconds !== null && (!Number.isSafeInteger(timeLimitSeconds) || (timeLimitSeconds as number) < 10 || (timeLimitSeconds as number) > 600)) {
     throw new Error("Invalid timeLimitSeconds.");
   }
-  if ((status === "editing") !== (submittedAt === null)) throw new Error("Invalid bank lifecycle.");
+  const latestReview = parseLatestReview(value.latestReview, revision);
+  const expectedDecision = reviewStatus === "changes-requested"
+    ? "request-correction"
+    : reviewStatus === "approved"
+      ? "approve"
+      : reviewStatus === "rejected"
+        ? "reject"
+        : null;
+  if ((status === "editing") !== (submittedAt === null)
+    || (status === "editing" && reviewStatus !== "unreviewed")
+    || (status === "review-ready" && reviewStatus === "unreviewed")
+    || (expectedDecision === null) !== (latestReview === null)
+    || (expectedDecision !== null && latestReview?.decision !== expectedDecision)) {
+    throw new Error("Invalid bank lifecycle.");
+  }
   return {
     draftId,
     prompt: readString(value, "prompt"),
     sourceNotes: readString(value, "sourceNotes"),
     coverageNotes: readString(value, "coverageNotes"),
-    revision: readPositiveInteger(value, "revision"),
+    revision,
     status: status as CategoryBankStatus,
+    reviewStatus: reviewStatus as CategoryBankReviewStatus,
     snapshotDate,
     timeLimitSeconds: timeLimitSeconds as number | null,
     sourceLabel: readNullableString(value, "sourceLabel"),
@@ -93,6 +132,7 @@ export function parseCategoryBankPayload(value: unknown): CategoryBankPayload {
     competitiveEligible: false,
     updatedAt: readTimestamp(value, "updatedAt"),
     submittedAt,
+    latestReview,
     answers: value.answers.map(parseAnswer),
   };
 }

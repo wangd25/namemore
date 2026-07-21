@@ -4,6 +4,15 @@ export type CategoryBankAnswer = {
 };
 
 export type CategoryBankStatus = "editing" | "review-ready";
+export type CategoryBankReviewStatus = "unreviewed" | "pending" | "changes-requested" | "approved" | "rejected";
+export type CategoryBankReviewDecision = "request-correction" | "reject" | "approve";
+
+export type CategoryBankLatestReview = {
+  decision: CategoryBankReviewDecision;
+  note: string;
+  revision: number;
+  decidedAt: string;
+};
 
 export type CategoryBankPayload = {
   draftId: string;
@@ -12,6 +21,7 @@ export type CategoryBankPayload = {
   coverageNotes: string;
   revision: number;
   status: CategoryBankStatus;
+  reviewStatus: CategoryBankReviewStatus;
   snapshotDate: string | null;
   timeLimitSeconds: number | null;
   sourceLabel: string | null;
@@ -20,6 +30,7 @@ export type CategoryBankPayload = {
   competitiveEligible: false;
   updatedAt: string;
   submittedAt: string | null;
+  latestReview: CategoryBankLatestReview | null;
   answers: CategoryBankAnswer[];
 };
 

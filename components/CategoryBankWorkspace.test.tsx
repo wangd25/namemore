@@ -13,6 +13,7 @@ const bank: CategoryBankPayload = {
   coverageNotes: "Sovereign national capitals only",
   revision: 1,
   status: "editing",
+  reviewStatus: "unreviewed",
   snapshotDate: "2026-07-21",
   timeLimitSeconds: 90,
   sourceLabel: "Official geographic list",
@@ -21,6 +22,7 @@ const bank: CategoryBankPayload = {
   competitiveEligible: false,
   updatedAt: "2026-07-21T17:00:00.000Z",
   submittedAt: null,
+  latestReview: null,
   answers: [
     { canonicalText: "Copenhagen", aliases: ["København"] },
     { canonicalText: "Lisbon", aliases: ["Lisboa"] },

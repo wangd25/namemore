@@ -21,7 +21,7 @@ export class CategoryBankServiceError extends Error {
   }
 }
 
-async function callBankRpc(name: string, args?: Record<string, unknown>): Promise<unknown> {
+export async function callCategoryBankRpc(name: string, args?: Record<string, unknown>): Promise<unknown> {
   try {
     const supabase = await createSupabaseServerClient();
     await ensureAnonymousIdentity(supabase);
@@ -53,7 +53,7 @@ async function callBankRpc(name: string, args?: Record<string, unknown>): Promis
   }
 }
 
-function parseBank(value: unknown): CategoryBankPayload {
+export function parseCategoryBankResponse(value: unknown): CategoryBankPayload {
   try {
     return parseCategoryBankPayload(value);
   } catch {
@@ -69,7 +69,7 @@ export async function getCategoryBankQueue(): Promise<CategoryBankQueuePayload> 
   const status = await getCategoryReviewerStatus();
   if (!status.authorized) return { ...status, drafts: [] };
   try {
-    return parseCategoryBankQueuePayload(await callBankRpc("category_bank_queue"));
+    return parseCategoryBankQueuePayload(await callCategoryBankRpc("category_bank_queue"));
   } catch (error) {
     if (error instanceof CategoryBankServiceError) throw error;
     throw new CategoryBankServiceError(
@@ -81,11 +81,11 @@ export async function getCategoryBankQueue(): Promise<CategoryBankQueuePayload> 
 }
 
 export async function openCategoryBank(draftId: string): Promise<CategoryBankPayload> {
-  return parseBank(await callBankRpc("category_bank_open", { p_draft_id: draftId }));
+  return parseCategoryBankResponse(await callCategoryBankRpc("category_bank_open", { p_draft_id: draftId }));
 }
 
 export async function saveCategoryBank(draftId: string, input: CategoryBankSaveInput): Promise<CategoryBankPayload> {
-  return parseBank(await callBankRpc("category_bank_save", {
+  return parseCategoryBankResponse(await callCategoryBankRpc("category_bank_save", {
     p_draft_id: draftId,
     p_snapshot_date: input.snapshotDate,
     p_time_limit_seconds: input.timeLimitSeconds,
@@ -97,9 +97,9 @@ export async function saveCategoryBank(draftId: string, input: CategoryBankSaveI
 }
 
 export async function freezeCategoryBank(draftId: string): Promise<CategoryBankPayload> {
-  return parseBank(await callBankRpc("category_bank_freeze", { p_draft_id: draftId }));
+  return parseCategoryBankResponse(await callCategoryBankRpc("category_bank_freeze", { p_draft_id: draftId }));
 }
 
 export async function startCategoryBankRevision(draftId: string): Promise<CategoryBankPayload> {
-  return parseBank(await callBankRpc("category_bank_start_revision", { p_draft_id: draftId }));
+  return parseCategoryBankResponse(await callCategoryBankRpc("category_bank_start_revision", { p_draft_id: draftId }));
 }

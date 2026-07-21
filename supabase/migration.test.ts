@@ -74,6 +74,10 @@ const answerBankIndexMigration = readFileSync(
   resolve(process.cwd(), "supabase/migrations/20260721173323_add_phase7c3_bank_foreign_key_indexes.sql"),
   "utf8",
 );
+const answerBankReviewMigration = readFileSync(
+  resolve(process.cwd(), "supabase/migrations/20260721180113_add_phase7c4_answer_bank_review_decisions.sql"),
+  "utf8",
+);
 
 describe("server-authoritative daily migration", () => {
   it("keeps the answer bank private and exposes only narrow RPCs", () => {
@@ -350,5 +354,33 @@ describe("server-authoritative daily migration", () => {
   it("covers the answer-bank foreign keys used by revision copying and ownership cleanup", () => {
     expect(answerBankIndexMigration).toContain("category_answer_bank_aliases_answer_idx");
     expect(answerBankIndexMigration).toContain("category_answer_bank_versions_editor_idx");
+  });
+
+  it("adds deny-all append-only decisions for frozen answer-bank revisions", () => {
+    expect(answerBankReviewMigration).toContain("create table private.category_answer_bank_reviews");
+    expect(answerBankReviewMigration).toContain("unique (bank_version_id)");
+    expect(answerBankReviewMigration).toContain("answers_snapshot jsonb not null");
+    expect(answerBankReviewMigration).toContain("decision in ('request-correction', 'reject', 'approve')");
+    expect(answerBankReviewMigration).toContain("revoke all on table private.category_answer_bank_reviews from public, anon, authenticated");
+    expect(answerBankReviewMigration).not.toMatch(/grant\s+(select|insert|update|delete)/i);
+  });
+
+  it("requires an independent reviewer and never widens approval into publication", () => {
+    expect(answerBankReviewMigration).toContain("version.editor_user_id <> current_user_id");
+    expect(answerBankReviewMigration).toContain("draft.user_id <> current_user_id");
+    expect(answerBankReviewMigration).toContain("selected_version.editor_user_id = current_user_id");
+    expect(answerBankReviewMigration).toContain("selected_version.bank_review_status <> 'pending'");
+    expect(answerBankReviewMigration).toContain("bank_review_status = next_review_status");
+    expect(answerBankReviewMigration).toContain("competitiveEligible', false");
+    expect(answerBankReviewMigration).not.toContain("competitive_eligible = true");
+    expect(answerBankReviewMigration).not.toMatch(/insert into private\.category_(versions|answers|answer_aliases|discovery_items)/i);
+  });
+
+  it("allows correction copies only after a request and exposes two narrow authenticated RPCs", () => {
+    expect(answerBankReviewMigration).toContain("source_version.bank_review_status <> 'changes-requested'");
+    expect(answerBankReviewMigration).toContain("source_version.editor_user_id <> current_user_id");
+    expect(answerBankReviewMigration).toContain("grant execute on function public.category_bank_review_queue() to authenticated");
+    expect(answerBankReviewMigration).toContain("grant execute on function public.category_bank_review_decide(uuid, text, text) to authenticated");
+    expect(answerBankReviewMigration.match(/security definer\nset search_path = ''/g)).toHaveLength(5);
   });
 });

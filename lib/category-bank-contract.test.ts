@@ -15,6 +15,7 @@ const bank = {
   coverageNotes: "Sovereign national capitals only",
   revision: 1,
   status: "editing",
+  reviewStatus: "unreviewed",
   snapshotDate: "2026-07-21",
   timeLimitSeconds: 90,
   sourceLabel: "Official geographic list",
@@ -23,6 +24,7 @@ const bank = {
   competitiveEligible: false,
   updatedAt: "2026-07-21T17:00:00.000Z",
   submittedAt: null,
+  latestReview: null,
   answers: [{ canonicalText: "Copenhagen", aliases: ["København"] }],
 };
 
@@ -47,6 +49,7 @@ describe("category bank contracts", () => {
   it("parses only coupled private revision lifecycle payloads", () => {
     expect(parseCategoryBankPayload(bank)).toEqual(bank);
     expect(() => parseCategoryBankPayload({ ...bank, status: "review-ready" })).toThrow("lifecycle");
+    expect(() => parseCategoryBankPayload({ ...bank, reviewStatus: "approved" })).toThrow("lifecycle");
     expect(() => parseCategoryBankPayload({ ...bank, competitiveEligible: true })).toThrow("payload");
     expect(parseCategoryBankQueuePayload({
       serverNow: "2026-07-21T17:00:01.000Z",

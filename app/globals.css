@@ -1360,6 +1360,16 @@ button {
   text-underline-offset: 4px;
 }
 
+.bank-rail-links {
+  display: grid;
+  justify-items: start;
+}
+
+.bank-rail-links .bank-back-link + .bank-back-link {
+  margin-top: 14px;
+  color: #667386;
+}
+
 .bank-detail {
   display: flex;
   min-height: 0;
@@ -1494,6 +1504,351 @@ button {
   font-size: 0.75rem;
   font-weight: 650;
   transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+}
+
+.bank-review-outcome {
+  display: grid;
+  gap: 10px;
+  margin-top: auto;
+  padding: 20px;
+  border: 1px solid #d8e0ea;
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+.bank-review-outcome h3,
+.bank-review-outcome p,
+.bank-review-outcome small {
+  margin: 0;
+}
+
+.bank-review-outcome h3 {
+  font-size: 1rem;
+}
+
+.bank-review-outcome p,
+.bank-review-outcome small {
+  color: #5c6879;
+  font-size: 0.74rem;
+  line-height: 1.55;
+}
+
+.bank-review-outcome button {
+  min-height: 48px;
+  margin-top: 6px;
+  border: 1px solid #b26b00;
+  border-radius: 11px;
+  background: #fff8e9;
+  color: #9a5a00;
+  font-size: 0.75rem;
+  font-weight: 680;
+}
+
+.bank-review-outcome.is-approved {
+  border-color: #b9ddc8;
+  background: #f3fbf6;
+}
+
+.bank-review-outcome.is-rejected {
+  border-color: #edc5c9;
+  background: #fff7f8;
+}
+
+.bank-decision-workspace {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  width: calc(100% - 36px);
+  min-height: calc(100svh - 102px);
+  grid-template-columns: minmax(250px, 0.78fr) minmax(620px, 2.05fr) minmax(250px, 0.82fr);
+  margin: 0 18px 18px;
+  overflow: hidden;
+  border: 1px solid #dde2e8;
+  border-radius: 22px;
+  background: #ffffff;
+}
+
+.bank-decision-rail,
+.bank-decision-detail,
+.bank-decision-boundary {
+  min-width: 0;
+  padding: clamp(25px, 2.8vw, 40px);
+}
+
+.bank-decision-rail {
+  padding-right: 18px;
+  padding-left: 18px;
+  border-right: 1px solid #e2e6eb;
+}
+
+.bank-decision-rail h1,
+.bank-decision-detail h2,
+.bank-decision-boundary h2 {
+  margin: 0;
+  color: #101216;
+  font-weight: 690;
+  letter-spacing: -0.045em;
+}
+
+.bank-decision-rail h1,
+.bank-decision-boundary h2 {
+  font-size: 1.08rem;
+}
+
+.bank-decision-list {
+  display: grid;
+  gap: 6px;
+  margin-top: 22px;
+}
+
+.bank-decision-list button {
+  position: relative;
+  display: grid;
+  width: 100%;
+  min-height: 78px;
+  grid-template-columns: minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 10px 13px 15px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #20242b;
+  text-align: left;
+}
+
+.bank-decision-list button::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  border-radius: 3px;
+  background: transparent;
+  content: "";
+}
+
+.bank-decision-list button:hover,
+.bank-decision-list button.is-selected {
+  border-color: #cfe2d7;
+  background: #f0f8f3;
+}
+
+.bank-decision-list button.is-selected::before {
+  background: #15914c;
+}
+
+.bank-decision-list button > span {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bank-decision-list strong {
+  overflow: hidden;
+  font-size: 0.8rem;
+  font-weight: 650;
+  letter-spacing: -0.025em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bank-decision-list small {
+  color: #758078;
+  font-size: 0.66rem;
+}
+
+.bank-decision-list svg {
+  width: 16px;
+  fill: none;
+  stroke: #7f8982;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.4;
+}
+
+.bank-decision-detail {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  padding-right: clamp(32px, 4vw, 58px);
+  padding-left: clamp(32px, 4vw, 58px);
+}
+
+.bank-decision-detail h2 {
+  font-size: clamp(2rem, 3vw, 3rem);
+  line-height: 1.02;
+}
+
+.bank-decision-form {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 30px;
+}
+
+.bank-decision-row {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  align-items: center;
+  gap: 18px;
+  color: #252b33;
+  font-size: 0.73rem;
+  font-weight: 650;
+}
+
+.bank-decision-row output {
+  min-width: 0;
+  padding: 11px 13px;
+  overflow: hidden;
+  border: 1px solid #d4dae1;
+  border-radius: 9px;
+  background: #fbfcfd;
+  color: #252b33;
+  font-size: 0.77rem;
+  font-weight: 470;
+  line-height: 1.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bank-decision-row output a {
+  color: inherit;
+  text-decoration-color: #9aaba0;
+  text-underline-offset: 3px;
+}
+
+.bank-decision-answer-field,
+.bank-decision-note {
+  display: grid;
+  gap: 8px;
+  color: #252b33;
+  font-size: 0.73rem;
+  font-weight: 650;
+}
+
+.bank-decision-answers {
+  min-height: 172px;
+  max-height: 265px;
+  padding: 12px 14px;
+  overflow: auto;
+  border: 1px solid #d4dae1;
+  border-radius: 10px;
+  background: #fbfcfd;
+}
+
+.bank-decision-answers code {
+  display: block;
+  color: #20252c;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.76rem;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.bank-decision-note textarea {
+  min-height: 116px;
+  padding: 12px 14px;
+  border: 1px solid #b7c1cb;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #171a1f;
+  font: inherit;
+  font-size: 0.77rem;
+  font-weight: 470;
+  line-height: 1.5;
+  outline: none;
+  resize: vertical;
+}
+
+.bank-decision-note textarea:focus {
+  border-color: #168448;
+  box-shadow: 0 0 0 4px rgba(22, 132, 72, 0.1);
+}
+
+.bank-decision-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 18px;
+}
+
+.bank-decision-actions button {
+  min-height: 48px;
+  border-radius: 10px;
+  background: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 680;
+}
+
+.bank-decision-actions .bank-request-correction {
+  border: 1px solid #c97a00;
+  color: #a46100;
+}
+
+.bank-decision-actions .bank-reject {
+  border: 1px solid #d8434d;
+  color: #c62d37;
+}
+
+.bank-decision-actions .bank-approve {
+  border: 1px solid #158348;
+  background: #168a4b;
+  color: #ffffff;
+  box-shadow: 0 10px 22px rgba(22, 138, 75, 0.18);
+}
+
+.bank-decision-actions button:disabled {
+  opacity: 0.55;
+}
+
+.bank-decision-boundary {
+  border-left: 1px solid #e2e6eb;
+}
+
+.bank-decision-boundary p {
+  margin: 22px 0 0;
+  color: #4d5662;
+  font-size: 0.76rem;
+  line-height: 1.58;
+}
+
+.bank-decision-boundary ul {
+  display: grid;
+  gap: 20px;
+  margin: 34px 0 0;
+  padding: 26px 0 0;
+  border-top: 1px solid #dde2e8;
+  list-style: none;
+}
+
+.bank-decision-boundary li {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  color: #3f474f;
+  font-size: 0.68rem;
+  line-height: 1.4;
+}
+
+.bank-decision-boundary li span {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  border-radius: 50%;
+  background: #16914f;
+  color: #ffffff;
+  font-size: 0.62rem;
+}
+
+.bank-decision-list button:focus-visible,
+.bank-decision-actions button:focus-visible {
+  outline: 3px solid rgba(22, 132, 72, 0.18);
+  outline-offset: 3px;
 }
 
 .bank-actions .bank-freeze,
@@ -1654,6 +2009,34 @@ button {
 
   .bank-workspace {
     grid-template-columns: minmax(210px, 0.7fr) minmax(500px, 1.7fr);
+  }
+
+  .bank-decision-workspace {
+    grid-template-columns: minmax(210px, 0.7fr) minmax(520px, 1.7fr);
+  }
+
+  .bank-decision-boundary {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 180px minmax(0, 1fr) minmax(360px, 1.2fr);
+    align-items: start;
+    gap: 22px;
+    padding-top: 26px;
+    padding-bottom: 26px;
+    border-top: 1px solid #e2e6eb;
+    border-left: 0;
+  }
+
+  .bank-decision-boundary p,
+  .bank-decision-boundary ul {
+    margin: 0;
+  }
+
+  .bank-decision-boundary ul {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 18px;
+    padding: 0;
+    border: 0;
   }
 
   .bank-boundary {
@@ -1941,6 +2324,95 @@ button {
     margin: 0 8px 8px;
     overflow: visible;
     border-radius: 17px;
+  }
+
+  .bank-decision-workspace {
+    width: calc(100% - 16px);
+    min-height: 0;
+    grid-template-columns: 1fr;
+    margin: 0 8px 8px;
+    overflow: visible;
+    border-radius: 17px;
+  }
+
+  .bank-decision-rail,
+  .bank-decision-detail,
+  .bank-decision-boundary {
+    padding: 22px 18px;
+  }
+
+  .bank-decision-rail {
+    border-right: 0;
+    border-bottom: 1px solid #e2e6eb;
+  }
+
+  .bank-decision-list {
+    display: flex;
+    margin-top: 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .bank-decision-list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .bank-decision-list button {
+    min-width: min(300px, 82vw);
+  }
+
+  .bank-decision-detail h2 {
+    max-width: 340px;
+    font-size: clamp(2rem, 9vw, 3rem);
+  }
+
+  .bank-decision-row {
+    grid-template-columns: minmax(120px, 0.7fr) minmax(0, 1.5fr);
+    gap: 10px;
+    padding: 0 0 10px;
+    border-bottom: 1px solid #e2e6eb;
+  }
+
+  .bank-decision-row output {
+    padding: 0;
+    overflow: visible;
+    border: 0;
+    background: transparent;
+    text-overflow: clip;
+    white-space: normal;
+  }
+
+  .bank-decision-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .bank-approve {
+    order: 1;
+  }
+
+  .bank-request-correction {
+    order: 2;
+  }
+
+  .bank-reject {
+    order: 3;
+  }
+
+  .bank-decision-boundary {
+    grid-column: auto;
+    display: block;
+    border-left: 0;
+  }
+
+  .bank-decision-boundary p {
+    margin-top: 17px;
+  }
+
+  .bank-decision-boundary ul {
+    grid-template-columns: 1fr;
+    margin-top: 24px;
+    padding-top: 22px;
+    border-top: 1px solid #dde2e8;
   }
 
   .bank-rail,

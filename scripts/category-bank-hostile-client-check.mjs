@@ -28,15 +28,21 @@ async function assertDenied(label, operation, expectedCode) {
 }
 
 const owner = client();
-const reviewer = client();
+const editor = client();
+const decider = client();
 const outsider = client();
-const [ownerId, reviewerId] = await Promise.all([signIn(owner), signIn(reviewer), signIn(outsider)])
-  .then(([ownerUserId, reviewerUserId]) => [ownerUserId, reviewerUserId]);
+const [ownerId, editorId, deciderId] = await Promise.all([
+  signIn(owner),
+  signIn(editor),
+  signIn(decider),
+  signIn(outsider),
+]).then(([ownerUserId, editorUserId, deciderUserId]) => [ownerUserId, editorUserId, deciderUserId]);
 
-for (const table of ["category_answer_bank_versions", "category_answer_bank_answers", "category_answer_bank_aliases"]) {
-  await assertDenied(`direct ${table} read`, () => reviewer.schema("private").from(table).select("*"));
+for (const table of ["category_answer_bank_versions", "category_answer_bank_answers", "category_answer_bank_aliases", "category_answer_bank_reviews"]) {
+  await assertDenied(`direct ${table} read`, () => editor.schema("private").from(table).select("*"));
 }
 await assertDenied("outsider bank queue", () => outsider.rpc("category_bank_queue"), "42501");
+await assertDenied("outsider bank review queue", () => outsider.rpc("category_bank_review_queue"), "42501");
 
 const runId = String(Date.now()).slice(-8);
 const { data: draft, error: createError } = await owner.rpc("category_create_draft", {
@@ -49,13 +55,14 @@ const { error: submitError } = await owner.rpc("category_submit_draft", { p_draf
 assert.ifError(submitError);
 
 console.log(`BANK_QA_DRAFT_ID=${draft.id}`);
-console.log(`REVIEWER_USER_ID=${reviewerId}`);
-console.log("Promote this isolated QA identity in the private reviewer allowlist, then send a newline.");
+console.log(`BANK_EDITOR_USER_ID=${editorId}`);
+console.log(`BANK_DECIDER_USER_ID=${deciderId}`);
+console.log("Promote both isolated QA identities in the private reviewer allowlist, then send a newline.");
 const input = createInterface({ input: process.stdin, output: process.stdout });
 await input.question("");
 input.close();
 
-const { data: decision, error: decisionError } = await reviewer.rpc("category_review_decide", {
+const { data: decision, error: decisionError } = await editor.rpc("category_review_decide", {
   p_draft_id: draft.id,
   p_decision: "scope-approve",
   p_note: "The QA scope is clear enough for private answer-bank validation.",
@@ -66,7 +73,7 @@ assert.equal(decision.reviewStatus, "scope-approved");
 await assertDenied("owner bank queue", () => owner.rpc("category_bank_queue"), "42501");
 await assertDenied("outsider bank open", () => outsider.rpc("category_bank_open", { p_draft_id: draft.id }), "42501");
 
-const { data: queue, error: queueError } = await reviewer.rpc("category_bank_queue");
+const { data: queue, error: queueError } = await editor.rpc("category_bank_queue");
 assert.ifError(queueError);
 const queued = queue.drafts.find((item) => item.draftId === draft.id);
 assert.ok(queued);
@@ -75,10 +82,11 @@ assert.equal(queued.revision, 0);
 assert.equal(queued.bank, null);
 assert.equal("userId" in queued, false);
 
-const { data: opened, error: openError } = await reviewer.rpc("category_bank_open", { p_draft_id: draft.id });
+const { data: opened, error: openError } = await editor.rpc("category_bank_open", { p_draft_id: draft.id });
 assert.ifError(openError);
 assert.equal(opened.revision, 1);
 assert.equal(opened.status, "editing");
+assert.equal(opened.reviewStatus, "unreviewed");
 assert.equal(opened.competitiveEligible, false);
 
 const metadata = {
@@ -90,11 +98,11 @@ const metadata = {
   p_version_note: "Initial private QA answer-bank snapshot.",
 };
 
-await assertDenied("accent collision", () => reviewer.rpc("category_bank_save", {
+await assertDenied("accent collision", () => editor.rpc("category_bank_save", {
   ...metadata,
   p_answers: [{ canonicalText: "Luka Dončić", aliases: ["Luka Doncic"] }],
 }), "22023");
-await assertDenied("cross-answer collision", () => reviewer.rpc("category_bank_save", {
+await assertDenied("cross-answer collision", () => editor.rpc("category_bank_save", {
   ...metadata,
   p_answers: [
     { canonicalText: "Copenhagen", aliases: ["København"] },
@@ -107,7 +115,7 @@ const firstAnswers = [
   { canonicalText: "Lisbon", aliases: ["Lisboa"] },
   { canonicalText: "Prague", aliases: ["Praha"] },
 ];
-const { data: saved, error: saveError } = await reviewer.rpc("category_bank_save", {
+const { data: saved, error: saveError } = await editor.rpc("category_bank_save", {
   ...metadata,
   p_answers: firstAnswers,
 });
@@ -115,25 +123,68 @@ assert.ifError(saveError);
 assert.deepEqual(saved.answers, firstAnswers);
 assert.equal(saved.status, "editing");
 
-const { data: frozen, error: freezeError } = await reviewer.rpc("category_bank_freeze", { p_draft_id: draft.id });
+const { data: frozen, error: freezeError } = await editor.rpc("category_bank_freeze", { p_draft_id: draft.id });
 assert.ifError(freezeError);
 assert.equal(frozen.status, "review-ready");
 assert.ok(frozen.submittedAt);
+assert.equal(frozen.reviewStatus, "pending");
+assert.equal(frozen.latestReview, null);
 assert.equal(frozen.competitiveEligible, false);
-await assertDenied("frozen revision overwrite", () => reviewer.rpc("category_bank_save", {
+await assertDenied("frozen revision overwrite", () => editor.rpc("category_bank_save", {
   ...metadata,
   p_answers: firstAnswers,
 }), "55000");
 
-const { data: revision, error: revisionError } = await reviewer.rpc("category_bank_start_revision", { p_draft_id: draft.id });
+if (process.env.BANK_QA_FREEZE_ONLY === "1") {
+  await Promise.all([owner.auth.signOut(), editor.auth.signOut(), decider.auth.signOut(), outsider.auth.signOut()]);
+  console.log("BANK_QA_FROZEN_FOR_BROWSER=1");
+  process.exit(0);
+}
+
+await assertDenied("editor self-decision", () => editor.rpc("category_bank_review_decide", {
+  p_draft_id: draft.id,
+  p_decision: "approve",
+  p_note: "The editor must not approve their own frozen answer bank.",
+}), "55000");
+await assertDenied("owner decision", () => owner.rpc("category_bank_review_decide", {
+  p_draft_id: draft.id,
+  p_decision: "approve",
+  p_note: "The category owner must not approve their own answer bank.",
+}), "42501");
+await assertDenied("premature correction copy", () => editor.rpc("category_bank_start_revision", { p_draft_id: draft.id }), "55000");
+
+const { data: reviewQueue, error: reviewQueueError } = await decider.rpc("category_bank_review_queue");
+assert.ifError(reviewQueueError);
+const pendingBank = reviewQueue.banks.find((item) => item.draftId === draft.id);
+assert.ok(pendingBank);
+assert.equal(pendingBank.reviewStatus, "pending");
+assert.deepEqual(pendingBank.answers, firstAnswers);
+assert.equal("editorUserId" in pendingBank, false);
+
+const { data: correctionDecision, error: correctionDecisionError } = await decider.rpc("category_bank_review_decide", {
+  p_draft_id: draft.id,
+  p_decision: "request-correction",
+  p_note: "Add the documented Vienna alias before this bank can be approved.",
+});
+assert.ifError(correctionDecisionError);
+assert.equal(correctionDecision.reviewStatus, "changes-requested");
+assert.equal(correctionDecision.competitiveEligible, false);
+await assertDenied("duplicate revision decision", () => decider.rpc("category_bank_review_decide", {
+  p_draft_id: draft.id,
+  p_decision: "approve",
+  p_note: "A frozen revision may receive exactly one final decision record.",
+}), "55000");
+
+const { data: revision, error: revisionError } = await editor.rpc("category_bank_start_revision", { p_draft_id: draft.id });
 assert.ifError(revisionError);
 assert.equal(revision.revision, 2);
 assert.equal(revision.status, "editing");
+assert.equal(revision.reviewStatus, "unreviewed");
 assert.deepEqual(revision.answers, firstAnswers);
-await assertDenied("parallel editing revision", () => reviewer.rpc("category_bank_start_revision", { p_draft_id: draft.id }), "55000");
+await assertDenied("parallel editing revision", () => editor.rpc("category_bank_start_revision", { p_draft_id: draft.id }), "55000");
 
 const correctedAnswers = [...firstAnswers, { canonicalText: "Vienna", aliases: ["Wien"] }];
-const { data: corrected, error: correctedError } = await reviewer.rpc("category_bank_save", {
+const { data: corrected, error: correctedError } = await editor.rpc("category_bank_save", {
   ...metadata,
   p_version_note: "Second private QA snapshot adds the documented correction.",
   p_answers: correctedAnswers,
@@ -141,6 +192,20 @@ const { data: corrected, error: correctedError } = await reviewer.rpc("category_
 assert.ifError(correctedError);
 assert.equal(corrected.revision, 2);
 assert.deepEqual(corrected.answers, correctedAnswers);
+
+const { data: correctedFrozen, error: correctedFreezeError } = await editor.rpc("category_bank_freeze", { p_draft_id: draft.id });
+assert.ifError(correctedFreezeError);
+assert.equal(correctedFrozen.reviewStatus, "pending");
+
+const { data: approval, error: approvalError } = await decider.rpc("category_bank_review_decide", {
+  p_draft_id: draft.id,
+  p_decision: "approve",
+  p_note: "The corrected frozen snapshot matches its provenance and declared coverage.",
+});
+assert.ifError(approvalError);
+assert.equal(approval.reviewStatus, "approved");
+assert.equal(approval.competitiveEligible, false);
+await assertDenied("approved revision correction copy", () => editor.rpc("category_bank_start_revision", { p_draft_id: draft.id }), "55000");
 
 const { data: ownerDrafts, error: ownerDraftsError } = await owner.rpc("category_list_drafts");
 assert.ifError(ownerDraftsError);
@@ -154,7 +219,7 @@ const { data: discovery, error: discoveryError } = await owner.rpc("category_dis
 assert.ifError(discoveryError);
 assert.deepEqual(discovery.categories, []);
 
-await Promise.all([owner.auth.signOut(), reviewer.auth.signOut(), outsider.auth.signOut()]);
+await Promise.all([owner.auth.signOut(), editor.auth.signOut(), decider.auth.signOut(), outsider.auth.signOut()]);
 
 console.log(`CATEGORY_BANK_QA_OWNER=${ownerId}`);
-console.log("Category bank hostile-client checks passed: deny-all tables, reviewer-only RPCs, approved non-owned scope, deterministic collisions, immutable freeze, copied correction revisions, owner privacy, noncompetitive state, and discovery exclusion.");
+console.log("Category bank hostile-client checks passed: deny-all tables, editor/owner self-review denial, independent decisions, immutable frozen snapshots, correction-only revision copying, terminal private approval, owner privacy, noncompetitive state, and discovery exclusion.");
