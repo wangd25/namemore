@@ -1,12 +1,12 @@
 # NameMore
 
-NameMore is a fast-paced, category-first recall platform where players try to name as many valid answers as possible before a timer expires. NBA players remain the first competitive proof of concept, while a reviewed Chemical Elements bank proves that local practice, visuals, and results are not tied to sports. The current development branch adds a private, versioned answer-bank workspace for approved category scopes without weakening the secure daily, private-race, atomic elimination, owner-draft, or reviewer boundaries.
+NameMore is a fast-paced, category-first recall platform where players try to name as many valid answers as possible before a timer expires. NBA players remain the first competitive proof of concept, while a reviewed Chemical Elements bank proves that local practice, visuals, and results are not tied to sports. The current development branch adds independent decisions for frozen private answer-bank revisions without weakening the secure daily, private-race, atomic elimination, owner-draft, reviewer, or publishing boundaries.
 
 ## Current Status
 
-Phases 1–6, **Phase 7A: Category Discovery Foundation**, **Phase 7B: Reviewed General Practice**, **Phase 7C1: Private Draft Review Boundary**, **Phase 7C2: Reviewer Authority and Outcomes**, and **Phase 7C3: Versioned Answer-Bank Workspace** are complete. Phase 7 remains in progress toward answer-bank decisions, publishing, moderation, and category lifecycle workflows.
+Phases 1–6, **Phase 7A: Category Discovery Foundation**, **Phase 7B: Reviewed General Practice**, **Phase 7C1: Private Draft Review Boundary**, **Phase 7C2: Reviewer Authority and Outcomes**, **Phase 7C3: Versioned Answer-Bank Workspace**, and **Phase 7C4: Independent Answer-Bank Decisions** are complete. Phase 7 remains in progress toward publishing, moderation, and category lifecycle workflows.
 
-**Current branch:** `codex/phase-7c3-answer-bank-versions`, created from the completed Phase 7C2 branch. `main` has not been changed or merged.
+**Current branch:** `codex/phase-7c4-answer-bank-decisions`, created from the completed Phase 7C3 branch. `main` has not been changed or merged.
 
 The focused post–Phase 3 polish verifies that the non-production database has an active current-UTC challenge and a continuous schedule through 2026-12-31. A single transient empty status now triggers one automatic recovery check before the safe unavailable state appears. The ready dwell uses a damped charge and squash-and-stretch launch instead of a linear loading treatment, and competitive automatic answer checks begin after a 180ms pause instead of 420ms with a small in-board pending cue. No answer data or scoring authority moved into the browser.
 
@@ -42,7 +42,11 @@ Phase 7C3 adds `/review/banks`, where an authorized reviewer can open one editin
 
 Phase 7C3 application commit `2b401b866d8cb90e491708de942d396b91e0e2be` (`Build versioned answer-bank workspace`) is pushed to `origin/codex/phase-7c3-answer-bank-versions`. Exact-source protected Git Preview `dpl_5g3Fv7hEVSjpQBCho4naDXhkz4pk` at `https://namemore-kshpk32vq-namemore.vercel.app` was verified `READY`, source `git`, target null, and sourced from that exact commit. The ordinary-user bank page/API boundary, mobile overflow, browser-error, runtime-error, fatal, and 5xx gates pass. Production and `main` remain untouched.
 
-Supabase project `namemore` (`hutmxxlicxeaovoeqbwg`) was explicitly confirmed non-production. Anonymous sign-in is enabled. Eighteen repository migrations now provide 418 private canonical answers and 801 aliases across the immutable NBA and Chemical Elements versions, empty deny-all versioned bank tables for future reviewed drafts, a UTC schedule through 2026-12-31, immutable display names, strict control-character rejection, answer-check and draft-creation burst controls, private per-player Realtime topics, twenty-five narrow gameplay/status/discovery/draft/review/bank RPC signatures plus one Realtime authorization helper. Vercel contains only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, scoped to Preview; Production variables were not changed.
+Phase 7C4 adds `/review/banks/decisions`, where an independently authorized reviewer can inspect the frozen prompt, provenance, version note, canonical answers, and aliases, then request correction, reject the bank, or approve the bank with a required reason. One append-only evidence snapshot is recorded per bank revision. The category owner and bank editor cannot decide that revision; only a changes-requested revision can return to its original editor as a copied new version. Approval is terminal for that private revision but does not publish it, make it playable, expose it in discovery, or grant ranked eligibility.
+
+Phase 7C4 application commit `99d0acc4b1da5bd236effd6d0ec165d4e4e3929b` (`Build independent answer-bank decisions`) is pushed to `origin/codex/phase-7c4-answer-bank-decisions`. Exact-source protected Git Preview `dpl_23hthHcsTUk42up2B7jdS296U8ws` at `https://namemore-k9nuebmc0-namemore.vercel.app` was verified `READY`, `target: preview`, and sourced from that exact commit. The protected decision page and ordinary-user API boundary returned HTTP 200, the API projected `authorized: false` with no banks, runtime error/5xx scans were empty, and Production remains empty. The complete authorized desktop/mobile decision flow was verified locally against the real non-production backend.
+
+Supabase project `namemore` (`hutmxxlicxeaovoeqbwg`) was explicitly confirmed non-production. Anonymous sign-in is enabled. Nineteen repository migrations now provide 418 private canonical answers and 801 aliases across the immutable NBA and Chemical Elements versions, empty deny-all versioned bank/review tables after QA, a UTC schedule through 2026-12-31, immutable display names, strict control-character rejection, answer-check and draft-creation burst controls, private per-player Realtime topics, twenty-seven narrow gameplay/status/discovery/draft/review/bank RPC signatures plus one Realtime authorization helper. Vercel contains only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, scoped to Preview; Production variables were not changed.
 
 Implemented:
 
@@ -91,14 +95,15 @@ Implemented:
 - A separate `/category/new` private-draft workspace with an owner-only rail, editable prompt/provenance/coverage fields, save state, and an explicit review boundary. Bounded no-store list/create/update/submit routes call narrow authenticated RPCs; submission locks the draft while preserving its unreviewed, unpublished, noncompetitive state.
 - A private `/review` workspace with explicit allowlist authority, a pending queue that excludes the reviewer's own drafts, read-only submitted evidence, required decision reasons, and revision-safe request-changes/reject/scope-approve outcomes. Owner-visible outcomes omit reviewer identity, and scope approval still cannot enter discovery or play.
 - A private `/review/banks` workspace with scope-preserving bank selection, versioned edit/freeze/correction lifecycle, dated HTTPS provenance, bounded canonical/alias input, deterministic accent-insensitive collision checks, immutable review-ready snapshots, and an explicit publication boundary. Direct tables remain deny-all and the owner/discovery contracts contain no bank payload.
+- A private `/review/banks/decisions` workspace with an independent-review queue, read-only frozen evidence, required decision notes, and request-correction/reject/approve outcomes. The database excludes the category owner and bank editor, records one append-only snapshot per version, restricts correction copies to the original editor, and keeps approved banks private and noncompetitive.
 - A deterministic 300-answer/561-alias seed plus 168 scheduled UTC challenge dates from 2026-07-17 through 2026-12-31.
-- One hundred twenty-four passing unit, dataset, contract, session, request-boundary, migration, Realtime, and component tests across twenty-two test files, plus direct publishable-key daily, room-lobby, room-game, elimination, category-draft, and category-review hostile-client scripts.
+- One hundred forty-four passing unit, dataset, contract, session, request-boundary, migration, Realtime, and component tests across twenty-six test files, plus direct publishable-key daily, room-lobby, room-game, elimination, category-draft, category-review, and category-bank hostile-client scripts.
 
 Not implemented yet:
 
 - Global aggregates or production launch hardening.
 - CAPTCHA. A broader unprotected preview requires a product choice and credentials for hCaptcha or Cloudflare Turnstile; the current preview remains protected by Vercel team authentication.
-- Answer-bank review, public category correction and publishing workflows, provenance administration, and broader discovery abuse reporting.
+- Publishing of approved private bank revisions, public category correction workflows, provenance administration, and broader discovery abuse reporting.
 
 ## Product Direction Beyond NBA
 
@@ -137,10 +142,10 @@ pnpm test
 pnpm build
 ```
 
-Verification snapshot from 2026-07-20 UTC:
+Verification snapshot from 2026-07-21 UTC:
 
 - `git diff --check`, `pnpm lint`, `pnpm typecheck`, and the Next.js production build pass.
-- `pnpm test` passes 124 tests in 22 test files.
+- `pnpm test` passes 144 tests in 26 test files.
 - The hostile-client script passes directly against Supabase using only the public URL/publishable key and anonymous identities. It additionally proves display-name validation/normalization/immutability, active-attempt exclusion, top-ten limiting, deterministic tie order, safe projection keys, no UUID/answer leakage, direct leaderboard insertion denial, concurrent idempotent finish, and the 40-per-10-second burst guard.
 - A rollback-only live database deadline test returned `round-ended` and `expired` without accepting a late answer. Migration history, 418 answers, 801 aliases, 168 scheduled challenges through 2026-12-31, RLS, grants, constraints, and indexes were inspected live. The Chemical Elements version has exactly 118 canonical answers and 240 accepted exact/symbol/alternate aliases, no team codes, and direct public-table reads remain denied.
 - Supabase security advisors report only intentional deny-all/no-policy tables, the intentionally callable authenticated security-definer operations, anonymous Realtime access constrained by membership policies, and leaked-password protection for the deferred permanent-account path. Performance advisors report only expected unused indexes on the fresh schema; all reported missing foreign-key indexes were fixed.
@@ -155,10 +160,11 @@ Verification snapshot from 2026-07-20 UTC:
 - Phase 7C1 local browser QA created, edited, saved, submitted, and locked an owner draft at desktop and 390×844 mobile widths with no console warnings/errors or horizontal overflow. Its public-key hostile-client suite proves authentication, owner isolation, direct-table denial, five-per-hour limiting, input normalization, irreversible submission, and discovery privacy.
 - Phase 7C2 local browser QA denied an ordinary user, loaded the authorized review queue, recorded a request-changes decision, advanced the queue, and matched the accepted desktop/mobile reviewer concept with no console warnings/errors or horizontal overflow. Its public-key hostile-client suite proves explicit reviewer authority, direct-table denial, ordinary-user and self-review denial, immutable submitted snapshots, revision-safe resubmission, owner-visible reasons without reviewer identity, noncompetitive scope approval, and discovery privacy.
 - Phase 7C3 local browser QA opened a real approved scope, validated a three-answer/six-name bank, froze revision 1, verified locked fields, started revision 2 with copied answers, matched the accepted desktop/mobile bank concepts, and passed console/overflow checks. A rollback-only live integration proves zero browser table grants, five authenticated bank RPCs, accent-insensitive collision rejection, immutable freeze, correction copying, and noncompetitive state; all QA bank/reviewer rows were removed afterward.
+- Phase 7C4 local browser QA loaded a real frozen revision, recorded an independent approval, emptied the queue, preserved the locked bank and publication boundary, matched the accepted three-column desktop and one-column mobile concepts, and passed console/overflow checks. Its public-key hostile suite proves deny-all review storage, outsider/owner/editor decision denial, immutable evidence, correction-only revision copying by the original editor, terminal private approval, discovery privacy, and noncompetitive state. The exact-source protected Preview passes page/API, runtime-error/5xx, and Production-isolation gates; all QA bank/review/reviewer rows were removed afterward.
 
 ## Roadmap Remaining
 
-Phases 1–6 are complete. **Phase 7 is in progress**; Phase 7C3 now provides private versioned answer-bank creation and correction snapshots, while answer-bank decisions, publishing, moderation administration, and abuse reporting remain before Phase 8 production hardening/launch.
+Phases 1–6 are complete. **Phase 7 is in progress**; Phase 7C4 now provides independent private decisions for frozen answer-bank revisions, while publishing approved revisions, moderation administration, and abuse reporting remain before Phase 8 production hardening/launch.
 
 In Codex desktop, the shell may not include `node` on its default `PATH`. Use the bundled workspace Node runtime when that occurs; do not treat a missing shell executable as an application failure.
 
