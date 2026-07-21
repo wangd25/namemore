@@ -46,6 +46,14 @@ function getDraftLabel(prompt: string) {
   return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
+function getDraftStateLabel(draft: CategoryDraftPayload) {
+  if (draft.reviewStatus === "changes-requested") return "Changes requested";
+  if (draft.reviewStatus === "pending") return "Pending review";
+  if (draft.reviewStatus === "scope-approved") return "Scope approved";
+  if (draft.reviewStatus === "rejected") return "Rejected";
+  return "Draft";
+}
+
 function sameFields(draft: CategoryDraftPayload, fields: DraftFields) {
   return draft.prompt === fields.prompt
     && draft.sourceNotes === fields.sourceNotes
@@ -87,7 +95,7 @@ export function CategoryDraftForm({
   const formRef = useRef<HTMLFormElement>(null);
 
   const selectedDraft = drafts.find((draft) => draft.id === selectedId);
-  const editingLocked = selectedDraft?.status === "review-requested";
+  const editingLocked = selectedDraft ? selectedDraft.status !== "draft" : false;
   const isDirty = selectedDraft ? !sameFields(selectedDraft, fields) : Object.values(fields).some(Boolean);
 
   const loadDrafts = useCallback(async () => {
@@ -237,7 +245,7 @@ export function CategoryDraftForm({
               >
                 <span className="draft-list-copy">
                   <strong>{getDraftLabel(draft.prompt)}</strong>
-                  <small>{draft.status === "draft" ? "Draft" : "Review requested"}</small>
+                  <small>{getDraftStateLabel(draft)}</small>
                 </span>
                 <svg viewBox="0 0 20 20" aria-hidden="true">
                   <path d="m7 4 6 6-6 6" />
@@ -287,10 +295,31 @@ export function CategoryDraftForm({
               />
             </label>
 
+            {selectedDraft?.latestReview ? (
+              <div className={`draft-review-outcome is-${selectedDraft.reviewStatus}`}>
+                <strong>
+                  {selectedDraft.reviewStatus === "changes-requested"
+                    ? "Changes requested"
+                    : selectedDraft.reviewStatus === "scope-approved"
+                      ? "Scope approved"
+                      : selectedDraft.reviewStatus === "rejected"
+                        ? "Draft rejected"
+                        : "Previous review"}
+                </strong>
+                <p>{selectedDraft.latestReview.note}</p>
+              </div>
+            ) : null}
+
             {editingLocked ? (
               <div className="draft-locked-actions">
                 <span aria-hidden="true">✓</span>
-                <strong>Submitted for review · editing locked</strong>
+                <strong>
+                  {selectedDraft?.reviewStatus === "scope-approved"
+                    ? "Scope approved · answer bank still required"
+                    : selectedDraft?.reviewStatus === "rejected"
+                      ? "Review complete · draft rejected"
+                      : "Submitted for review · editing locked"}
+                </strong>
                 <button type="button" onClick={startNewDraft}>Start another draft</button>
               </div>
             ) : (

@@ -62,6 +62,10 @@ const privateDraftReviewMigration = readFileSync(
   resolve(process.cwd(), "supabase/migrations/20260720225651_add_phase7c_private_draft_review.sql"),
   "utf8",
 );
+const reviewerAuthorityMigration = readFileSync(
+  resolve(process.cwd(), "supabase/migrations/20260721061214_add_phase7c2_reviewer_authority.sql"),
+  "utf8",
+);
 
 describe("server-authoritative daily migration", () => {
   it("keeps the answer bank private and exposes only narrow RPCs", () => {
@@ -270,5 +274,36 @@ describe("server-authoritative daily migration", () => {
     expect(privateDraftReviewMigration).toContain("grant execute on function public.category_submit_draft(uuid) to authenticated");
     expect(privateDraftReviewMigration).not.toMatch(/grant\s+(select|insert|update|delete)/i);
     expect(privateDraftReviewMigration).not.toContain("competitive_eligible = true");
+  });
+
+  it("adds deny-all reviewer authority and append-only snapshot decisions", () => {
+    expect(reviewerAuthorityMigration).toContain("create table private.category_reviewers");
+    expect(reviewerAuthorityMigration).toContain("create table private.category_draft_reviews");
+    expect(reviewerAuthorityMigration).toContain("unique (draft_id, review_revision)");
+    expect(reviewerAuthorityMigration).toContain("prompt_snapshot text not null");
+    expect(reviewerAuthorityMigration).toContain("competitive_eligible boolean not null default false check (not competitive_eligible)");
+    expect(reviewerAuthorityMigration).toContain("revoke all on table private.category_reviewers from public, anon, authenticated");
+    expect(reviewerAuthorityMigration).toContain("revoke all on table private.category_draft_reviews from public, anon, authenticated");
+    expect(reviewerAuthorityMigration).not.toMatch(/grant\s+(select|insert|update|delete)/i);
+  });
+
+  it("requires an active reviewer, prevents self-review, and preserves non-publishing outcomes", () => {
+    expect(reviewerAuthorityMigration).toContain("where reviewer.user_id = current_user_id");
+    expect(reviewerAuthorityMigration).toContain("and reviewer.active");
+    expect(reviewerAuthorityMigration).toContain("and draft.user_id <> current_user_id");
+    expect(reviewerAuthorityMigration).toContain("for update;");
+    expect(reviewerAuthorityMigration).toContain("decision in ('request-changes', 'reject', 'scope-approve')");
+    expect(reviewerAuthorityMigration).toContain("review_status = next_review_status");
+    expect(reviewerAuthorityMigration).toContain("review_revision = draft.review_revision + 1");
+    expect(reviewerAuthorityMigration).not.toContain("competitive_eligible = true");
+    expect(reviewerAuthorityMigration).not.toMatch(/insert into private\.category_(versions|answers|answer_aliases|discovery_items)/i);
+  });
+
+  it("exposes only narrow authenticated reviewer RPCs with safe search paths", () => {
+    expect(reviewerAuthorityMigration.match(/security definer\nset search_path = ''/g)).toHaveLength(7);
+    expect(reviewerAuthorityMigration).toContain("grant execute on function public.category_reviewer_status() to authenticated");
+    expect(reviewerAuthorityMigration).toContain("grant execute on function public.category_review_queue() to authenticated");
+    expect(reviewerAuthorityMigration).toContain("grant execute on function public.category_review_decide(uuid, text, text) to authenticated");
+    expect(reviewerAuthorityMigration).toContain("revoke all on function public.category_review_decide(uuid, text, text) from public, anon, authenticated");
   });
 });

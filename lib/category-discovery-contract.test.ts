@@ -72,6 +72,8 @@ describe("category discovery contracts", () => {
       coverageNotes: "Sovereign national capitals only",
       status: "draft",
       reviewStatus: "unreviewed",
+      reviewRevision: 0,
+      latestReview: null,
       competitiveEligible: false,
       createdAt: "2026-07-20T20:00:00.000Z",
       updatedAt: "2026-07-20T20:01:00.000Z",
@@ -86,12 +88,26 @@ describe("category discovery contracts", () => {
     expect(() => parseCategoryDraftPayload({
       ...draft,
       status: "review-requested",
-      reviewStatus: "unreviewed",
+      reviewStatus: "pending",
+      reviewRevision: 1,
     })).toThrow("lifecycle");
     expect(() => parseCategoryDraftPayload({
       ...draft,
       competitiveEligible: true,
     })).toThrow("eligibility");
+
+    const changesRequested = {
+      ...draft,
+      reviewStatus: "changes-requested",
+      reviewRevision: 1,
+      latestReview: {
+        decision: "request-changes",
+        note: "Clarify the geographic boundary before resubmitting.",
+        revision: 1,
+        decidedAt: "2026-07-20T20:03:00.000Z",
+      },
+    };
+    expect(parseCategoryDraftPayload(changesRequested)).toEqual(changesRequested);
   });
 
   it("accepts only canonical UUID draft identifiers", () => {

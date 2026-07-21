@@ -40,9 +40,26 @@ export type CategoryDiscoveryPayload = {
   };
 };
 
-export type CategoryDraftStatus = "draft" | "review-requested";
+export type CategoryDraftStatus = "draft" | "review-requested" | "review-complete";
 
-export type CategoryDraftReviewStatus = "unreviewed" | "pending";
+export type CategoryDraftReviewStatus =
+  | "unreviewed"
+  | "changes-requested"
+  | "pending"
+  | "scope-approved"
+  | "rejected";
+
+export type CategoryDraftReviewDecision =
+  | "request-changes"
+  | "reject"
+  | "scope-approve";
+
+export type CategoryDraftLatestReview = {
+  decision: CategoryDraftReviewDecision;
+  note: string;
+  revision: number;
+  decidedAt: string;
+};
 
 export type CategoryDraftPayload = {
   id: string;
@@ -51,6 +68,8 @@ export type CategoryDraftPayload = {
   coverageNotes: string;
   status: CategoryDraftStatus;
   reviewStatus: CategoryDraftReviewStatus;
+  reviewRevision: number;
+  latestReview: CategoryDraftLatestReview | null;
   competitiveEligible: false;
   createdAt: string;
   updatedAt: string;

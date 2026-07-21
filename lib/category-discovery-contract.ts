@@ -3,7 +3,9 @@ import type {
   CategoryDiscoveryEntry,
   CategoryDiscoveryPayload,
   CategoryDraftListPayload,
+  CategoryDraftLatestReview,
   CategoryDraftPayload,
+  CategoryDraftReviewDecision,
   CategoryDraftReviewStatus,
   CategoryDraftStatus,
   CategoryReviewStatus,
@@ -50,6 +52,23 @@ function readTimestamp(record: Record<string, unknown>, key: string): string {
 
 function readNullableTimestamp(record: Record<string, unknown>, key: string): string | null {
   return record[key] === null ? null : readTimestamp(record, key);
+}
+
+function parseLatestReview(value: unknown): CategoryDraftLatestReview | null {
+  if (value === null) return null;
+  if (!isRecord(value)) throw new Error("Invalid latest review.");
+  const decision = readString(value, "decision");
+  if (!(new Set<CategoryDraftReviewDecision>(["request-changes", "reject", "scope-approve"]) as Set<string>).has(decision)) {
+    throw new Error("Invalid latest review.");
+  }
+  const revision = readInteger(value, "revision");
+  if (revision < 1) throw new Error("Invalid latest review.");
+  return {
+    decision: decision as CategoryDraftReviewDecision,
+    note: readString(value, "note"),
+    revision,
+    decidedAt: readTimestamp(value, "decidedAt"),
+  };
 }
 
 function parseCategory(value: unknown): CategoryDiscoveryEntry {
@@ -118,18 +137,32 @@ export function parseCategoryDraftPayload(value: unknown): CategoryDraftPayload 
   const id = readString(value, "id");
   const status = readString(value, "status");
   const reviewStatus = readString(value, "reviewStatus");
+  const reviewRevision = readInteger(value, "reviewRevision");
+  const latestReview = parseLatestReview(value.latestReview);
   if (
     !uuidPattern.test(id)
-    || !(new Set<CategoryDraftStatus>(["draft", "review-requested"]) as Set<string>).has(status)
-    || !(new Set<CategoryDraftReviewStatus>(["unreviewed", "pending"]) as Set<string>).has(reviewStatus)
+    || !(new Set<CategoryDraftStatus>(["draft", "review-requested", "review-complete"]) as Set<string>).has(status)
+    || !(new Set<CategoryDraftReviewStatus>([
+      "unreviewed",
+      "changes-requested",
+      "pending",
+      "scope-approved",
+      "rejected",
+    ]) as Set<string>).has(reviewStatus)
   ) {
     throw new Error("Invalid category draft state.");
   }
   if (value.competitiveEligible !== false) throw new Error("Invalid draft eligibility.");
   const submittedAt = readNullableTimestamp(value, "submittedAt");
   if (
-    (status === "draft" && (reviewStatus !== "unreviewed" || submittedAt !== null))
-    || (status === "review-requested" && (reviewStatus !== "pending" || submittedAt === null))
+    (status === "draft" && (!(["unreviewed", "changes-requested"] as string[]).includes(reviewStatus) || submittedAt !== null))
+    || (status === "review-requested" && (reviewStatus !== "pending" || submittedAt === null || reviewRevision < 1))
+    || (status === "review-complete" && (!(["scope-approved", "rejected"] as string[]).includes(reviewStatus) || submittedAt === null || reviewRevision < 1))
+    || (reviewStatus === "unreviewed" && (reviewRevision !== 0 || latestReview !== null))
+    || (reviewStatus === "changes-requested" && (latestReview?.decision !== "request-changes" || latestReview.revision !== reviewRevision))
+    || (reviewStatus === "scope-approved" && (latestReview?.decision !== "scope-approve" || latestReview.revision !== reviewRevision))
+    || (reviewStatus === "rejected" && (latestReview?.decision !== "reject" || latestReview.revision !== reviewRevision))
+    || (reviewStatus === "pending" && latestReview !== null && latestReview.revision >= reviewRevision)
   ) {
     throw new Error("Invalid category draft lifecycle.");
   }
@@ -140,6 +173,8 @@ export function parseCategoryDraftPayload(value: unknown): CategoryDraftPayload 
     coverageNotes: readString(value, "coverageNotes"),
     status: status as CategoryDraftStatus,
     reviewStatus: reviewStatus as CategoryDraftReviewStatus,
+    reviewRevision,
+    latestReview,
     competitiveEligible: false,
     createdAt: readTimestamp(value, "createdAt"),
     updatedAt: readTimestamp(value, "updatedAt"),
