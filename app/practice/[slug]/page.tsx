@@ -3,14 +3,10 @@ import { notFound } from "next/navigation";
 import { GameBoard } from "@/components/GameBoard";
 import {
   getPracticeCategory,
-  practiceCategories,
 } from "@/lib/chemical-elements";
+import { getPublishedPracticeCategory } from "@/lib/published-practice-server";
 
-export const dynamicParams = false;
-
-export function generateStaticParams() {
-  return practiceCategories.map((category) => ({ slug: category.slug }));
-}
+export const dynamic = "force-dynamic";
 
 export default async function PracticeCategoryPage({
   params,
@@ -18,7 +14,7 @@ export default async function PracticeCategoryPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const category = getPracticeCategory(slug);
+  const category = getPracticeCategory(slug) ?? await getPublishedPracticeCategory(slug);
 
   if (!category) {
     notFound();

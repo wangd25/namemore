@@ -78,6 +78,10 @@ const answerBankReviewMigration = readFileSync(
   resolve(process.cwd(), "supabase/migrations/20260721180113_add_phase7c4_answer_bank_review_decisions.sql"),
   "utf8",
 );
+const approvedBankPublishingMigration = readFileSync(
+  resolve(process.cwd(), "supabase/migrations/20260721184852_add_phase7c5_approved_bank_publishing.sql"),
+  "utf8",
+);
 
 describe("server-authoritative daily migration", () => {
   it("keeps the answer bank private and exposes only narrow RPCs", () => {
@@ -382,5 +386,37 @@ describe("server-authoritative daily migration", () => {
     expect(answerBankReviewMigration).toContain("grant execute on function public.category_bank_review_queue() to authenticated");
     expect(answerBankReviewMigration).toContain("grant execute on function public.category_bank_review_decide(uuid, text, text) to authenticated");
     expect(answerBankReviewMigration.match(/security definer\nset search_path = ''/g)).toHaveLength(5);
+  });
+
+  it("adds separate deny-all publisher authority and immutable publication evidence", () => {
+    expect(approvedBankPublishingMigration).toContain("create table private.category_publishers");
+    expect(approvedBankPublishingMigration).toContain("create table private.category_answer_bank_publications");
+    expect(approvedBankPublishingMigration).toContain("bank_version_id uuid not null unique");
+    expect(approvedBankPublishingMigration).toContain("category_version_id uuid not null unique");
+    expect(approvedBankPublishingMigration).toContain("answers_snapshot jsonb not null");
+    expect(approvedBankPublishingMigration).toContain("revoke all on table private.category_publishers from public, anon, authenticated");
+    expect(approvedBankPublishingMigration).toContain("revoke all on table private.category_answer_bank_publications from public, anon, authenticated");
+    expect(approvedBankPublishingMigration).not.toMatch(/grant\s+(select|insert|update|delete)/i);
+  });
+
+  it("publishes only independently approved banks into reviewed unranked practice", () => {
+    expect(approvedBankPublishingMigration).toContain("where publisher.user_id = current_user_id and publisher.active");
+    expect(approvedBankPublishingMigration).toContain("selected_draft.user_id = current_user_id");
+    expect(approvedBankPublishingMigration).toContain("selected_version.editor_user_id = current_user_id");
+    expect(approvedBankPublishingMigration).toContain("selected_review.reviewer_user_id = current_user_id");
+    expect(approvedBankPublishingMigration).toContain("selected_version.bank_review_status <> 'approved'");
+    expect(approvedBankPublishingMigration).toContain("insert into private.category_versions");
+    expect(approvedBankPublishingMigration).toContain("insert into private.category_answers");
+    expect(approvedBankPublishingMigration).toContain("insert into private.category_answer_aliases");
+    expect(approvedBankPublishingMigration).toContain("'reviewed', 'practice', false");
+    expect(approvedBankPublishingMigration).not.toContain("competitive_eligible = true");
+  });
+
+  it("exposes only four narrow authenticated publication/practice RPCs", () => {
+    expect(approvedBankPublishingMigration.match(/security definer\nset search_path = ''/g)).toHaveLength(4);
+    expect(approvedBankPublishingMigration).toContain("grant execute on function public.category_publisher_status() to authenticated");
+    expect(approvedBankPublishingMigration).toContain("grant execute on function public.category_publication_queue() to authenticated");
+    expect(approvedBankPublishingMigration).toContain("grant execute on function public.category_publish_approved_bank(uuid, text, text, text, text) to authenticated");
+    expect(approvedBankPublishingMigration).toContain("grant execute on function public.category_practice_get(text) to authenticated");
   });
 });

@@ -30,19 +30,25 @@ async function assertDenied(label, operation, expectedCode) {
 const owner = client();
 const editor = client();
 const decider = client();
+const publisher = client();
 const outsider = client();
-const [ownerId, editorId, deciderId] = await Promise.all([
+const [ownerId, editorId, deciderId, publisherId] = await Promise.all([
   signIn(owner),
   signIn(editor),
   signIn(decider),
+  signIn(publisher),
   signIn(outsider),
-]).then(([ownerUserId, editorUserId, deciderUserId]) => [ownerUserId, editorUserId, deciderUserId]);
+]).then(([ownerUserId, editorUserId, deciderUserId, publisherUserId]) => [ownerUserId, editorUserId, deciderUserId, publisherUserId]);
 
-for (const table of ["category_answer_bank_versions", "category_answer_bank_answers", "category_answer_bank_aliases", "category_answer_bank_reviews"]) {
+for (const table of ["category_answer_bank_versions", "category_answer_bank_answers", "category_answer_bank_aliases", "category_answer_bank_reviews", "category_publishers", "category_answer_bank_publications"]) {
   await assertDenied(`direct ${table} read`, () => editor.schema("private").from(table).select("*"));
 }
 await assertDenied("outsider bank queue", () => outsider.rpc("category_bank_queue"), "42501");
 await assertDenied("outsider bank review queue", () => outsider.rpc("category_bank_review_queue"), "42501");
+await assertDenied("outsider publication queue", () => outsider.rpc("category_publication_queue"), "42501");
+const { data: outsiderPublisherStatus, error: outsiderPublisherStatusError } = await outsider.rpc("category_publisher_status");
+assert.ifError(outsiderPublisherStatusError);
+assert.equal(outsiderPublisherStatus.authorized, false);
 
 const runId = String(Date.now()).slice(-8);
 const { data: draft, error: createError } = await owner.rpc("category_create_draft", {
@@ -57,7 +63,9 @@ assert.ifError(submitError);
 console.log(`BANK_QA_DRAFT_ID=${draft.id}`);
 console.log(`BANK_EDITOR_USER_ID=${editorId}`);
 console.log(`BANK_DECIDER_USER_ID=${deciderId}`);
-console.log("Promote both isolated QA identities in the private reviewer allowlist, then send a newline.");
+console.log(`BANK_PUBLISHER_USER_ID=${publisherId}`);
+console.log(`BANK_OWNER_USER_ID=${ownerId}`);
+console.log("Promote editor and decider in the private reviewer allowlist. Promote owner, editor, decider, and publisher in the private publisher allowlist. Then send a newline.");
 const input = createInterface({ input: process.stdin, output: process.stdout });
 await input.question("");
 input.close();
@@ -136,7 +144,7 @@ await assertDenied("frozen revision overwrite", () => editor.rpc("category_bank_
 }), "55000");
 
 if (process.env.BANK_QA_FREEZE_ONLY === "1") {
-  await Promise.all([owner.auth.signOut(), editor.auth.signOut(), decider.auth.signOut(), outsider.auth.signOut()]);
+  await Promise.all([owner.auth.signOut(), editor.auth.signOut(), decider.auth.signOut(), publisher.auth.signOut(), outsider.auth.signOut()]);
   console.log("BANK_QA_FROZEN_FOR_BROWSER=1");
   process.exit(0);
 }
@@ -207,6 +215,66 @@ assert.equal(approval.reviewStatus, "approved");
 assert.equal(approval.competitiveEligible, false);
 await assertDenied("approved revision correction copy", () => editor.rpc("category_bank_start_revision", { p_draft_id: draft.id }), "55000");
 
+if (process.env.BANK_QA_APPROVE_ONLY === "1") {
+  await Promise.all([owner.auth.signOut(), editor.auth.signOut(), decider.auth.signOut(), publisher.auth.signOut(), outsider.auth.signOut()]);
+  console.log("BANK_QA_APPROVED_FOR_BROWSER=1");
+  process.exit(0);
+}
+
+const { data: publisherStatus, error: publisherStatusError } = await publisher.rpc("category_publisher_status");
+assert.ifError(publisherStatusError);
+assert.equal(publisherStatus.authorized, true);
+const { data: publicationQueue, error: publicationQueueError } = await publisher.rpc("category_publication_queue");
+assert.ifError(publicationQueueError);
+const publishableBank = publicationQueue.banks.find((item) => item.draftId === draft.id);
+assert.ok(publishableBank);
+assert.equal(publishableBank.reviewStatus, "approved");
+assert.deepEqual(publishableBank.answers, correctedAnswers);
+assert.equal("editorUserId" in publishableBank, false);
+assert.equal("reviewerUserId" in publishableBank, false);
+
+const publicationInput = {
+  p_draft_id: draft.id,
+  p_slug: `bank-qa-${runId}-capitals`,
+  p_title: `Bank QA ${runId} capitals`,
+  p_summary: `A reviewed local-practice QA bank for run ${runId}.`,
+  p_coverage_note: `The reviewed QA scope for run ${runId} contains four capital names.`,
+};
+await assertDenied("owner self-publish", () => owner.rpc("category_publish_approved_bank", publicationInput), "55000");
+await assertDenied("editor self-publish", () => editor.rpc("category_publish_approved_bank", publicationInput), "55000");
+await assertDenied("reviewer self-publish", () => decider.rpc("category_publish_approved_bank", publicationInput), "55000");
+await assertDenied("invalid publication slug", () => publisher.rpc("category_publish_approved_bank", {
+  ...publicationInput,
+  p_slug: "../private",
+}), "22023");
+
+const { data: publication, error: publicationError } = await publisher.rpc("category_publish_approved_bank", publicationInput);
+assert.ifError(publicationError);
+assert.equal(publication.slug, publicationInput.p_slug);
+assert.equal(publication.categoryVersion, 1);
+assert.equal(publication.answerCount, 4);
+assert.equal(publication.acceptedNameCount, 8);
+assert.equal(publication.availability, "practice");
+assert.equal(publication.competitiveEligible, false);
+console.log(`BANK_QA_PUBLICATION_ID=${publication.publicationId}`);
+console.log(`BANK_QA_PUBLICATION_SLUG=${publication.slug}`);
+await assertDenied("duplicate publication", () => publisher.rpc("category_publish_approved_bank", publicationInput), "55000");
+
+const { data: publishedDiscovery, error: publishedDiscoveryError } = await owner.rpc("category_discover", { p_query: `bank QA ${runId}` });
+assert.ifError(publishedDiscoveryError);
+const discoveryEntry = publishedDiscovery.categories.find((item) => item.slug === publication.slug);
+assert.ok(discoveryEntry);
+assert.equal(discoveryEntry.reviewStatus, "reviewed");
+assert.equal(discoveryEntry.availability, "practice");
+assert.equal(discoveryEntry.competitiveEligible, false);
+assert.equal(discoveryEntry.answerCount, 4);
+
+const { data: practiceCategory, error: practiceCategoryError } = await owner.rpc("category_practice_get", { p_slug: publication.slug });
+assert.ifError(practiceCategoryError);
+assert.equal(practiceCategory.slug, publication.slug);
+assert.equal(practiceCategory.competitiveEligible, false);
+assert.deepEqual(practiceCategory.answers, correctedAnswers);
+
 const { data: ownerDrafts, error: ownerDraftsError } = await owner.rpc("category_list_drafts");
 assert.ifError(ownerDraftsError);
 const ownerProjection = ownerDrafts.drafts.find((item) => item.id === draft.id);
@@ -215,11 +283,7 @@ assert.equal("answers" in ownerProjection, false);
 assert.equal("bank" in ownerProjection, false);
 assert.equal(ownerProjection.competitiveEligible, false);
 
-const { data: discovery, error: discoveryError } = await owner.rpc("category_discover", { p_query: `bank QA ${runId}` });
-assert.ifError(discoveryError);
-assert.deepEqual(discovery.categories, []);
-
-await Promise.all([owner.auth.signOut(), editor.auth.signOut(), decider.auth.signOut(), outsider.auth.signOut()]);
+await Promise.all([owner.auth.signOut(), editor.auth.signOut(), decider.auth.signOut(), publisher.auth.signOut(), outsider.auth.signOut()]);
 
 console.log(`CATEGORY_BANK_QA_OWNER=${ownerId}`);
-console.log("Category bank hostile-client checks passed: deny-all tables, editor/owner self-review denial, independent decisions, immutable frozen snapshots, correction-only revision copying, terminal private approval, owner privacy, noncompetitive state, and discovery exclusion.");
+console.log("Category bank hostile-client checks passed: deny-all tables, independent review and publishing, immutable frozen snapshots, correction-only revision copying, atomic reviewed practice publication, dynamic practice projection, discovery visibility, and noncompetitive state.");

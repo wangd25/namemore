@@ -1,12 +1,12 @@
 # NameMore
 
-NameMore is a fast-paced, category-first recall platform where players try to name as many valid answers as possible before a timer expires. NBA players remain the first competitive proof of concept, while a reviewed Chemical Elements bank proves that local practice, visuals, and results are not tied to sports. The current development branch adds independent decisions for frozen private answer-bank revisions without weakening the secure daily, private-race, atomic elimination, owner-draft, reviewer, or publishing boundaries.
+NameMore is a fast-paced, category-first recall platform where players try to name as many valid answers as possible before a timer expires. NBA players remain the first competitive proof of concept, while a reviewed Chemical Elements bank proves that local practice, visuals, and results are not tied to sports. The current development branch adds a separate publisher-controlled transition from an independently approved private bank into immutable reviewed, unranked practice without weakening the secure daily, private-race, atomic elimination, owner-draft, reviewer, or ranked-eligibility boundaries.
 
 ## Current Status
 
-Phases 1–6, **Phase 7A: Category Discovery Foundation**, **Phase 7B: Reviewed General Practice**, **Phase 7C1: Private Draft Review Boundary**, **Phase 7C2: Reviewer Authority and Outcomes**, **Phase 7C3: Versioned Answer-Bank Workspace**, and **Phase 7C4: Independent Answer-Bank Decisions** are complete. Phase 7 remains in progress toward publishing, moderation, and category lifecycle workflows.
+Phases 1–6, **Phase 7A: Category Discovery Foundation**, **Phase 7B: Reviewed General Practice**, **Phase 7C1: Private Draft Review Boundary**, **Phase 7C2: Reviewer Authority and Outcomes**, **Phase 7C3: Versioned Answer-Bank Workspace**, **Phase 7C4: Independent Answer-Bank Decisions**, and **Phase 7C5: Approved Bank Publishing** are complete. Phase 7 remains in progress toward moderation, correction, and broader category lifecycle workflows.
 
-**Current branch:** `codex/phase-7c4-answer-bank-decisions`, created from the completed Phase 7C3 branch. `main` has not been changed or merged.
+**Current branch:** `codex/phase-7c5-approved-bank-publishing`, created from the completed Phase 7C4 branch. `main` has not been changed or merged.
 
 The focused post–Phase 3 polish verifies that the non-production database has an active current-UTC challenge and a continuous schedule through 2026-12-31. A single transient empty status now triggers one automatic recovery check before the safe unavailable state appears. The ready dwell uses a damped charge and squash-and-stretch launch instead of a linear loading treatment, and competitive automatic answer checks begin after a 180ms pause instead of 420ms with a small in-board pending cue. No answer data or scoring authority moved into the browser.
 
@@ -46,7 +46,9 @@ Phase 7C4 adds `/review/banks/decisions`, where an independently authorized revi
 
 Phase 7C4 application commit `99d0acc4b1da5bd236effd6d0ec165d4e4e3929b` (`Build independent answer-bank decisions`) is pushed to `origin/codex/phase-7c4-answer-bank-decisions`. Exact-source protected Git Preview `dpl_23hthHcsTUk42up2B7jdS296U8ws` at `https://namemore-k9nuebmc0-namemore.vercel.app` was verified `READY`, `target: preview`, and sourced from that exact commit. The protected decision page and ordinary-user API boundary returned HTTP 200, the API projected `authorized: false` with no banks, runtime error/5xx scans were empty, and Production remains empty. The complete authorized desktop/mobile decision flow was verified locally against the real non-production backend.
 
-Supabase project `namemore` (`hutmxxlicxeaovoeqbwg`) was explicitly confirmed non-production. Anonymous sign-in is enabled. Nineteen repository migrations now provide 418 private canonical answers and 801 aliases across the immutable NBA and Chemical Elements versions, empty deny-all versioned bank/review tables after QA, a UTC schedule through 2026-12-31, immutable display names, strict control-character rejection, answer-check and draft-creation burst controls, private per-player Realtime topics, twenty-seven narrow gameplay/status/discovery/draft/review/bank RPC signatures plus one Realtime authorization helper. Vercel contains only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, scoped to Preview; Production variables were not changed.
+Phase 7C5 adds `/review/banks/publish`, an explicit publisher allowlist, and a final separation-of-duties gate. The category owner, bank editor, and approving reviewer cannot publish that revision even if separately allowlisted. A successful transaction copies the locked approved snapshot into immutable category/version/answer/alias rows, creates a reviewed discovery entry, and records an append-only publication snapshot. The result is available only through dynamic local practice with `competitive_eligible = false`; it cannot enter daily, leaderboard, room, or ranked play.
+
+Supabase project `namemore` (`hutmxxlicxeaovoeqbwg`) was explicitly confirmed non-production. Anonymous sign-in is enabled. Twenty repository migrations now provide 418 private canonical answers and 801 aliases across the immutable NBA and Chemical Elements versions, empty deny-all versioned bank/review/publication tables after QA, a UTC schedule through 2026-12-31, immutable display names, strict control-character rejection, answer-check and draft-creation burst controls, private per-player Realtime topics, thirty-one narrow gameplay/status/discovery/draft/review/bank/publishing RPC signatures plus one Realtime authorization helper. Vercel contains only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, scoped to Preview; Production variables were not changed.
 
 Implemented:
 
@@ -96,14 +98,16 @@ Implemented:
 - A private `/review` workspace with explicit allowlist authority, a pending queue that excludes the reviewer's own drafts, read-only submitted evidence, required decision reasons, and revision-safe request-changes/reject/scope-approve outcomes. Owner-visible outcomes omit reviewer identity, and scope approval still cannot enter discovery or play.
 - A private `/review/banks` workspace with scope-preserving bank selection, versioned edit/freeze/correction lifecycle, dated HTTPS provenance, bounded canonical/alias input, deterministic accent-insensitive collision checks, immutable review-ready snapshots, and an explicit publication boundary. Direct tables remain deny-all and the owner/discovery contracts contain no bank payload.
 - A private `/review/banks/decisions` workspace with an independent-review queue, read-only frozen evidence, required decision notes, and request-correction/reject/approve outcomes. The database excludes the category owner and bank editor, records one append-only snapshot per version, restricts correction copies to the original editor, and keeps approved banks private and noncompetitive.
+- A private `/review/banks/publish` workspace with a separate publisher allowlist, approved evidence, editable catalog copy, immutable transactional publication, and an explicit release boundary. Owners, bank editors, and approving reviewers cannot publish their own revision; published categories remain reviewed local practice and noncompetitive.
+- Dynamic `/practice/[slug]` lookup for published reviewed banks. Only reviewed/practice/noncompetitive discovery rows with a matching publication snapshot can project their bounded answer bank to the local game; static Chemical Elements practice remains supported.
 - A deterministic 300-answer/561-alias seed plus 168 scheduled UTC challenge dates from 2026-07-17 through 2026-12-31.
-- One hundred forty-four passing unit, dataset, contract, session, request-boundary, migration, Realtime, and component tests across twenty-six test files, plus direct publishable-key daily, room-lobby, room-game, elimination, category-draft, category-review, and category-bank hostile-client scripts.
+- One hundred fifty-five passing unit, dataset, contract, session, request-boundary, migration, Realtime, and component tests across twenty-nine test files, plus direct publishable-key daily, room-lobby, room-game, elimination, category-draft, category-review, and category-bank hostile-client scripts.
 
 Not implemented yet:
 
 - Global aggregates or production launch hardening.
 - CAPTCHA. A broader unprotected preview requires a product choice and credentials for hCaptcha or Cloudflare Turnstile; the current preview remains protected by Vercel team authentication.
-- Publishing of approved private bank revisions, public category correction workflows, provenance administration, and broader discovery abuse reporting.
+- Public category correction workflows, provenance administration, and broader discovery abuse reporting.
 
 ## Product Direction Beyond NBA
 
@@ -161,10 +165,11 @@ Verification snapshot from 2026-07-21 UTC:
 - Phase 7C2 local browser QA denied an ordinary user, loaded the authorized review queue, recorded a request-changes decision, advanced the queue, and matched the accepted desktop/mobile reviewer concept with no console warnings/errors or horizontal overflow. Its public-key hostile-client suite proves explicit reviewer authority, direct-table denial, ordinary-user and self-review denial, immutable submitted snapshots, revision-safe resubmission, owner-visible reasons without reviewer identity, noncompetitive scope approval, and discovery privacy.
 - Phase 7C3 local browser QA opened a real approved scope, validated a three-answer/six-name bank, froze revision 1, verified locked fields, started revision 2 with copied answers, matched the accepted desktop/mobile bank concepts, and passed console/overflow checks. A rollback-only live integration proves zero browser table grants, five authenticated bank RPCs, accent-insensitive collision rejection, immutable freeze, correction copying, and noncompetitive state; all QA bank/reviewer rows were removed afterward.
 - Phase 7C4 local browser QA loaded a real frozen revision, recorded an independent approval, emptied the queue, preserved the locked bank and publication boundary, matched the accepted three-column desktop and one-column mobile concepts, and passed console/overflow checks. Its public-key hostile suite proves deny-all review storage, outsider/owner/editor decision denial, immutable evidence, correction-only revision copying by the original editor, terminal private approval, discovery privacy, and noncompetitive state. The exact-source protected Preview passes page/API, runtime-error/5xx, and Production-isolation gates; all QA bank/review/reviewer rows were removed afterward.
+- Phase 7C5 local browser QA loaded an independently approved bank, edited its release metadata, published it, found the reviewed 4-answer entry in homepage discovery, opened the dynamic practice route, and accepted `Wien` as `Vienna` with no ranked/server attempt. The accepted 1505×1045 desktop and 853×1844 mobile concepts were compared with 1440×1000 and 390×844 live captures; the responsive action order, console, and overflow gates pass. Its hostile-client suite proves deny-all publisher/publication tables, outsider denial, owner/editor/approver self-publication denial, invalid/duplicate rejection, atomic immutable projection, discovery safety, dynamic practice retrieval, and noncompetitive state. All QA data and allowlist entries were removed afterward.
 
 ## Roadmap Remaining
 
-Phases 1–6 are complete. **Phase 7 is in progress**; Phase 7C4 now provides independent private decisions for frozen answer-bank revisions, while publishing approved revisions, moderation administration, and abuse reporting remain before Phase 8 production hardening/launch.
+Phases 1–6 are complete. **Phase 7 is in progress**; Phase 7C5 now publishes independently approved revisions only as reviewed, unranked practice, while correction workflows, moderation administration, and abuse reporting remain before Phase 8 production hardening/launch.
 
 In Codex desktop, the shell may not include `node` on its default `PATH`. Use the bundled workspace Node runtime when that occurs; do not treat a missing shell executable as an application failure.
 
@@ -177,7 +182,7 @@ app/
   api/rooms/             No-store create/status/join/start/game/submit Route Handlers
   category/new/          Separate private practice-draft workspace
   daily/                 Trusted server-authoritative daily route
-  practice/[slug]/       Static reviewed local-practice categories
+  practice/[slug]/       Static and published reviewed local-practice categories
   room/                  Private-room entry, lobby, live game, and results routes
   globals.css            White liquid-glass, clean answer-surface, ripple, and responsive rules
   layout.tsx             Root layout and NameMore metadata

@@ -110,6 +110,7 @@ export function CategoryBankReviewWorkspace({
           </div>
           {payload.banks.length === 0 ? <p className="bank-empty">No independent bank decisions are waiting.</p> : null}
           <Link className="bank-back-link" href="/review/banks">Return to bank workspace</Link>
+          <Link className="bank-back-link" href="/review/banks/publish">Open publishing workspace</Link>
         </aside>
 
         <main className="bank-decision-detail">
