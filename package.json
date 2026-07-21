@@ -8,6 +8,7 @@
     "audit:client-bundle": "node scripts/audit-client-bundle.mjs",
     "test:hostile-client": "node scripts/hostile-client-check.mjs",
     "test:room-hostile-client": "node scripts/room-hostile-client-check.mjs",
+    "test:room-abuse-hostile-client": "node scripts/room-abuse-hostile-client-check.mjs",
     "test:room-game-hostile-client": "node scripts/room-game-hostile-client-check.mjs",
     "test:elimination-hostile-client": "node scripts/elimination-hostile-client-check.mjs",
     "test:category-draft-hostile-client": "node scripts/category-draft-hostile-client-check.mjs",

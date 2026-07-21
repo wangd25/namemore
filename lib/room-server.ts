@@ -10,26 +10,15 @@ import type {
   RoomPayload,
   RoomSubmissionResult,
 } from "@/lib/room-types";
+import {
+  RoomServiceError,
+  roomServiceErrorFromPayload,
+  roomServiceErrorFromRpcCode,
+} from "@/lib/room-error";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ensureAnonymousIdentity } from "@/lib/supabase/session";
 
-export class RoomServiceError extends Error {
-  constructor(
-    public readonly code: string,
-    message: string,
-    public readonly httpStatus: number,
-  ) {
-    super(message);
-  }
-}
-
-const rpcErrors: Record<string, { code: string; message: string; status: number }> = {
-  "22023": { code: "invalid-room-request", message: "That room request is invalid.", status: 400 },
-  P0002: { code: "room-not-found", message: "That private room doesn’t exist.", status: 404 },
-  "42501": { code: "room-unavailable", message: "That room action isn’t available to you.", status: 403 },
-  "55000": { code: "room-locked", message: "That private room has already started.", status: 409 },
-  "54000": { code: "room-full", message: "That private room is full.", status: 409 },
-};
+export { RoomServiceError } from "@/lib/room-error";
 
 async function callRpc(name: string, args?: Record<string, string>): Promise<unknown> {
   try {
@@ -37,13 +26,10 @@ async function callRpc(name: string, args?: Record<string, string>): Promise<unk
     await ensureAnonymousIdentity(supabase);
     const { data, error } = await supabase.rpc(name, args);
     if (error) {
-      const mapped = rpcErrors[error.code];
-      throw new RoomServiceError(
-        mapped?.code ?? "room-unavailable",
-        mapped?.message ?? "Private rooms are temporarily unavailable.",
-        mapped?.status ?? 503,
-      );
+      throw roomServiceErrorFromRpcCode(error.code);
     }
+    const payloadError = roomServiceErrorFromPayload(data);
+    if (payloadError) throw payloadError;
     return data;
   } catch (error) {
     if (error instanceof RoomServiceError) throw error;

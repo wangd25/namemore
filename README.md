@@ -1,12 +1,12 @@
 # NameMore
 
-NameMore is a fast-paced, category-first recall platform where players try to name as many valid answers as possible before a timer expires. NBA players remain the first competitive proof of concept, while a reviewed Chemical Elements bank proves that local practice, visuals, and results are not tied to sports. The current development branch adds private category reporting and a moderator-to-publisher escalation path without exposing reporter identity, automatically changing a live category, or weakening the secure daily, private-race, atomic elimination, owner-draft, reviewer, publisher, or ranked-eligibility boundaries.
+NameMore is a fast-paced, category-first recall platform where players try to name as many valid answers as possible before a timer expires. NBA players remain the first competitive proof of concept, while a reviewed Chemical Elements bank proves that local practice, visuals, and results are not tied to sports. The current development branch begins production hardening with database-backed room creation/join limits and records the guarded future direction for AI-assisted category drafts and a sky-and-cloud homepage.
 
 ## Current Status
 
-Phases 1–6 and all Phase 7 slices through **Phase 7C7: Category Reporting and Moderation** are complete and Preview-verified. Phase 8 production hardening has not started.
+Phases 1–7 are complete and Preview-verified. **Phase 8A: Room Abuse Foundation** is in progress on non-production infrastructure; Production remains untouched.
 
-**Current branch:** `codex/phase-7c7-category-moderation`, created from the completed Phase 7C6 branch. `main` has not been changed or merged.
+**Current branch:** `codex/phase-8a-abuse-foundation`, created from the completed Phase 7C7 branch. `main` has not been changed or merged.
 
 The focused post–Phase 3 polish verifies that the non-production database has an active current-UTC challenge and a continuous schedule through 2026-12-31. A single transient empty status now triggers one automatic recovery check before the safe unavailable state appears. The ready dwell uses a damped charge and squash-and-stretch launch instead of a linear loading treatment, and competitive automatic answer checks begin after a 180ms pause instead of 420ms with a small in-board pending cue. No answer data or scoring authority moved into the browser.
 
@@ -58,7 +58,9 @@ Phase 7C7 adds a bounded “Report a category problem” dialog to reviewed prac
 
 Phase 7C7 application commit `32865ed0d2e70f6dbdd6b08d4eedd316e777de50` (`Build private category moderation`) is pushed to `origin/codex/phase-7c7-category-moderation`. Exact-source protected Git Preview `dpl_hVFLHCabetfByj2EdQiSaPJKRZgw` at `https://namemore-3aez7s8vh-namemore.vercel.app` was verified `READY`, source `git`, target null, and sourced from that exact commit. The safe ordinary-user moderation API returned HTTP 200 with `authorized: false`; build-error, runtime-error, and 5xx scans were empty. The protected HTML routes remain behind Vercel Authentication. Production and `main` are untouched.
 
-Supabase project `namemore` (`hutmxxlicxeaovoeqbwg`) was explicitly confirmed non-production. Anonymous sign-in is enabled. Twenty-two repository migrations now provide 418 private canonical answers and 801 aliases across the immutable NBA and Chemical Elements versions, empty deny-all versioned bank/review/publication/correction/moderation tables after QA, a UTC schedule through 2026-12-31, immutable display names, strict control-character rejection, answer-check/draft-creation/report burst controls, private per-player Realtime topics, thirty-six narrow gameplay/status/discovery/draft/review/bank/publishing/moderation RPC signatures plus one Realtime authorization helper. Vercel contains only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, scoped to Preview; Production variables were not changed.
+Phase 8A adds a private, RLS-enabled, deny-all action-event ledger and transaction-safe rolling limits of five room creations per hour and thirty valid room-join requests per ten minutes per anonymous identity. Join failures return a committed internal rejection payload so missing-code guesses count even when no room exists; the Next.js boundary converts that payload into the existing safe 404/403/409 contracts or a new HTTP 429. Events older than 24 hours self-prune during bounded actions. The existing room hostile-client suite and a dedicated abuse suite pass against the non-production database, and all disposable rooms, identities linked to the test events, and event rows were removed after reviewed counts restored the 17-room/35-player baseline.
+
+Supabase project `namemore` (`hutmxxlicxeaovoeqbwg`) was explicitly confirmed non-production. Anonymous sign-in is enabled. Twenty-three repository migrations now provide 418 private canonical answers and 801 aliases across the immutable NBA and Chemical Elements versions, empty deny-all versioned bank/review/publication/correction/moderation/abuse-event tables after QA, a UTC schedule through 2026-12-31, immutable display names, strict control-character rejection, answer-check/draft-creation/report/room-action burst controls, private per-player Realtime topics, thirty-six narrow gameplay/status/discovery/draft/review/bank/publishing/moderation RPC signatures plus one Realtime authorization helper. Vercel contains only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, scoped to Preview; Production variables were not changed.
 
 Implemented:
 
@@ -112,13 +114,13 @@ Implemented:
 - An immutable practice-release ledger with publisher correction requests, editor-only copied revisions, independent reapproval, exact-slug successor publishing, linked provenance, atomic discovery-pointer updates, and preserved historical snapshots. The currently published version remains live until its independently approved successor is released.
 - Dynamic `/practice/[slug]` lookup for published reviewed banks. Only reviewed/practice/noncompetitive discovery rows with a matching publication snapshot can project their bounded answer bank to the local game; static Chemical Elements practice remains supported.
 - A deterministic 300-answer/561-alias seed plus 168 scheduled UTC challenge dates from 2026-07-17 through 2026-12-31.
-- One hundred fifty-seven passing unit, dataset, contract, session, request-boundary, migration, Realtime, and component tests across twenty-nine test files, plus direct publishable-key daily, room-lobby, room-game, elimination, category-draft, category-review, and category-bank hostile-client scripts.
+- One hundred sixty-nine passing unit, dataset, contract, session, request-boundary, migration, Realtime, and component tests across thirty-three test files, plus direct publishable-key daily, room-lobby, room-abuse, room-game, elimination, category-draft, category-review, category-bank, and category-moderation hostile-client scripts.
 
 Not implemented yet:
 
-- Global aggregates or production launch hardening.
+- Remaining Production hardening: deployment-layer anonymous-sign-in controls, retention jobs, final accessibility/privacy/dependency/authorization reviews, release/rollback verification, and Production configuration.
 - CAPTCHA. A broader unprotected preview requires a product choice and credentials for hCaptcha or Cloudflare Turnstile; the current preview remains protected by Vercel team authentication.
-- Broader discovery moderation, abuse reporting, and copyright/provenance administration.
+- AI-assisted answer-bank generation and the sky-and-cloud homepage redesign. Both are designed but not implemented.
 
 ## Product Direction Beyond NBA
 
@@ -128,7 +130,7 @@ The surrounding ready screen now carries a sparse atmospheric layer of slowly dr
 
 Universal category and answer contracts now treat compact visuals and coverage groups as optional category-provided metadata. NBA team marks/colors and chemical symbols/periods use the same renderer without making either subject a universal requirement.
 
-Generated or community-supplied answer banks require provenance, deterministic normalization and collision checks, versioning, moderation, and explicit coverage/review status. Unreviewed categories remain practice-only and must not enter ranked daily play or competitive multiplayer.
+Generated or community-supplied answer banks require provenance, deterministic normalization and collision checks, versioning, moderation, and explicit coverage/review status. Unreviewed categories remain unavailable to play and must not enter ranked daily play or competitive multiplayer. The proposed server-only AI draft flow, reliability labels, source safeguards, and cloud-card physics are specified in [`docs/future-ai-cloud-home.md`](./docs/future-ai-cloud-home.md).
 
 See [`plan.md`](./plan.md) for the phase-by-phase roadmap and current progress.
 
@@ -160,11 +162,12 @@ pnpm build
 Verification snapshot from 2026-07-21 UTC:
 
 - `git diff --check`, `pnpm lint`, `pnpm typecheck`, and the Next.js production build pass.
-- `pnpm test` passes 144 tests in 26 test files.
+- `pnpm test` passes 169 tests in 33 test files.
 - The hostile-client script passes directly against Supabase using only the public URL/publishable key and anonymous identities. It additionally proves display-name validation/normalization/immutability, active-attempt exclusion, top-ten limiting, deterministic tie order, safe projection keys, no UUID/answer leakage, direct leaderboard insertion denial, concurrent idempotent finish, and the 40-per-10-second burst guard.
 - A rollback-only live database deadline test returned `round-ended` and `expired` without accepting a late answer. Migration history, 418 answers, 801 aliases, 168 scheduled challenges through 2026-12-31, RLS, grants, constraints, and indexes were inspected live. The Chemical Elements version has exactly 118 canonical answers and 240 accepted exact/symbol/alternate aliases, no team codes, and direct public-table reads remain denied.
 - Supabase security advisors report only intentional deny-all/no-policy tables, the intentionally callable authenticated security-definer operations, anonymous Realtime access constrained by membership policies, and leaked-password protection for the deferred permanent-account path. Performance advisors report only expected unused indexes on the fresh schema; all reported missing foreign-key indexes were fixed.
 - The room hostile-client suite uses isolated anonymous sessions to prove safe outsider projection, stable rejoin, immutable membership names, direct table/status/deadline denial, non-host start denial, an atomic eight-player capacity race, host-set 90-second timestamps, and late-join rejection. The room host foreign-key advisor issue was fixed forward-only; remaining room index notices are expected on fresh QA data.
+- The room-abuse hostile-client suite proves private event-table denial, five room creations per rolling hour, thirty room-join requests per rolling ten minutes, committed counting of missing-code guesses, safe error projection, and unchanged lobby behavior. The event ledger self-prunes rows older than 24 hours; tested QA rows and rooms were removed after exact count review.
 - The room-game hostile-client suite proves unsigned/outsider/direct-table denial, independent per-player scoring for the same canonical answer, duplicate and invalid handling, active opponent-answer secrecy, private topic membership, own-topic-only publish rights, safe Presence/Broadcast payloads, automatic deadline completion, and post-round reveal.
 - The elimination hostile-client suite proves unsigned and direct-claim denial, exactly one owner under simultaneous submissions, idempotent winner retry, answer-free loser responses, cross-room isolation, unchanged private-race scoring, late-answer rejection, and verified ownership reveal.
 - `pnpm audit:client-bundle` audits the page’s manifest-referenced browser chunks and finds no NBA answer-bank markers. HTML inspection also found no canonical answer leakage before acceptance.
@@ -181,7 +184,7 @@ Verification snapshot from 2026-07-21 UTC:
 
 ## Roadmap Remaining
 
-Phases 1–6 are complete. **Phase 7 is in progress**; Phase 7C6 now corrects published practice through immutable successor versions and the full independent review chain, while moderation administration and abuse reporting remain before Phase 8 production hardening/launch.
+Phases 1–7 are complete. **Phase 8 is in progress**; Phase 8A establishes the first database abuse boundary for room creation and joining. Next are deployment-layer anonymous-sign-in controls and a reviewed retention policy/job before the final accessibility, privacy, dependency, authorization, release, and rollback gates.
 
 In Codex desktop, the shell may not include `node` on its default `PATH`. Use the bundled workspace Node runtime when that occurs; do not treat a missing shell executable as an application failure.
 
@@ -226,11 +229,14 @@ scripts/
   audit-client-bundle.mjs      Manifest-scoped answer-bank leak audit
   hostile-client-check.mjs     Direct public-key daily authorization/concurrency checks
   room-hostile-client-check.mjs Direct public-key room authorization/capacity checks
+  room-abuse-hostile-client-check.mjs Direct public-key room request-limit checks
   room-game-hostile-client-check.mjs Direct live-game/Realtime/privacy checks
   elimination-hostile-client-check.mjs Direct atomic-claim/concurrency/regression checks
 supabase/
   config.toml             Anonymous-auth local configuration
   migrations/             Schema/seed, schedule, RPC correction, and index migrations
+docs/
+  future-ai-cloud-home.md  Guarded AI-category and sky-homepage product design
 AGENTS.md                 Repository-wide product, security, and coding rules
 plan.md                   Eight-phase implementation plan and live status
 ```

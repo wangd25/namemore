@@ -16,8 +16,18 @@ function client() {
 }
 
 async function assertDenied(label, operation) {
-  const { error } = await operation();
-  assert.ok(error, `${label} unexpectedly succeeded.`);
+  const { data, error } = await operation();
+  assert.ok(error || roomErrorCode(data), `${label} unexpectedly succeeded.`);
+}
+
+function roomErrorCode(data) {
+  return data && typeof data === "object" && typeof data._roomError === "string"
+    ? data._roomError
+    : null;
+}
+
+function requestWasDenied(result) {
+  return result.error !== null || roomErrorCode(result.data) !== null;
 }
 
 const unsigned = client();
@@ -94,8 +104,8 @@ const capacityRace = await Promise.all([
   candidates[5].rpc("room_join", { p_room_code: roomCode, p_display_name: `QA ${runId} Player 8A` }),
   candidates[6].rpc("room_join", { p_room_code: roomCode, p_display_name: `QA ${runId} Player 8B` }),
 ]);
-assert.equal(capacityRace.filter(({ error }) => error === null).length, 1);
-assert.equal(capacityRace.filter(({ error }) => error !== null).length, 1);
+assert.equal(capacityRace.filter((result) => !requestWasDenied(result)).length, 1);
+assert.equal(capacityRace.filter(requestWasDenied).length, 1);
 
 const { data: fullStatus, error: fullStatusError } = await host.rpc("room_get_status", { p_room_code: roomCode });
 assert.ifError(fullStatusError);
