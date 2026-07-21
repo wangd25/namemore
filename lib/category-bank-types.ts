@@ -42,6 +42,14 @@ export type CategoryBankQueueItem = {
   revision: number;
   status: "not-started" | CategoryBankStatus;
   available: boolean;
+  publicationCorrection: {
+    requestId: string;
+    publicationId: string;
+    slug: string;
+    categoryVersion: number;
+    reason: string;
+    requestedAt: string;
+  } | null;
   bank: CategoryBankPayload | null;
 };
 

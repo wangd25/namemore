@@ -62,6 +62,7 @@ describe("category bank contracts", () => {
         revision: 1,
         status: "editing",
         available: true,
+        publicationCorrection: null,
         bank,
       }],
     }).drafts[0].bank).toEqual(bank);

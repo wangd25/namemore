@@ -7,6 +7,7 @@ export type CategoryPublisherStatusPayload = {
 
 export type CategoryPublicationQueuePayload = CategoryPublisherStatusPayload & {
   banks: CategoryBankPayload[];
+  releases: CategoryPublicationRelease[];
 };
 
 export type CategoryPublicationInput = {
@@ -25,6 +26,45 @@ export type CategoryPublicationPayload = {
   answerCount: number;
   acceptedNameCount: number;
   publishedAt: string;
+  supersededPublicationId: string | null;
   availability: "practice";
   competitiveEligible: false;
+};
+
+export type CategoryPublicationCorrection = {
+  requestId: string;
+  reason: string;
+  requestedAt: string;
+  revisionStarted: boolean;
+  successorPublished: boolean;
+};
+
+export type CategoryPublicationRelease = {
+  publicationId: string;
+  draftId: string;
+  bankRevision: number;
+  slug: string;
+  title: string;
+  prompt: string;
+  summary: string;
+  coverageNote: string;
+  categoryVersion: number;
+  snapshotDate: string;
+  timeLimitSeconds: number;
+  sourceLabel: string;
+  sourceUrl: string;
+  versionNote: string;
+  answerCount: number;
+  acceptedNameCount: number;
+  publishedAt: string;
+  current: boolean;
+  supersedesPublicationId: string | null;
+  supersededByPublicationId: string | null;
+  availability: "practice";
+  competitiveEligible: false;
+  correctionRequest: CategoryPublicationCorrection | null;
+};
+
+export type CategoryPublicationCorrectionInput = {
+  reason: string;
 };

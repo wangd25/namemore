@@ -149,6 +149,27 @@ function parseQueueItem(value: unknown): CategoryBankQueueItem {
     throw new Error("Invalid bank revision.");
   }
   const bank = value.bank === null ? null : parseCategoryBankPayload(value.bank);
+  let publicationCorrection = null;
+  if (value.publicationCorrection !== null) {
+    if (!isRecord(value.publicationCorrection)) throw new Error("Invalid publication correction.");
+    const requestId = readString(value.publicationCorrection, "requestId");
+    const publicationId = readString(value.publicationCorrection, "publicationId");
+    const slug = readString(value.publicationCorrection, "slug");
+    const categoryVersion = readPositiveInteger(value.publicationCorrection, "categoryVersion");
+    const reason = readString(value.publicationCorrection, "reason");
+    if (!uuidPattern.test(requestId) || !uuidPattern.test(publicationId)
+      || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) || reason.length > 1000) {
+      throw new Error("Invalid publication correction.");
+    }
+    publicationCorrection = {
+      requestId,
+      publicationId,
+      slug,
+      categoryVersion,
+      reason,
+      requestedAt: readTimestamp(value.publicationCorrection, "requestedAt"),
+    };
+  }
   if (bank && (bank.draftId !== draftId || bank.status !== status || bank.revision !== revision)) {
     throw new Error("Invalid bank queue projection.");
   }
@@ -160,6 +181,7 @@ function parseQueueItem(value: unknown): CategoryBankQueueItem {
     revision: revision as number,
     status: status as CategoryBankQueueItem["status"],
     available: value.available,
+    publicationCorrection,
     bank,
   };
 }

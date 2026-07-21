@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   parseCategoryPublicationPayload,
   parseCategoryPublicationQueuePayload,
+  parseCategoryPublicationCorrectionRequest,
   parseCategoryPublicationRequest,
   parseCategoryPublisherStatusPayload,
 } from "@/lib/category-publication-contract";
@@ -45,12 +46,20 @@ describe("category publication contracts", () => {
       serverNow: "2026-07-21T18:01:00.000Z",
       authorized: true,
       banks: [approvedBank],
+      releases: [],
     }).banks[0]).toEqual(approvedBank);
     expect(() => parseCategoryPublicationQueuePayload({
       serverNow: "2026-07-21T18:01:00.000Z",
       authorized: true,
       banks: [{ ...approvedBank, reviewStatus: "pending", latestReview: null }],
+      releases: [],
     })).toThrow("queue");
+  });
+
+  it("normalizes bounded correction reasons", () => {
+    expect(parseCategoryPublicationCorrectionRequest({ reason: "  Correct   the documented spelling. " }))
+      .toEqual({ reason: "Correct the documented spelling." });
+    expect(parseCategoryPublicationCorrectionRequest({ reason: "too short" })).toBeNull();
   });
 
   it("normalizes bounded publication metadata and rejects unsafe slugs", () => {
@@ -83,6 +92,7 @@ describe("category publication contracts", () => {
       answerCount: 44,
       acceptedNameCount: 61,
       publishedAt: "2026-07-21T18:02:00.000Z",
+      supersededPublicationId: null,
       availability: "practice",
       competitiveEligible: false,
     };

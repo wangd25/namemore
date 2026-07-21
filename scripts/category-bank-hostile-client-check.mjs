@@ -32,15 +32,15 @@ const editor = client();
 const decider = client();
 const publisher = client();
 const outsider = client();
-const [ownerId, editorId, deciderId, publisherId] = await Promise.all([
+const [ownerId, editorId, deciderId, publisherId, outsiderId] = await Promise.all([
   signIn(owner),
   signIn(editor),
   signIn(decider),
   signIn(publisher),
   signIn(outsider),
-]).then(([ownerUserId, editorUserId, deciderUserId, publisherUserId]) => [ownerUserId, editorUserId, deciderUserId, publisherUserId]);
+]);
 
-for (const table of ["category_answer_bank_versions", "category_answer_bank_answers", "category_answer_bank_aliases", "category_answer_bank_reviews", "category_publishers", "category_answer_bank_publications"]) {
+for (const table of ["category_answer_bank_versions", "category_answer_bank_answers", "category_answer_bank_aliases", "category_answer_bank_reviews", "category_publishers", "category_answer_bank_publications", "category_publication_correction_requests"]) {
   await assertDenied(`direct ${table} read`, () => editor.schema("private").from(table).select("*"));
 }
 await assertDenied("outsider bank queue", () => outsider.rpc("category_bank_queue"), "42501");
@@ -65,6 +65,7 @@ console.log(`BANK_EDITOR_USER_ID=${editorId}`);
 console.log(`BANK_DECIDER_USER_ID=${deciderId}`);
 console.log(`BANK_PUBLISHER_USER_ID=${publisherId}`);
 console.log(`BANK_OWNER_USER_ID=${ownerId}`);
+console.log(`BANK_OUTSIDER_USER_ID=${outsiderId}`);
 console.log("Promote editor and decider in the private reviewer allowlist. Promote owner, editor, decider, and publisher in the private publisher allowlist. Then send a newline.");
 const input = createInterface({ input: process.stdin, output: process.stdout });
 await input.question("");
@@ -283,7 +284,128 @@ assert.equal("answers" in ownerProjection, false);
 assert.equal("bank" in ownerProjection, false);
 assert.equal(ownerProjection.competitiveEligible, false);
 
+const correctionReason = "Add the newly documented Helsinki answer and refresh the dated provenance snapshot.";
+await assertDenied("outsider correction request", () => outsider.rpc("category_publication_request_correction", {
+  p_publication_id: publication.publicationId,
+  p_reason: correctionReason,
+}), "42501");
+await assertDenied("owner correction request", () => owner.rpc("category_publication_request_correction", {
+  p_publication_id: publication.publicationId,
+  p_reason: correctionReason,
+}), "42501");
+await assertDenied("editor correction request", () => editor.rpc("category_publication_request_correction", {
+  p_publication_id: publication.publicationId,
+  p_reason: correctionReason,
+}), "42501");
+await assertDenied("reviewer correction request", () => decider.rpc("category_publication_request_correction", {
+  p_publication_id: publication.publicationId,
+  p_reason: correctionReason,
+}), "42501");
+
+const { data: correctionRequest, error: correctionRequestError } = await publisher.rpc(
+  "category_publication_request_correction",
+  { p_publication_id: publication.publicationId, p_reason: correctionReason },
+);
+assert.ifError(correctionRequestError);
+assert.equal(correctionRequest.current, true);
+assert.equal(correctionRequest.categoryVersion, 1);
+assert.equal(correctionRequest.correctionRequest.reason, correctionReason);
+assert.equal(correctionRequest.correctionRequest.revisionStarted, false);
+assert.equal(correctionRequest.competitiveEligible, false);
+await assertDenied("duplicate publication correction", () => publisher.rpc("category_publication_request_correction", {
+  p_publication_id: publication.publicationId,
+  p_reason: "A second correction request must not overwrite the first immutable request.",
+}), "55000");
+
+const { data: editorCorrectionQueue, error: editorCorrectionQueueError } = await editor.rpc("category_bank_queue");
+assert.ifError(editorCorrectionQueueError);
+const correctionQueueItem = editorCorrectionQueue.drafts.find((item) => item.draftId === draft.id);
+assert.ok(correctionQueueItem);
+assert.equal(correctionQueueItem.available, true);
+assert.equal(correctionQueueItem.publicationCorrection.publicationId, publication.publicationId);
+assert.equal(correctionQueueItem.publicationCorrection.reason, correctionReason);
+await assertDenied("non-editor published correction copy", () => decider.rpc("category_bank_start_revision", {
+  p_draft_id: draft.id,
+}), "55000");
+
+const { data: publishedRevision, error: publishedRevisionError } = await editor.rpc(
+  "category_bank_start_revision",
+  { p_draft_id: draft.id },
+);
+assert.ifError(publishedRevisionError);
+assert.equal(publishedRevision.revision, 3);
+assert.equal(publishedRevision.status, "editing");
+assert.deepEqual(publishedRevision.answers, correctedAnswers);
+
+const successorAnswers = [...correctedAnswers, { canonicalText: "Helsinki", aliases: ["Helsingfors"] }];
+const { data: successorSaved, error: successorSaveError } = await editor.rpc("category_bank_save", {
+  ...metadata,
+  p_snapshot_date: "2026-07-22",
+  p_source_label: "Updated official QA geographic list",
+  p_version_note: "Third private QA snapshot adds the documented Helsinki correction.",
+  p_answers: successorAnswers,
+});
+assert.ifError(successorSaveError);
+assert.equal(successorSaved.revision, 3);
+assert.deepEqual(successorSaved.answers, successorAnswers);
+const { data: successorFrozen, error: successorFreezeError } = await editor.rpc("category_bank_freeze", {
+  p_draft_id: draft.id,
+});
+assert.ifError(successorFreezeError);
+assert.equal(successorFrozen.reviewStatus, "pending");
+const { data: successorApproval, error: successorApprovalError } = await decider.rpc("category_bank_review_decide", {
+  p_draft_id: draft.id,
+  p_decision: "approve",
+  p_note: "The successor snapshot resolves the correction and matches the updated provenance.",
+});
+assert.ifError(successorApprovalError);
+assert.equal(successorApproval.reviewStatus, "approved");
+
+const successorInput = {
+  ...publicationInput,
+  p_summary: `An updated reviewed local-practice QA bank for run ${runId}.`,
+  p_coverage_note: `The reviewed QA scope for run ${runId} now contains five capital names.`,
+};
+await assertDenied("successor URL change", () => publisher.rpc("category_publish_approved_bank", {
+  ...successorInput,
+  p_slug: `${publication.slug}-changed`,
+}), "55000");
+const { data: successorPublication, error: successorPublicationError } = await publisher.rpc(
+  "category_publish_approved_bank",
+  successorInput,
+);
+assert.ifError(successorPublicationError);
+assert.equal(successorPublication.categoryVersion, 2);
+assert.equal(successorPublication.bankRevision, 3);
+assert.equal(successorPublication.supersededPublicationId, publication.publicationId);
+assert.equal(successorPublication.slug, publication.slug);
+assert.equal(successorPublication.answerCount, 5);
+assert.equal(successorPublication.acceptedNameCount, 10);
+assert.equal(successorPublication.competitiveEligible, false);
+
+const { data: releaseLedger, error: releaseLedgerError } = await publisher.rpc("category_publication_queue");
+assert.ifError(releaseLedgerError);
+const currentRelease = releaseLedger.releases.find((item) => item.publicationId === successorPublication.publicationId);
+const historicalRelease = releaseLedger.releases.find((item) => item.publicationId === publication.publicationId);
+assert.ok(currentRelease);
+assert.ok(historicalRelease);
+assert.equal(currentRelease.current, true);
+assert.equal(currentRelease.categoryVersion, 2);
+assert.equal(currentRelease.supersedesPublicationId, publication.publicationId);
+assert.equal(historicalRelease.current, false);
+assert.equal(historicalRelease.supersededByPublicationId, successorPublication.publicationId);
+assert.equal(historicalRelease.correctionRequest.successorPublished, true);
+assert.equal(historicalRelease.answerCount, 4);
+
+const { data: correctedPractice, error: correctedPracticeError } = await owner.rpc("category_practice_get", {
+  p_slug: publication.slug,
+});
+assert.ifError(correctedPracticeError);
+assert.equal(correctedPractice.version, 2);
+assert.deepEqual(correctedPractice.answers, successorAnswers);
+assert.equal(correctedPractice.competitiveEligible, false);
+
 await Promise.all([owner.auth.signOut(), editor.auth.signOut(), decider.auth.signOut(), publisher.auth.signOut(), outsider.auth.signOut()]);
 
 console.log(`CATEGORY_BANK_QA_OWNER=${ownerId}`);
-console.log("Category bank hostile-client checks passed: deny-all tables, independent review and publishing, immutable frozen snapshots, correction-only revision copying, atomic reviewed practice publication, dynamic practice projection, discovery visibility, and noncompetitive state.");
+console.log("Category bank hostile-client checks passed: deny-all tables, independent review and publishing, immutable correction evidence and release history, editor-only successor revision copying, atomic practice supersession, dynamic current-practice projection, discovery visibility, and unchanged noncompetitive state.");

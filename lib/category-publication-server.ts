@@ -1,12 +1,15 @@
 import {
   parseCategoryPublicationPayload,
   parseCategoryPublicationQueuePayload,
+  parseCategoryPublicationRelease,
   parseCategoryPublisherStatusPayload,
 } from "@/lib/category-publication-contract";
 import type {
   CategoryPublicationInput,
+  CategoryPublicationCorrectionInput,
   CategoryPublicationPayload,
   CategoryPublicationQueuePayload,
+  CategoryPublicationRelease,
   CategoryPublisherStatusPayload,
 } from "@/lib/category-publication-types";
 import { CategoryBankServiceError } from "@/lib/category-bank-server";
@@ -48,7 +51,7 @@ async function callPublicationRpc(name: string, args?: Record<string, unknown>):
             : locked
               ? "This approved bank is no longer available to publish."
               : conflict
-                ? "That practice URL is already in use. Choose another slug."
+                ? "The release changed before this operation completed. Reload and try again."
                 : "Category publishing is temporarily unavailable.",
         unauthorized ? 403 : invalid ? 400 : locked || conflict ? 409 : 503,
       );
@@ -79,7 +82,7 @@ export async function getCategoryPublisherStatus(): Promise<CategoryPublisherSta
 
 export async function getCategoryPublicationQueue(): Promise<CategoryPublicationQueuePayload> {
   const status = await getCategoryPublisherStatus();
-  if (!status.authorized) return { ...status, banks: [] };
+  if (!status.authorized) return { ...status, banks: [], releases: [] };
   try {
     return parseCategoryPublicationQueuePayload(await callPublicationRpc("category_publication_queue"));
   } catch (error) {
@@ -87,6 +90,25 @@ export async function getCategoryPublicationQueue(): Promise<CategoryPublication
     throw new CategoryPublicationServiceError(
       "invalid-category-publication-response",
       "The publishing queue returned an invalid response.",
+      502,
+    );
+  }
+}
+
+export async function requestCategoryPublicationCorrection(
+  publicationId: string,
+  input: CategoryPublicationCorrectionInput,
+): Promise<CategoryPublicationRelease> {
+  try {
+    return parseCategoryPublicationRelease(await callPublicationRpc("category_publication_request_correction", {
+      p_publication_id: publicationId,
+      p_reason: input.reason,
+    }));
+  } catch (error) {
+    if (error instanceof CategoryPublicationServiceError) throw error;
+    throw new CategoryPublicationServiceError(
+      "invalid-category-publication-response",
+      "The correction request returned an invalid response.",
       502,
     );
   }

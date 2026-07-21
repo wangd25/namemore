@@ -40,6 +40,7 @@ const payload: CategoryBankQueuePayload = {
     revision: 1,
     status: "editing",
     available: true,
+    publicationCorrection: null,
     bank,
   }],
 };
