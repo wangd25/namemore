@@ -38,6 +38,7 @@ describe("daily API contracts", () => {
       attempt: {
         id: attemptId,
         displayName: "Daily Player",
+        rankedEligible: false,
         status: "active",
         startedAt: "2026-07-17T18:00:00.000Z",
         deadlineAt: "2026-07-17T18:01:30.000Z",
@@ -48,6 +49,26 @@ describe("daily API contracts", () => {
     });
 
     expect(payload.attempt?.answers).toEqual([acceptedAnswer]);
+    expect(payload.attempt?.rankedEligible).toBe(false);
+  });
+
+  it("requires ranked eligibility to come from the server payload", () => {
+    const status = {
+      serverNow: "2026-07-17T18:00:12.000Z",
+      challenge: null,
+      attempt: {
+        id: attemptId,
+        displayName: "Daily Player",
+        status: "completed",
+        startedAt: "2026-07-17T18:00:00.000Z",
+        deadlineAt: "2026-07-17T18:01:30.000Z",
+        completedAt: "2026-07-17T18:00:30.000Z",
+        score: 1,
+        answers: [acceptedAnswer],
+      },
+    };
+
+    expect(() => parseDailyStatusPayload(status)).toThrow("Invalid rankedEligible");
   });
 
   it("normalizes safe display names and rejects malformed public names", () => {

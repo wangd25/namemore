@@ -86,6 +86,7 @@ assert.ifError(startError1);
 assert.ifError(startError2);
 assert.equal(startA1.attempt.id, startA2.attempt.id);
 assert.equal(startA1.attempt.displayName, playerAName);
+assert.equal(startA1.attempt.rankedEligible, false);
 assert.equal(startA1.attempt.deadlineAt, startA2.attempt.deadlineAt);
 assert.equal(
   Date.parse(startA1.attempt.deadlineAt) - Date.parse(startA1.attempt.startedAt),
@@ -107,6 +108,7 @@ const { data: startB, error: startErrorB } = await playerB.rpc(
 );
 assert.ifError(startErrorB);
 assert.notEqual(startB.attempt.id, startA1.attempt.id);
+assert.equal(startB.attempt.rankedEligible, false);
 
 const { data: accepted, error: acceptedError } = await playerA.rpc(
   "daily_submit_answer",
@@ -164,6 +166,7 @@ await assertDenied("arbitrary score write", () =>
       status: "completed",
       user_id: authB.data.user.id,
       display_name: "Forged Name",
+      ranked_eligible: true,
     })
     .eq("id", startA1.attempt.id),
 );
@@ -202,17 +205,8 @@ const acceptedAliases = [
   "curry",
   "harden",
   "durant",
-  "lebron james",
-  "anthony davis",
-  "jayson tatum",
-  "jaylen brown",
-  "nikola jokic",
-  "jamal murray",
-  "luka doncic",
-  "kyrie irving",
-  "giannis antetokounmpo",
 ];
-const targetScores = [12, 11, 10, 9, 8, 7, 6, 5, 5, 4];
+const targetScores = [3, 2];
 const completedNames = [];
 
 for (let index = 0; index < targetScores.length; index += 1) {
@@ -223,6 +217,7 @@ for (let index = 0; index < targetScores.length; index += 1) {
     { p_display_name: displayName },
   );
   assert.ifError(startError);
+  assert.equal(started.attempt.rankedEligible, false);
 
   for (const normalizedAnswer of acceptedAliases.slice(0, targetScores[index])) {
     const { data, error } = await player.rpc("daily_submit_answer", {
@@ -249,7 +244,7 @@ assert.ifError(leaderboardError);
 assert.equal(leaderboard.challenge.date, statusA.challenge.date);
 assert.equal(leaderboard.challenge.category.slug, statusA.challenge.category.slug);
 assert.equal(leaderboard.challenge.category.version, statusA.challenge.category.version);
-assert.equal(leaderboard.entries.length, 10);
+assert.ok(leaderboard.entries.length <= 10);
 leaderboard.entries.forEach((entry, index) => {
   assert.deepEqual(Object.keys(entry).sort(), ["displayName", "isTied", "rank", "score"]);
   assert.equal(entry.rank, index + 1);
@@ -259,15 +254,12 @@ leaderboard.entries.forEach((entry, index) => {
 });
 assert.equal(leaderboard.entries.some(({ displayName }) => displayName === playerBName), false);
 assert.equal(leaderboard.entries.some(({ displayName }) => displayName === playerAName), false);
+completedNames.forEach((displayName) => {
+  assert.equal(leaderboard.entries.some((entry) => entry.displayName === displayName), false);
+});
 assert.equal(JSON.stringify(leaderboard).includes(authA.data.user.id), false);
 assert.equal(JSON.stringify(leaderboard).includes("canonicalText"), false);
 assert.equal(JSON.stringify(leaderboard).includes("answer"), false);
-
-const firstTie = leaderboard.entries.find(({ displayName }) => displayName === completedNames[7]);
-const secondTie = leaderboard.entries.find(({ displayName }) => displayName === completedNames[8]);
-assert.ok(firstTie?.isTied);
-assert.ok(secondTie?.isTied);
-assert.ok(firstTie.rank < secondTie.rank);
 
 const burst = await Promise.all(
   Array.from({ length: 41 }, (_, index) =>
@@ -283,5 +275,5 @@ assert.ok(burst.some(({ data }) => data.status === "rate-limited"));
 await Promise.all(players.map((player) => player.auth.signOut()));
 
 console.log(
-  "Hostile client checks passed: display names, hidden answers, ownership, rate limiting, derived scores, idempotent finish, and safe top-ten ordering.",
+  "Hostile client checks passed: anonymous attempts stay unranked while ownership, rate limiting, derived scores, idempotent finish, and safe leaderboard projection remain intact.",
 );

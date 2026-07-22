@@ -447,7 +447,10 @@ export function DailyGameBoard({ api = dailyGameApi }: DailyGameBoardProps) {
   async function shareResult() {
     if (!challenge || !attempt) return;
     const scorePattern = `${"◆".repeat(Math.floor(attempt.score / 5))}${"•".repeat(attempt.score % 5)}` || "—";
-    const text = [`NameMore Daily — ${challenge.date}`, `${attempt.score} ${attempt.score === 1 ? "name" : "names"} · ${stats.representedTeamCodes.length}/30 NBA teams`, scorePattern, "Verified daily result"].join("\n");
+    const resultLabel = attempt.rankedEligible
+      ? "Verified ranked result"
+      : "Verified daily practice · not ranked";
+    const text = [`NameMore Daily — ${challenge.date}`, `${attempt.score} ${attempt.score === 1 ? "name" : "names"} · ${stats.representedTeamCodes.length}/30 NBA teams`, scorePattern, resultLabel].join("\n");
     try {
       if (navigator.share) { await navigator.share({ title: "NameMore Daily", text }); setShareStatus("shared"); }
       else if (navigator.clipboard?.writeText) { await navigator.clipboard.writeText(text); setShareStatus("copied"); }
@@ -483,7 +486,7 @@ export function DailyGameBoard({ api = dailyGameApi }: DailyGameBoardProps) {
         <div className="ready-state name-state">
           <div className="ready-copy">
             <h1 id="game-prompt">Choose your daily display name</h1>
-            <p>One verified attempt per UTC challenge. Your display name is public on the leaderboard and cannot be changed after the round starts.</p>
+            <p>Anonymous daily play is verified practice and is not ranked. Your display name stays on this result and cannot be changed after the round starts.</p>
           </div>
           <form className="display-name-form" onSubmit={handleNameSubmit}>
             <label htmlFor="display-name">Display name</label>
@@ -507,7 +510,7 @@ export function DailyGameBoard({ api = dailyGameApi }: DailyGameBoardProps) {
         </div>
       ) : (phase === "ready" || phase === "starting") && challenge ? (
         <div className="ready-state">
-          <div className="ready-copy"><h1 id="game-prompt">{prompt}</h1><p>{phase === "starting" ? `Locked in as ${confirmedName}. Your verified board is opening now.` : `${challenge.category.timeLimitSeconds} seconds as ${confirmedName}. The server starts the one-attempt clock and verifies every name.`}</p></div>
+          <div className="ready-copy"><h1 id="game-prompt">{prompt}</h1><p>{phase === "starting" ? `Locked in as ${confirmedName}. Your verified practice board is opening now.` : `${challenge.category.timeLimitSeconds} seconds as ${confirmedName}. The server starts the clock and verifies every name; this anonymous round stays unranked.`}</p></div>
           <button className={`ready-zone ripple-surface${isReadyIntentActive ? " is-activating" : ""}${phase === "starting" ? " is-launching" : ""}`} type="button" aria-describedby="ready-instructions" aria-busy={phase === "starting"} disabled={phase === "starting"} onPointerEnter={(event) => { if (event.pointerType === "mouse") beginReadyIntent(); }} onPointerLeave={clearReadyIntent} onPointerDown={(event) => { if (event.pointerType !== "mouse") beginReadyIntent(); }} onPointerUp={clearReadyIntent} onPointerCancel={clearReadyIntent} onPointerMove={handleRipplePointerMove} onFocus={beginReadyIntent} onBlur={clearReadyIntent} onKeyDown={handleReadyKeyDown}>
             <LiquidRipple /><span className="ready-ring" aria-hidden="true"><svg viewBox="0 0 120 120"><circle className="ready-ring-track" cx="60" cy="60" r="53" /><circle className="ready-ring-progress" cx="60" cy="60" r="53" /></svg><span className="ready-dot" /></span><strong>{phase === "starting" ? "Go!" : "Move here when you’re ready"}</strong><span id="ready-instructions">{phase === "starting" ? "Opening your verified board…" : "Focus or press and hold also works."}</span>
           </button>
@@ -515,6 +518,7 @@ export function DailyGameBoard({ api = dailyGameApi }: DailyGameBoardProps) {
       ) : phase === "finished" && challenge && attempt ? (
         <DailyGameResults
           category={challenge.category}
+          rankedEligible={attempt.rankedEligible}
           stats={stats}
           shareStatus={shareStatus}
           leaderboard={leaderboard}

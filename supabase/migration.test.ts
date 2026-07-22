@@ -82,6 +82,10 @@ const approvedBankPublishingMigration = readFileSync(
   resolve(process.cwd(), "supabase/migrations/20260721184852_add_phase7c5_approved_bank_publishing.sql"),
   "utf8",
 );
+const dailyRankedEligibilityMigration = readFileSync(
+  resolve(process.cwd(), "supabase/migrations/20260722041436_gate_daily_leaderboard_by_durable_identity.sql"),
+  "utf8",
+);
 
 describe("server-authoritative daily migration", () => {
   it("keeps the answer bank private and exposes only narrow RPCs", () => {
@@ -150,6 +154,25 @@ describe("server-authoritative daily migration", () => {
     expect(leaderboardMigration).toContain("count(*)::integer");
     expect(leaderboardMigration).toContain("submission_window_count >= 40");
     expect(leaderboardMigration).toContain("'rate-limited'");
+  });
+
+  it("fails anonymous daily attempts closed and admits only trusted durable identities to ranking", () => {
+    expect(dailyRankedEligibilityMigration).toContain(
+      "add column ranked_eligible boolean not null default false",
+    );
+    expect(dailyRankedEligibilityMigration).toContain(
+      "new.ranked_eligible := coalesce(auth.jwt() ->> 'is_anonymous', 'true') = 'false'",
+    );
+    expect(dailyRankedEligibilityMigration).toContain(
+      "before insert on public.daily_attempts",
+    );
+    expect(dailyRankedEligibilityMigration).toContain(
+      "'rankedEligible', attempt.ranked_eligible",
+    );
+    expect(dailyRankedEligibilityMigration).toContain("and attempt.ranked_eligible");
+    expect(dailyRankedEligibilityMigration).not.toMatch(
+      /grant\s+(insert|update)\s+on\s+(table\s+)?public\.daily_attempts/i,
+    );
   });
 
   it("extends the deterministic UTC preview schedule without changing category history", () => {

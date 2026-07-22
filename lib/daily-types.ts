@@ -28,6 +28,7 @@ export type DailyAcceptedAnswer = {
 export type DailyAttempt = {
   id: string;
   displayName: string | null;
+  rankedEligible: boolean;
   status: DailyAttemptStatus;
   startedAt: string;
   deadlineAt: string;

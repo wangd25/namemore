@@ -8,6 +8,7 @@ import type { PracticeStats } from "@/lib/practice-game";
 
 type DailyGameResultsProps = {
   category: DailyCategoryMetadata;
+  rankedEligible: boolean;
   stats: PracticeStats;
   shareStatus: "idle" | "copied" | "shared" | "error";
   leaderboard: DailyLeaderboardPayload | null;
@@ -51,6 +52,7 @@ function shareMessage(status: DailyGameResultsProps["shareStatus"]): string {
 
 export function DailyGameResults({
   category,
+  rankedEligible,
   stats,
   shareStatus,
   leaderboard,
@@ -71,7 +73,7 @@ export function DailyGameResults({
 
         <p className="best-result is-new">
           <CheckIcon />
-          Verified daily result
+          {rankedEligible ? "Verified ranked result" : "Verified practice result · not ranked"}
         </p>
 
         <div className="result-rate">

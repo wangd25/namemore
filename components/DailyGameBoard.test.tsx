@@ -33,6 +33,7 @@ const curry: DailyAcceptedAnswer = {
 const activeAttempt: DailyAttempt = {
   id: "11111111-1111-4111-8111-111111111111",
   displayName: "Daily Player",
+  rankedEligible: false,
   status: "active",
   startedAt: "2099-07-17T12:00:00.000Z",
   deadlineAt: "2099-07-17T12:01:30.000Z",
@@ -190,7 +191,7 @@ describe("DailyGameBoard", () => {
     expect(screen.getByTestId("score-value")).toHaveTextContent("01");
   });
 
-  it("finishes through the server and presents a verified result", async () => {
+  it("finishes through the server and clearly labels anonymous play as unranked", async () => {
     const completed = {
       ...activeAttempt,
       status: "completed" as const,
@@ -203,10 +204,25 @@ describe("DailyGameBoard", () => {
     render(<DailyGameBoard api={api} />);
 
     fireEvent.click(await screen.findByRole("button", { name: "End round" }));
-    expect(await screen.findByText("Verified daily result")).toBeInTheDocument();
+    expect(await screen.findByText("Verified practice result · not ranked")).toBeInTheDocument();
     expect(finish).toHaveBeenCalledWith(activeAttempt.id);
     expect(await screen.findByRole("heading", { name: "Today’s top ten" })).toBeInTheDocument();
     expect(await screen.findByText("Daily Player")).toBeInTheDocument();
+  });
+
+  it("presents server-approved durable attempts as ranked", async () => {
+    const completed = {
+      ...activeAttempt,
+      rankedEligible: true,
+      status: "completed" as const,
+      completedAt: "2099-07-17T12:00:30.000Z",
+    };
+    const api = mockApi({
+      getStatus: vi.fn().mockResolvedValue({ ...activeStatus, attempt: completed }),
+    });
+    render(<DailyGameBoard api={api} />);
+
+    expect(await screen.findByText("Verified ranked result")).toBeInTheDocument();
   });
 
   it("validates and normalizes a public display name before the attempt starts", async () => {

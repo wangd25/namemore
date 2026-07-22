@@ -29,14 +29,14 @@ describe("DailyLeaderboard", () => {
 
     expect(screen.getByText("D’Angelo Fan")).toBeInTheDocument();
     expect(screen.getByText("tied score")).toBeInTheDocument();
-    expect(screen.getByText(/Earlier verified completion/)).toBeInTheDocument();
+    expect(screen.getByText(/Durable signed-in identity is required/)).toBeInTheDocument();
   });
 
   it("handles empty and retryable error states without fabricated results", () => {
     const { rerender } = render(
       <DailyLeaderboard state="ready" onRetry={vi.fn()} leaderboard={emptyLeaderboard} />,
     );
-    expect(screen.getByText(/No verified finishers yet/)).toBeInTheDocument();
+    expect(screen.getByText(/No ranked finishers yet/)).toBeInTheDocument();
 
     const onRetry = vi.fn();
     rerender(<DailyLeaderboard state="error" onRetry={onRetry} leaderboard={null} />);

@@ -19,7 +19,7 @@ export function DailyLeaderboard({
     >
       <div className="results-section-heading">
         <h2 id="leaderboard-heading">Today’s top ten</h2>
-        <span>Verified only</span>
+        <span>Ranked only</span>
       </div>
 
       {state === "loading" ? (
@@ -35,7 +35,7 @@ export function DailyLeaderboard({
         <p className="leaderboard-message">No leaderboard is available for this UTC challenge.</p>
       ) : leaderboard.entries.length === 0 ? (
         <p className="leaderboard-message">
-          No verified finishers yet. Active rounds never appear here.
+          No ranked finishers yet. Anonymous practice rounds never appear here.
         </p>
       ) : (
         <ol className="leaderboard-list">
@@ -51,8 +51,8 @@ export function DailyLeaderboard({
       )}
 
       <p className="leaderboard-rule">
-        Equal scores are marked tied. Earlier verified completion, then earlier attempt creation,
-        sets the displayed position.
+        Durable signed-in identity is required for ranking. Equal scores are marked tied;
+        earlier verified completion, then earlier attempt creation, sets the displayed position.
       </p>
     </section>
   );

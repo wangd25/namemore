@@ -95,6 +95,7 @@ export function parseDailyAttempt(value: unknown): DailyAttempt {
   return {
     id: readString(value, "id"),
     displayName,
+    rankedEligible: readBoolean(value, "rankedEligible"),
     status: status as DailyAttemptStatus,
     startedAt: readString(value, "startedAt"),
     deadlineAt: readString(value, "deadlineAt"),
