@@ -4,7 +4,7 @@ NameMore is a fast-paced, category-first recall platform where players try to na
 
 ## Current Status
 
-Phases 1–7 and **Phase 8A: Room Abuse Foundation** are complete and Preview-verified. **Phase 8B: Retention Dry Run** is implemented and verified against non-production. **Phase 8C: Daily Ranking Eligibility** is applied and fully exercised against non-production, and awaits publication and protected Preview verification; Phase 8 production hardening remains in progress and Production is untouched.
+Phases 1–7, **Phase 8A: Room Abuse Foundation**, and **Phase 8C: Daily Ranking Eligibility** are complete and Preview-verified. **Phase 8B: Retention Dry Run** is implemented and verified against non-production. Phase 8 production hardening remains in progress and Production is untouched.
 
 **Current branch:** `codex/phase-8c-daily-ranking-eligibility`, created from the verified Phase 8B branch. `main` has not been changed or merged.
 
@@ -68,6 +68,8 @@ Phase 8B application commit `98411a577c199e869970ab94f7a3a699258d001b` (`Add ret
 
 Phase 8C responds to the completed standard security scan finding that clearing or isolating browser storage can create another Supabase anonymous identity. Anonymous daily rounds remain server-timed, server-scored, resumable for that identity, and shareable, but are explicitly verified practice and cannot enter the ranked leaderboard. A forward-only migration adds a fail-closed eligibility flag, derives it only from the signed Auth JWT's system-owned anonymous claim, and filters the leaderboard in Postgres. Existing attempts are backfilled unranked; future durable non-anonymous identities can be ranked without accepting a browser-supplied eligibility value. The migration is applied only to non-production. Live schema, privilege, public-key hostile-client, advisor, desktop/mobile gameplay, reload, duplicate-score, leaderboard-exclusion, console, and cleanup gates pass; Production is unchanged.
 
+Phase 8C application commit `7703d626b2d6b800bb6d211d9d8b8b1d3fa27267` (`Harden daily ranking eligibility`) is pushed to `origin/codex/phase-8c-daily-ranking-eligibility`. Exact-source protected Git Preview `dpl_94Ztev2bwVFmGTb6wmMtytMWAU46` at `https://namemore-3pgv5n11r-namemore.vercel.app` is `READY`, source `git`, target Preview, and matches that commit. Protected `/daily` returned HTTP 200; build-error, runtime-error/fatal, and 5xx checks were empty. The Vercel project remains `live: false` with no domains, so Production is untouched.
+
 Supabase project `namemore` (`hutmxxlicxeaovoeqbwg`) was explicitly confirmed non-production. Anonymous sign-in is enabled. Twenty-five repository migrations are applied there. The schema provides 418 private canonical answers and 801 aliases across the immutable NBA and Chemical Elements versions, empty deny-all versioned bank/review/publication/correction/moderation/abuse-event tables after QA, a private counts-only retention audit, a UTC schedule through 2026-12-31, immutable display names, strict control-character rejection, answer-check/draft-creation/report/room-action burst controls, private per-player Realtime topics, thirty-six narrow gameplay/status/discovery/draft/review/bank/publishing/moderation RPC signatures plus one Realtime authorization helper. Vercel contains only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, scoped to Preview; Production variables were not changed.
 
 Implemented:
@@ -127,7 +129,7 @@ Implemented:
 
 Not implemented yet:
 
-- Remaining Production hardening: publish and verify the exact Phase 8C source in protected Preview, choose and build durable sign-in before enabling ranked daily submissions, approve a bounded retention cleanup/schedule, finish accessibility/privacy/dependency/authorization reviews, verify release/rollback, and configure Production. Supabase's 30-anonymous-sign-ins-per-IP-per-hour control and Vercel's automatic DDoS mitigation are active; no custom Vercel Firewall rule or CAPTCHA provider has been authorized.
+- Remaining Production hardening: choose and build durable sign-in before enabling ranked daily submissions, approve a bounded retention cleanup/schedule, finish accessibility/privacy/dependency/authorization reviews, verify release/rollback, and configure Production. Supabase's 30-anonymous-sign-ins-per-IP-per-hour control and Vercel's automatic DDoS mitigation are active; no custom Vercel Firewall rule or CAPTCHA provider has been authorized.
 - CAPTCHA. A broader unprotected preview requires a product choice and credentials for hCaptcha or Cloudflare Turnstile; the current preview remains protected by Vercel team authentication.
 - AI-assisted answer-bank generation and the sky-and-cloud homepage redesign. Both are designed but not implemented.
 
