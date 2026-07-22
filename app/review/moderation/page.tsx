@@ -5,5 +5,9 @@ export const dynamic = "force-dynamic";
 
 export default async function CategoryModerationPage() {
   const initialPayload = await getCategoryModerationQueue().catch(() => null);
-  return <CategoryModerationWorkspace initialPayload={initialPayload} />;
+  return (
+    <main className="discovery-shell">
+      <CategoryModerationWorkspace initialPayload={initialPayload} />
+    </main>
+  );
 }

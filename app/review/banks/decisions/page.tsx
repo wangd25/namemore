@@ -5,5 +5,9 @@ export const dynamic = "force-dynamic";
 
 export default async function CategoryBankDecisionsPage() {
   const initialPayload = await getCategoryBankReviewQueue().catch(() => null);
-  return <CategoryBankReviewWorkspace initialPayload={initialPayload} />;
+  return (
+    <main className="discovery-shell">
+      <CategoryBankReviewWorkspace initialPayload={initialPayload} />
+    </main>
+  );
 }

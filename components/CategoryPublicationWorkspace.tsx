@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { KeyboardEvent } from "react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   parseCategoryPublicationPayload,
@@ -84,8 +84,13 @@ export function CategoryPublicationWorkspace({
   const [error, setError] = useState(initialPayload ? "" : "The release workspace could not be loaded.");
   const publicationFormRef = useRef<HTMLFormElement>(null);
   const correctionFormRef = useRef<HTMLFormElement>(null);
+  const messageRef = useRef<HTMLParagraphElement>(null);
   const selectedBank = payload?.banks.find((bank) => bank.draftId === selectedBankId) ?? null;
   const selectedRelease = payload?.releases.find((release) => release.publicationId === selectedReleaseId) ?? null;
+
+  useEffect(() => {
+    if (message) messageRef.current?.focus();
+  }, [message]);
 
   function currentReleaseForBank(bank: CategoryBankPayload) {
     return payload?.releases.find((release) => release.draftId === bank.draftId && release.current);
@@ -216,7 +221,7 @@ export function CategoryPublicationWorkspace({
   }
 
   if (!payload) {
-    return <section className="draft-frame"><PublicationHeader /><section className="review-access-boundary"><h1>Publishing unavailable.</h1><p>{error}</p><button type="button" disabled={operation === "loading"} onClick={() => void reloadQueue()}>{operation === "loading" ? "Retrying…" : "Retry"}</button></section></section>;
+    return <section className="draft-frame"><PublicationHeader /><section className="review-access-boundary" aria-busy={operation === "loading"}><h1>Publishing unavailable.</h1><p>{error}</p><button type="button" disabled={operation === "loading"} onClick={() => void reloadQueue()}>{operation === "loading" ? "Retrying…" : "Retry"}</button></section></section>;
   }
 
   return (
@@ -246,7 +251,7 @@ export function CategoryPublicationWorkspace({
           <Link className="publication-back-link" href="/review/banks/decisions">← <span>Return to bank decisions</span></Link>
         </aside>
 
-        <main className="publication-detail">
+        <section className="publication-detail" aria-busy={operation !== null}>
           {view === "ready" ? <ReadyRelease
             selected={selectedBank}
             form={form}
@@ -262,9 +267,9 @@ export function CategoryPublicationWorkspace({
             operation={operation}
             requestCorrection={requestCorrection}
           />}
-          {publication ? <p className="publication-message" role="status">{message} <Link href={`/practice/${publication.slug}`}>Open practice category</Link></p> : message ? <p className="publication-message" role="status">{message}</p> : null}
+          {publication ? <p ref={messageRef} className="publication-message" role="status" tabIndex={-1}>{message} <Link href={`/practice/${publication.slug}`}>Open practice category</Link></p> : message ? <p ref={messageRef} className="publication-message" role="status" tabIndex={-1}>{message}</p> : null}
           {error ? <p className="review-message is-error" role="alert">{error}</p> : null}
-        </main>
+        </section>
 
         <aside className="publication-boundary">
           <h2>{view === "published" ? "Immutable release boundary" : "Release boundary"}</h2>

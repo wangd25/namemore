@@ -44,7 +44,8 @@ describe("CategoryModerationWorkspace", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Send to publisher review" }));
 
-    expect(await screen.findByText(/live category remains unchanged/)).toBeInTheDocument();
+    const message = await screen.findByText(/live category remains unchanged/);
+    expect(message).toHaveFocus();
     expect(fetchMock).toHaveBeenCalledWith(
       `/api/categories/moderation/${payload.reports[0].reportId}/decision`,
       expect.objectContaining({ method: "POST" }),

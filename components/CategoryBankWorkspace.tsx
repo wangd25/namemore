@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   formatAnswerBankText,
@@ -52,9 +52,15 @@ export function CategoryBankWorkspace({ initialPayload }: { initialPayload: Cate
   const [message, setMessage] = useState("");
   const [error, setError] = useState(initialPayload ? "" : "The bank workspace could not be loaded.");
   const formRef = useRef<HTMLFormElement>(null);
+  const answerEditorRef = useRef<HTMLTextAreaElement>(null);
+  const messageRef = useRef<HTMLParagraphElement>(null);
   const selected = payload?.drafts.find((draft) => draft.draftId === selectedId) ?? null;
   const validation = useMemo(() => parseAnswerBankText(answerText), [answerText]);
   const editing = bank?.status === "editing";
+
+  useEffect(() => {
+    if (message) messageRef.current?.focus();
+  }, [message]);
 
   function syncFields(nextBank: CategoryBankPayload | null) {
     setSnapshotDate(nextBank?.snapshotDate ?? todayUtc());
@@ -128,7 +134,11 @@ export function CategoryBankWorkspace({ initialPayload }: { initialPayload: Cate
 
   function buildSaveInput(): CategoryBankSaveInput | null {
     setValidationVisible(true);
-    if (!formRef.current?.reportValidity() || validation.errors.length > 0) return null;
+    if (!formRef.current?.reportValidity()) return null;
+    if (validation.errors.length > 0) {
+      answerEditorRef.current?.focus();
+      return null;
+    }
     return {
       snapshotDate,
       timeLimitSeconds: Number(timeLimitSeconds),
@@ -169,6 +179,7 @@ export function CategoryBankWorkspace({ initialPayload }: { initialPayload: Cate
     if (!selected || validation.canonicalCount < 2) {
       setValidationVisible(true);
       setError("Add at least two canonical answers before freezing this revision.");
+      answerEditorRef.current?.focus();
       return;
     }
     const saved = await saveDraft(false);
@@ -193,7 +204,7 @@ export function CategoryBankWorkspace({ initialPayload }: { initialPayload: Cate
   }
 
   if (!payload) {
-    return <section className="draft-frame"><BankHeader /><section className="review-access-boundary"><h1>Bank workspace unavailable.</h1><p>{error}</p><button type="button" disabled={operation === "loading"} onClick={() => void reloadQueue()}>{operation === "loading" ? "Retrying…" : "Retry"}</button></section></section>;
+    return <section className="draft-frame"><BankHeader /><section className="review-access-boundary" aria-busy={operation === "loading"}><h1>Bank workspace unavailable.</h1><p>{error}</p><button type="button" disabled={operation === "loading"} onClick={() => void reloadQueue()}>{operation === "loading" ? "Retrying…" : "Retry"}</button></section></section>;
   }
 
   return (
@@ -214,11 +225,11 @@ export function CategoryBankWorkspace({ initialPayload }: { initialPayload: Cate
           <div className="bank-rail-links"><Link className="bank-back-link" href="/review/banks/decisions">Review frozen banks</Link><Link className="bank-back-link" href="/review">Return to scope queue</Link></div>
         </aside>
 
-        <section className="bank-detail">
+        <section className="bank-detail" aria-busy={operation !== null}>
           <h2>Build the bank, then prove it.</h2>
           {selected ? (
             bank ? (
-              <form ref={formRef} className="bank-form" onSubmit={(event) => { event.preventDefault(); void saveDraft(); }}>
+              <form ref={formRef} className="bank-form" aria-busy={operation !== null} onSubmit={(event) => { event.preventDefault(); void saveDraft(); }}>
                 <label className="bank-field-wide">Approved prompt<input value={bank.prompt} readOnly /></label>
                 <div className="bank-field-grid">
                   <label>Snapshot date<input type="date" value={snapshotDate} onChange={(event) => setSnapshotDate(event.target.value)} required disabled={!editing} /></label>
@@ -227,8 +238,8 @@ export function CategoryBankWorkspace({ initialPayload }: { initialPayload: Cate
                 <label>Source label<input value={sourceLabel} onChange={(event) => setSourceLabel(event.target.value)} minLength={3} maxLength={160} required readOnly={!editing} placeholder="Official league roster" /></label>
                 <label>Source URL<input type="url" value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} minLength={12} maxLength={500} required readOnly={!editing} placeholder="https://…" /></label>
                 <label>Version note<textarea value={versionNote} onChange={(event) => setVersionNote(event.target.value)} minLength={8} maxLength={500} required readOnly={!editing} placeholder="What this snapshot includes and excludes." /></label>
-                <label>Canonical answers and aliases<span className="bank-helper">One answer per line. Separate aliases with <strong>|</strong></span><textarea aria-label="Canonical answers and aliases" className="bank-answer-editor" value={answerText} onChange={(event) => setAnswerText(event.target.value)} readOnly={!editing} placeholder={"LeBron James | LeBron\nStephen Curry | Steph Curry"} spellCheck={false} /></label>
-                <div className={`bank-validation ${validationVisible && validation.errors.length ? "has-errors" : ""}`} role={validationVisible ? "status" : undefined}>
+                <label>Canonical answers and aliases<span className="bank-helper" id="bank-answer-guidance">One answer per line. Separate aliases with <strong>|</strong></span><textarea ref={answerEditorRef} aria-label="Canonical answers and aliases" className="bank-answer-editor" value={answerText} onChange={(event) => setAnswerText(event.target.value)} readOnly={!editing} placeholder={"LeBron James | LeBron\nStephen Curry | Steph Curry"} spellCheck={false} aria-describedby="bank-answer-guidance bank-validation" aria-invalid={validationVisible && validation.errors.length > 0} /></label>
+                <div id="bank-validation" className={`bank-validation ${validationVisible && validation.errors.length ? "has-errors" : ""}`} role={validationVisible ? validation.errors.length ? "alert" : "status" : undefined} aria-atomic={validationVisible ? "true" : undefined}>
                   {validation.canonicalCount} canonical answers · {validation.aliasCount} aliases · {validation.errors.length ? `${validation.errors.length} issue${validation.errors.length === 1 ? "" : "s"}` : "No collisions"}
                   {validationVisible && validation.errors.length ? <ul>{validation.errors.slice(0, 4).map((issue) => <li key={issue}>{issue}</li>)}</ul> : null}
                 </div>
@@ -242,7 +253,7 @@ export function CategoryBankWorkspace({ initialPayload }: { initialPayload: Cate
               <div className="bank-start"><h3>{selected.available ? "Start the first versioned bank." : "This bank is already being edited."}</h3><p>{selected.available ? "The approved prompt stays fixed while you add provenance, canonical answers, and explicit aliases." : "Another authorized reviewer owns the current editing revision."}</p>{selected.available ? <button type="button" disabled={operation !== null} onClick={() => void postBank(`/api/categories/banks/${selected.draftId}/open`, "opening")}>{operation === "opening" ? "Opening…" : "Begin bank"}</button> : null}</div>
             )
           ) : <div className="bank-start"><h3>No approved scopes are ready.</h3><p>Answer-bank work begins only after a separate reviewer approves a category scope.</p></div>}
-          {message ? <p className="review-message is-success" role="status">{message}</p> : null}
+          {message ? <p ref={messageRef} className="review-message is-success" role="status" tabIndex={-1}>{message}</p> : null}
           {error ? <p className="review-message is-error" role="alert">{error}</p> : null}
         </section>
 

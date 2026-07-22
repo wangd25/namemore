@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   parseCategoryReviewDecisionPayload,
@@ -35,7 +35,12 @@ export function CategoryReviewWorkspace({
   const [message, setMessage] = useState("");
   const [error, setError] = useState(initialPayload ? "" : "The review workspace could not be loaded.");
   const formRef = useRef<HTMLFormElement>(null);
+  const messageRef = useRef<HTMLParagraphElement>(null);
   const selectedDraft = payload?.drafts.find((draft) => draft.id === selectedId) ?? null;
+
+  useEffect(() => {
+    if (message) messageRef.current?.focus();
+  }, [message]);
 
   async function reloadQueue() {
     setOperation("loading");
@@ -106,7 +111,7 @@ export function CategoryReviewWorkspace({
     return (
       <section className="draft-frame">
         <ReviewHeader />
-        <section className="review-access-boundary">
+        <section className="review-access-boundary" aria-busy={operation === "loading"}>
           <h1>Review workspace unavailable.</h1>
           <p>{error}</p>
           <button type="button" disabled={operation === "loading"} onClick={() => void reloadQueue()}>
@@ -144,7 +149,7 @@ export function CategoryReviewWorkspace({
           <Link className="bank-back-link" href="/review/banks">Build approved banks</Link>
         </aside>
 
-        <section className="review-detail">
+        <section className="review-detail" aria-busy={operation !== null}>
           <h2>Review the evidence, not the promise.</h2>
           {selectedDraft ? (
             <form
@@ -207,7 +212,7 @@ export function CategoryReviewWorkspace({
               <p>There are no submitted category drafts waiting for a decision.</p>
             </div>
           )}
-          {message ? <p className="review-message is-success" role="status">{message}</p> : null}
+          {message ? <p ref={messageRef} className="review-message is-success" role="status" tabIndex={-1}>{message}</p> : null}
           {error ? <p className="review-message is-error" role="alert">{error}</p> : null}
         </section>
 

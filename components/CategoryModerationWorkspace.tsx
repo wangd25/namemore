@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { KeyboardEvent } from "react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   parseCategoryModerationDecisionPayload,
@@ -62,8 +62,13 @@ export function CategoryModerationWorkspace({
   const [message, setMessage] = useState("");
   const [error, setError] = useState(initialPayload ? "" : "The moderation workspace could not be loaded.");
   const formRef = useRef<HTMLFormElement>(null);
+  const messageRef = useRef<HTMLParagraphElement>(null);
   const visibleReports = payload ? reportsForView(payload, view) : [];
   const selected = payload?.reports.find((report) => report.reportId === selectedId) ?? null;
+
+  useEffect(() => {
+    if (message) messageRef.current?.focus();
+  }, [message]);
 
   function chooseView(nextView: ModerationView) {
     if (!payload) return;
@@ -152,7 +157,7 @@ export function CategoryModerationWorkspace({
   }
 
   if (!payload) {
-    return <section className="draft-frame"><ModerationHeader /><section className="review-access-boundary"><h1>Moderation unavailable.</h1><p>{error}</p><button type="button" disabled={operation === "loading"} onClick={() => void reloadQueue()}>{operation === "loading" ? "Retrying…" : "Retry"}</button></section></section>;
+    return <section className="draft-frame"><ModerationHeader /><section className="review-access-boundary" aria-busy={operation === "loading"}><h1>Moderation unavailable.</h1><p>{error}</p><button type="button" disabled={operation === "loading"} onClick={() => void reloadQueue()}>{operation === "loading" ? "Retrying…" : "Retry"}</button></section></section>;
   }
 
   return (
@@ -177,7 +182,7 @@ export function CategoryModerationWorkspace({
           <Link className="moderation-back-link" href="/review">Return to review workspaces</Link>
         </aside>
 
-        <section className="moderation-detail">
+        <section className="moderation-detail" aria-busy={operation !== null}>
           <h2>Review a category report.</h2>
           <p className="moderation-intro">Assess the report without exposing the reporter or changing the live category.</p>
           {selected ? <>
@@ -195,7 +200,7 @@ export function CategoryModerationWorkspace({
               <p>Neither decision changes the live category.</p>
             </form> : <section className="moderation-reviewed-state"><h3>{selected.status === "dismissed" ? "Report dismissed" : "Sent to publisher review"}</h3><p>{selected.decision?.note}</p><time dateTime={selected.decision?.decidedAt}>{selected.decision ? formatUtc(selected.decision.decidedAt) : null}</time></section>}
           </> : <div className="moderation-clear"><h3>The queue is clear.</h3><p>No reports in this view need attention.</p></div>}
-          {message ? <p className="moderation-message is-success" role="status">{message}</p> : null}
+          {message ? <p ref={messageRef} className="moderation-message is-success" role="status" tabIndex={-1}>{message}</p> : null}
           {error ? <p className="moderation-message is-error" role="alert">{error}</p> : null}
         </section>
 

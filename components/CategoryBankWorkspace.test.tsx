@@ -50,12 +50,17 @@ describe("CategoryBankWorkspace", () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
     render(<CategoryBankWorkspace initialPayload={payload} />);
-    fireEvent.change(screen.getByLabelText("Canonical answers and aliases"), {
+    const editor = screen.getByLabelText("Canonical answers and aliases");
+    fireEvent.change(editor, {
       target: { value: "Luka Dončić | Luka Doncic\nLeBron James" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Validate bank" }));
     expect(screen.getByText(/collides with/)).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveAttribute("id", "bank-validation");
+    expect(editor).toHaveAttribute("aria-describedby", "bank-answer-guidance bank-validation");
+    expect(editor).toHaveAttribute("aria-invalid", "true");
     fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
+    expect(editor).toHaveFocus();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -64,7 +69,8 @@ describe("CategoryBankWorkspace", () => {
     vi.stubGlobal("fetch", fetchMock);
     render(<CategoryBankWorkspace initialPayload={payload} />);
     fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
-    expect(await screen.findByText("Draft saved. The revision remains private and editable.")).toBeInTheDocument();
+    const message = await screen.findByText("Draft saved. The revision remains private and editable.");
+    expect(message).toHaveFocus();
     expect(fetchMock).toHaveBeenCalledWith(`/api/categories/banks/${bank.draftId}`, expect.objectContaining({ method: "PUT" }));
   });
 

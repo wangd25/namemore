@@ -40,7 +40,8 @@ describe("CategoryReviewWorkspace", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Request changes" }));
 
-    expect(await screen.findByText("Changes requested. The owner can revise and resubmit.")).toBeInTheDocument();
+    const message = await screen.findByText("Changes requested. The owner can revise and resubmit.");
+    expect(message).toHaveFocus();
     expect(screen.getByText("The queue is clear.")).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(
       `/api/categories/review/${queuePayload.drafts[0].id}/decision`,

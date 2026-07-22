@@ -35,10 +35,11 @@ const payload: CategoryBankReviewQueuePayload = {
 
 describe("CategoryBankReviewWorkspace", () => {
   it("renders the frozen revision and explicit non-publishing boundary", () => {
-    render(<CategoryBankReviewWorkspace initialPayload={payload} />);
+    const { container } = render(<CategoryBankReviewWorkspace initialPayload={payload} />);
     expect(screen.getByRole("heading", { name: "Review every name, then decide." })).toBeInTheDocument();
     expect(screen.getByText("Copenhagen | København")).toBeInTheDocument();
     expect(screen.getByText(/does not publish the category/)).toBeInTheDocument();
+    expect(container.querySelector("main")).toBeNull();
   });
 
   it("records a bounded approval through the narrow route and advances the queue", async () => {
@@ -55,7 +56,8 @@ describe("CategoryBankReviewWorkspace", () => {
     render(<CategoryBankReviewWorkspace initialPayload={payload} />);
     fireEvent.change(screen.getByLabelText("Reviewer note"), { target: { value: "The frozen source and answer set are complete." } });
     fireEvent.click(screen.getByRole("button", { name: "Approve bank" }));
-    expect(await screen.findByText(/approved as reviewed/)).toBeInTheDocument();
+    const message = await screen.findByText(/approved as reviewed/);
+    expect(message).toHaveFocus();
     expect(screen.getByText("No independent bank decisions are waiting.")).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(`/api/categories/banks/${payload.banks[0].draftId}/reviews`, expect.objectContaining({ method: "POST" }));
   });

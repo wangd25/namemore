@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   parseCategoryBankDecisionPayload,
@@ -35,7 +35,12 @@ export function CategoryBankReviewWorkspace({
   const [message, setMessage] = useState("");
   const [error, setError] = useState(initialPayload ? "" : "The bank review queue could not be loaded.");
   const formRef = useRef<HTMLFormElement>(null);
+  const messageRef = useRef<HTMLParagraphElement>(null);
   const selected = payload?.banks.find((bank) => bank.draftId === selectedId) ?? null;
+
+  useEffect(() => {
+    if (message) messageRef.current?.focus();
+  }, [message]);
 
   function selectBank(draftId: string) {
     setSelectedId(draftId);
@@ -91,7 +96,7 @@ export function CategoryBankReviewWorkspace({
   }
 
   if (!payload) {
-    return <section className="draft-frame"><BankReviewHeader /><section className="review-access-boundary"><h1>Bank review unavailable.</h1><p>{error}</p><button type="button" disabled={operation === "loading"} onClick={() => void reloadQueue()}>{operation === "loading" ? "Retrying…" : "Retry"}</button></section></section>;
+    return <section className="draft-frame"><BankReviewHeader /><section className="review-access-boundary" aria-busy={operation === "loading"}><h1>Bank review unavailable.</h1><p>{error}</p><button type="button" disabled={operation === "loading"} onClick={() => void reloadQueue()}>{operation === "loading" ? "Retrying…" : "Retry"}</button></section></section>;
   }
 
   return (
@@ -113,7 +118,7 @@ export function CategoryBankReviewWorkspace({
           <Link className="bank-back-link" href="/review/banks/publish">Open publishing workspace</Link>
         </aside>
 
-        <main className="bank-decision-detail">
+        <section className="bank-decision-detail" aria-busy={operation !== null}>
           <h2>Review every name, then decide.</h2>
           {selected ? (
             <form ref={formRef} className="bank-decision-form" onSubmit={(event) => event.preventDefault()}>
@@ -137,9 +142,9 @@ export function CategoryBankReviewWorkspace({
               </div>
             </form>
           ) : <div className="bank-start"><h3>No frozen banks are waiting.</h3><p>A bank appears here only after a different reviewer freezes a complete revision.</p></div>}
-          {message ? <p className="review-message is-success" role="status">{message}</p> : null}
+          {message ? <p ref={messageRef} className="review-message is-success" role="status" tabIndex={-1}>{message}</p> : null}
           {error ? <p className="review-message is-error" role="alert">{error}</p> : null}
-        </main>
+        </section>
 
         <aside className="bank-decision-boundary">
           <h2>Decision boundary</h2>

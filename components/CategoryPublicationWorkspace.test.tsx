@@ -68,11 +68,12 @@ const release = {
 
 describe("CategoryPublicationWorkspace", () => {
   it("renders approved evidence and the explicit noncompetitive boundary", () => {
-    render(<CategoryPublicationWorkspace initialPayload={payload} />);
+    const { container } = render(<CategoryPublicationWorkspace initialPayload={payload} />);
     expect(screen.getByRole("heading", { name: "Prepare the reviewed practice release." })).toBeInTheDocument();
     expect(screen.getByText("2 canonical answers · 4 accepted names")).toBeInTheDocument();
     expect(screen.getByText("Competitive play still blocked")).toBeInTheDocument();
     expect(screen.getByLabelText("Practice title")).toHaveValue("European capitals");
+    expect(container.querySelector("main")).toBeNull();
   });
 
   it("moves and selects release-view tabs with arrow keys", () => {
@@ -110,7 +111,8 @@ describe("CategoryPublicationWorkspace", () => {
     vi.stubGlobal("fetch", fetchMock);
     render(<CategoryPublicationWorkspace initialPayload={payload} />);
     fireEvent.click(screen.getByRole("button", { name: "Publish unranked practice" }));
-    expect(await screen.findByText(/Published as reviewed, unranked practice/)).toBeInTheDocument();
+    const message = await screen.findByText(/Published as reviewed, unranked practice/);
+    expect(message).toHaveFocus();
     expect(screen.getByRole("link", { name: "Open practice category" })).toHaveAttribute("href", "/practice/european-capitals");
     expect(screen.getByRole("heading", { name: "Published release history." })).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(`/api/categories/banks/${payload.banks[0].draftId}/publish`, expect.objectContaining({ method: "POST" }));

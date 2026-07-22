@@ -5,5 +5,9 @@ export const dynamic = "force-dynamic";
 
 export default async function CategoryPublishingPage() {
   const initialPayload = await getCategoryPublicationQueue().catch(() => null);
-  return <CategoryPublicationWorkspace initialPayload={initialPayload} />;
+  return (
+    <main className="discovery-shell">
+      <CategoryPublicationWorkspace initialPayload={initialPayload} />
+    </main>
+  );
 }
