@@ -4,7 +4,7 @@ NameMore is a fast-paced, category-first recall platform where players try to na
 
 ## Current Status
 
-Phases 1–7, **Phase 8A: Room Abuse Foundation**, and **Phase 8C: Daily Ranking Eligibility** are complete and Preview-verified. **Phase 8B: Retention Dry Run** is implemented and verified against non-production. **Phase 8D: Launch-Readiness Foundation** is implemented and locally verified with its migration applied to non-production; protected Preview verification is next. Production is untouched.
+Phases 1–7, **Phase 8A: Room Abuse Foundation**, **Phase 8C: Daily Ranking Eligibility**, and **Phase 8D: Launch-Readiness Foundation** are complete and Preview-verified. **Phase 8B: Retention Dry Run** is implemented and verified against non-production. Production is untouched.
 
 **Current branch:** `codex/phase-8d-launch-readiness`, created from the verified Phase 8C branch. `main` has not been changed or merged.
 
@@ -72,6 +72,8 @@ Phase 8C application commit `7703d626b2d6b800bb6d211d9d8b8b1d3fa27267` (`Harden 
 
 Phase 8D closes the first launch-readiness findings without changing game rules. Patched `sharp` and `postcss` overrides remove the dependency advisories; pnpm now rejects exotic transitive sources, quarantines ordinary new releases for seven days, pins the package-manager version, and explicitly allows only Sharp's required install script. PostgreSQL now defaults future `postgres`-owned public tables, sequences, and functions to owner-only access so every browser API grant must be deliberate. The publisher and moderator tab controls implement roving focus plus Arrow/Home/End navigation, and Turbopack is anchored to this repository instead of an unrelated parent lockfile. The twenty-sixth migration is applied only to non-production. Existing object grants are unchanged: all seven public tables retain RLS with zero browser table grants, anonymous users can execute zero RPCs, and the 37 authenticated RPCs retain an empty search path.
 
+Phase 8D application commit `2c4768a5f3de99a28e3d794eeb733222f2712f30` (`Harden launch readiness foundations`) is pushed to `origin/codex/phase-8d-launch-readiness`. Exact-source protected Git Preview `dpl_6etbamdoffSicooQj5MbnYobnjeb` at `https://namemore-c928xq997-namemore.vercel.app` is `READY`, source `git`, target Preview, and matches that commit. Vercel enforced the pinned pnpm and lockfile policy; protected `/daily` returned HTTP 200; build-error, runtime-error/fatal, and 5xx scans were empty. The Vercel project remains `live: false` with no domains, so Production is untouched.
+
 Supabase project `namemore` (`hutmxxlicxeaovoeqbwg`) was explicitly confirmed non-production. Anonymous sign-in is enabled. Twenty-six repository migrations are applied there. The schema provides 418 private canonical answers and 801 aliases across the immutable NBA and Chemical Elements versions, empty deny-all versioned bank/review/publication/correction/moderation/abuse-event tables after QA, a private counts-only retention audit, a UTC schedule through 2026-12-31, immutable display names, strict control-character rejection, answer-check/draft-creation/report/room-action burst controls, private per-player Realtime topics, thirty-six narrow gameplay/status/discovery/draft/review/bank/publishing/moderation RPC signatures plus one Realtime authorization helper. Vercel contains only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, scoped to Preview; Production variables were not changed.
 
 Implemented:
@@ -131,7 +133,7 @@ Implemented:
 
 Not implemented yet:
 
-- Remaining Production hardening: publish and verify Phase 8D, choose and build durable sign-in before enabling ranked daily submissions, approve a bounded retention cleanup/schedule, finish the assistive-technology/privacy/authorization review, verify release/rollback, and configure Production. Supabase's 30-anonymous-sign-ins-per-IP-per-hour control and Vercel's automatic DDoS mitigation are active; no custom Vercel Firewall rule or CAPTCHA provider has been authorized.
+- Remaining Production hardening: choose and build durable sign-in before enabling ranked daily submissions, approve a bounded retention cleanup/schedule, finish the assistive-technology/privacy/authorization review, verify release/rollback, and configure Production. Supabase's 30-anonymous-sign-ins-per-IP-per-hour control and Vercel's automatic DDoS mitigation are active; no custom Vercel Firewall rule or CAPTCHA provider has been authorized.
 - CAPTCHA. A broader unprotected preview requires a product choice and credentials for hCaptcha or Cloudflare Turnstile; the current preview remains protected by Vercel team authentication.
 - AI-assisted answer-bank generation and the sky-and-cloud homepage redesign. Both are designed but not implemented.
 
