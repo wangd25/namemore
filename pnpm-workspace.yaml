@@ -1,6 +1,14 @@
+minimumReleaseAge: 10080
+minimumReleaseAgeExclude:
+  # Existing official Supabase packages publish provenance attestations and release together.
+  - '@supabase/*'
+  # Security-patched transitive versions must not wait behind the normal quarantine.
+  - postcss
+  - sharp
+blockExoticSubdeps: true
 allowBuilds:
   sharp: true
-  unrs-resolver: true
-ignoredBuiltDependencies:
-  - sharp
-  - unrs-resolver
+  unrs-resolver: false
+overrides:
+  postcss: 8.5.19
+  sharp: 0.35.0

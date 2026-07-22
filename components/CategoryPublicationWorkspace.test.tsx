@@ -75,6 +75,21 @@ describe("CategoryPublicationWorkspace", () => {
     expect(screen.getByLabelText("Practice title")).toHaveValue("European capitals");
   });
 
+  it("moves and selects release-view tabs with arrow keys", () => {
+    render(<CategoryPublicationWorkspace initialPayload={payload} />);
+    const readyTab = screen.getByRole("tab", { name: "Ready to publish" });
+    const publishedTab = screen.getByRole("tab", { name: "Published" });
+
+    readyTab.focus();
+    fireEvent.keyDown(readyTab, { key: "ArrowRight" });
+
+    expect(publishedTab).toHaveFocus();
+    expect(publishedTab).toHaveAttribute("aria-selected", "true");
+    expect(publishedTab).toHaveAttribute("tabindex", "0");
+    expect(readyTab).toHaveAttribute("tabindex", "-1");
+    expect(screen.getByRole("tabpanel")).toHaveAttribute("aria-labelledby", "publication-tab-published");
+  });
+
   it("publishes through the narrow route and exposes the new practice link", async () => {
     const result = {
       publicationId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",

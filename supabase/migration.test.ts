@@ -86,6 +86,10 @@ const dailyRankedEligibilityMigration = readFileSync(
   resolve(process.cwd(), "supabase/migrations/20260722041436_gate_daily_leaderboard_by_durable_identity.sql"),
   "utf8",
 );
+const publicDefaultPrivilegeMigration = readFileSync(
+  resolve(process.cwd(), "supabase/migrations/20260722203829_harden_public_default_privileges.sql"),
+  "utf8",
+);
 
 describe("server-authoritative daily migration", () => {
   it("keeps the answer bank private and exposes only narrow RPCs", () => {
@@ -173,6 +177,22 @@ describe("server-authoritative daily migration", () => {
     expect(dailyRankedEligibilityMigration).not.toMatch(
       /grant\s+(insert|update)\s+on\s+(table\s+)?public\.daily_attempts/i,
     );
+  });
+
+  it("makes future public Data API exposure explicitly opt-in", () => {
+    expect(publicDefaultPrivilegeMigration).toContain(
+      "alter default privileges for role postgres in schema public",
+    );
+    expect(publicDefaultPrivilegeMigration).toContain(
+      "revoke all on tables from public, anon, authenticated, service_role",
+    );
+    expect(publicDefaultPrivilegeMigration).toContain(
+      "revoke all on sequences from public, anon, authenticated, service_role",
+    );
+    expect(publicDefaultPrivilegeMigration).toContain(
+      "revoke execute on functions from public, anon, authenticated, service_role",
+    );
+    expect(publicDefaultPrivilegeMigration).not.toMatch(/\bgrant\b/i);
   });
 
   it("extends the deterministic UTC preview schedule without changing category history", () => {

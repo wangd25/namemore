@@ -56,4 +56,19 @@ describe("CategoryModerationWorkspace", () => {
     expect(screen.getByRole("heading", { name: "Moderator access required." })).toBeInTheDocument();
     expect(screen.queryByText("Moderation queue")).not.toBeInTheDocument();
   });
+
+  it("moves and selects report-view tabs with arrow keys", () => {
+    render(<CategoryModerationWorkspace initialPayload={payload} />);
+    const pendingTab = screen.getByRole("tab", { name: "Pending" });
+    const reviewedTab = screen.getByRole("tab", { name: "Reviewed" });
+
+    pendingTab.focus();
+    fireEvent.keyDown(pendingTab, { key: "ArrowRight" });
+
+    expect(reviewedTab).toHaveFocus();
+    expect(reviewedTab).toHaveAttribute("aria-selected", "true");
+    expect(reviewedTab).toHaveAttribute("tabindex", "0");
+    expect(pendingTab).toHaveAttribute("tabindex", "-1");
+    expect(screen.getByRole("tabpanel")).toHaveAttribute("aria-labelledby", "moderation-tab-reviewed");
+  });
 });

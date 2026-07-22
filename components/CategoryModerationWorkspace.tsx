@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { KeyboardEvent } from "react";
 import { useRef, useState } from "react";
 
 import {
@@ -71,6 +72,21 @@ export function CategoryModerationWorkspace({
     setNote("");
     setMessage("");
     setError("");
+  }
+
+  function handleViewKeyDown(event: KeyboardEvent<HTMLButtonElement>, currentView: ModerationView) {
+    let nextView: ModerationView | null = null;
+    if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+      nextView = currentView === "pending" ? "reviewed" : "pending";
+    } else if (event.key === "Home") {
+      nextView = "pending";
+    } else if (event.key === "End") {
+      nextView = "reviewed";
+    }
+    if (!nextView) return;
+    event.preventDefault();
+    chooseView(nextView);
+    document.getElementById(`moderation-tab-${nextView}`)?.focus();
   }
 
   function selectReport(report: CategoryModerationQueueItem) {
@@ -146,18 +162,18 @@ export function CategoryModerationWorkspace({
         <aside className="moderation-queue" aria-label="Moderation queue">
           <h1>Moderation queue</h1>
           <div className="moderation-tabs" role="tablist" aria-label="Report views">
-            <button type="button" role="tab" aria-selected={view === "pending"} onClick={() => chooseView("pending")}>Pending</button>
-            <button type="button" role="tab" aria-selected={view === "reviewed"} onClick={() => chooseView("reviewed")}>Reviewed</button>
+            <button id="moderation-tab-pending" type="button" role="tab" aria-selected={view === "pending"} aria-controls="moderation-view-panel" tabIndex={view === "pending" ? 0 : -1} onKeyDown={(event) => handleViewKeyDown(event, "pending")} onClick={() => chooseView("pending")}>Pending</button>
+            <button id="moderation-tab-reviewed" type="button" role="tab" aria-selected={view === "reviewed"} aria-controls="moderation-view-panel" tabIndex={view === "reviewed" ? 0 : -1} onKeyDown={(event) => handleViewKeyDown(event, "reviewed")} onClick={() => chooseView("reviewed")}>Reviewed</button>
           </div>
-          <div className="moderation-list">
+          <div className="moderation-list" id="moderation-view-panel" role="tabpanel" aria-labelledby={`moderation-tab-${view}`}>
             {visibleReports.map((report) => (
               <button key={report.reportId} type="button" className={report.reportId === selectedId ? "is-selected" : undefined} onClick={() => selectReport(report)} aria-current={report.reportId === selectedId ? "true" : undefined}>
                 <span><strong>{report.categoryTitle}</strong><small>{reasonLabels[report.reason]} · {formatAge(payload.serverNow, report.reportedAt)}</small></span>
                 <i className={report.status === "pending" ? "is-pending" : undefined} aria-hidden="true" />
               </button>
             ))}
+            {visibleReports.length === 0 ? <p className="moderation-empty">No {view} category reports.</p> : null}
           </div>
-          {visibleReports.length === 0 ? <p className="moderation-empty">No {view} category reports.</p> : null}
           <Link className="moderation-back-link" href="/review">Return to review workspaces</Link>
         </aside>
 

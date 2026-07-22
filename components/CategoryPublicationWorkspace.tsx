@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { KeyboardEvent } from "react";
 import { useRef, useState } from "react";
 
 import {
@@ -105,6 +106,27 @@ export function CategoryPublicationWorkspace({
     setError("");
   }
 
+  function chooseView(nextView: WorkspaceView) {
+    setView(nextView);
+    setMessage("");
+    setError("");
+  }
+
+  function handleViewKeyDown(event: KeyboardEvent<HTMLButtonElement>, currentView: WorkspaceView) {
+    let nextView: WorkspaceView | null = null;
+    if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+      nextView = currentView === "ready" ? "published" : "ready";
+    } else if (event.key === "Home") {
+      nextView = "ready";
+    } else if (event.key === "End") {
+      nextView = "published";
+    }
+    if (!nextView) return;
+    event.preventDefault();
+    chooseView(nextView);
+    document.getElementById(`publication-tab-${nextView}`)?.focus();
+  }
+
   async function fetchWorkspace() {
     const response = await fetch("/api/categories/banks/publishing", { cache: "no-store" });
     const parsed = parseApiResponse(await response.json(), parseCategoryPublicationQueuePayload);
@@ -204,10 +226,10 @@ export function CategoryPublicationWorkspace({
         <aside className="publication-rail" aria-label="Release workspace">
           <h1>Release workspace</h1>
           <div className="publication-tabs" role="tablist" aria-label="Release views">
-            <button type="button" role="tab" aria-selected={view === "ready"} onClick={() => setView("ready")}>Ready to publish</button>
-            <button type="button" role="tab" aria-selected={view === "published"} onClick={() => setView("published")}>Published</button>
+            <button id="publication-tab-ready" type="button" role="tab" aria-selected={view === "ready"} aria-controls="publication-view-panel" tabIndex={view === "ready" ? 0 : -1} onKeyDown={(event) => handleViewKeyDown(event, "ready")} onClick={() => chooseView("ready")}>Ready to publish</button>
+            <button id="publication-tab-published" type="button" role="tab" aria-selected={view === "published"} aria-controls="publication-view-panel" tabIndex={view === "published" ? 0 : -1} onKeyDown={(event) => handleViewKeyDown(event, "published")} onClick={() => chooseView("published")}>Published</button>
           </div>
-          <div className="publication-list">
+          <div className="publication-list" id="publication-view-panel" role="tabpanel" aria-labelledby={`publication-tab-${view}`}>
             {view === "ready" ? payload.banks.map((bank) => (
               <button key={`${bank.draftId}-${bank.revision}`} type="button" className={bank.draftId === selectedBankId ? "is-selected" : undefined} onClick={() => selectBank(bank)} aria-current={bank.draftId === selectedBankId ? "true" : undefined}>
                 <span><strong>{getDraftLabel(bank.prompt)}</strong><small>Revision {bank.revision} · Approved</small></span>
@@ -218,9 +240,9 @@ export function CategoryPublicationWorkspace({
                 <span className={release.current ? "publication-state is-current" : "publication-state"} aria-hidden="true">{release.current ? "✓" : "◷"}</span>
               </button>
             ))}
+            {view === "ready" && payload.banks.length === 0 ? <p className="publication-empty">No approved banks are waiting to publish.</p> : null}
+            {view === "published" && payload.releases.length === 0 ? <p className="publication-empty">No practice releases have been published.</p> : null}
           </div>
-          {view === "ready" && payload.banks.length === 0 ? <p className="publication-empty">No approved banks are waiting to publish.</p> : null}
-          {view === "published" && payload.releases.length === 0 ? <p className="publication-empty">No practice releases have been published.</p> : null}
           <Link className="publication-back-link" href="/review/banks/decisions">← <span>Return to bank decisions</span></Link>
         </aside>
 
