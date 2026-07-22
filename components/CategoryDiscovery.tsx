@@ -70,7 +70,7 @@ function AmbientCards({ payload }: { payload: CategoryDiscoveryPayload }) {
     });
   }
   return (
-    <div className="ambient-card-layer" aria-label="Live NameMore activity">
+    <div className="ambient-card-layer" role="region" aria-label="Live NameMore activity">
       {cards.slice(0, 3).map((card, index) => (
         <article className={`ambient-card ambient-card-${index + 1}`} key={card.label}>
           <span>{card.label}</span>
@@ -98,6 +98,8 @@ export function CategoryDiscovery({
   const requestSequence = useRef(0);
   const skipInitialRequest = useRef(initialPayload !== null);
   const listboxId = useId();
+  const guidanceId = useId();
+  const statusId = useId();
 
   const loadCategories = useCallback(async (nextQuery: string) => {
     const sequence = ++requestSequence.current;
@@ -187,19 +189,27 @@ export function CategoryDiscovery({
             role="combobox"
             aria-autocomplete="list"
             aria-controls={listboxId}
-            aria-expanded="true"
+            aria-expanded={categories.length > 0}
             aria-activedescendant={categories[activeIndex] ? `${listboxId}-${categories[activeIndex].slug}` : undefined}
+            aria-describedby={`${guidanceId} ${statusId}`}
             autoComplete="off"
             spellCheck="false"
             rows={2}
           />
           <span className="prompt-edit-icon"><EditIcon /></span>
         </div>
-        <p className="composer-guidance">Type a category or choose a reviewed prompt.</p>
+        <p className="composer-guidance" id={guidanceId}>Type a category or choose a reviewed prompt.</p>
+        <p className="sr-only" id={statusId} role="status" aria-live="polite" aria-atomic="true">
+          {isLoading
+            ? "Updating reviewed category recommendations."
+            : error
+              ? "Category recommendations are unavailable."
+              : `${categories.length} reviewed ${categories.length === 1 ? "category" : "categories"} available.`}
+        </p>
 
-        <div className="recommendation-rail" id={listboxId} role="listbox" aria-label="Category recommendations">
+        <div className="recommendation-rail" id={listboxId} role="listbox" aria-label="Category recommendations" aria-busy={isLoading}>
           {isLoading && categories.length === 0 ? (
-            <p className="recommendation-message" role="status">Opening the reviewed catalog…</p>
+            <p className="recommendation-message">Opening the reviewed catalog…</p>
           ) : null}
           {error ? (
             <p className="recommendation-message is-error" role="alert">

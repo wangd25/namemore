@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useRef, useState } from "react";
 
 import { normalizeDisplayName } from "@/lib/display-name";
 import { roomApi } from "@/lib/room-api";
@@ -18,22 +18,30 @@ export function RoomEntry({ api = roomApi }: RoomEntryProps) {
   const [mode, setMode] = useState<RoomMode>("private-race");
   const [pendingAction, setPendingAction] = useState<"create" | "join" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [errorField, setErrorField] = useState<"name" | "code" | null>(null);
+  const displayNameRef = useRef<HTMLInputElement>(null);
+  const roomCodeRef = useRef<HTMLInputElement>(null);
 
   const normalizedName = normalizeDisplayName(displayName);
   const normalizedCode = normalizeRoomCode(roomCode);
 
-  async function createPrivateRoom() {
+  async function createPrivateRoom(event?: FormEvent<HTMLFormElement>) {
+    event?.preventDefault();
     if (!normalizedName) {
       setError("Use 2–24 letters or numbers for your display name.");
+      setErrorField("name");
+      displayNameRef.current?.focus();
       return;
     }
     setPendingAction("create");
     setError(null);
+    setErrorField(null);
     try {
       const payload = await api.create(normalizedName, mode);
       router.push(`/room/${payload.room.code}`);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Private rooms are temporarily unavailable.");
+      setErrorField(null);
       setPendingAction(null);
     }
   }
@@ -42,19 +50,25 @@ export function RoomEntry({ api = roomApi }: RoomEntryProps) {
     event.preventDefault();
     if (!normalizedName) {
       setError("Use 2–24 letters or numbers for your display name.");
+      setErrorField("name");
+      displayNameRef.current?.focus();
       return;
     }
     if (!normalizedCode) {
       setError("Enter the eight-character invite code.");
+      setErrorField("code");
+      roomCodeRef.current?.focus();
       return;
     }
     setPendingAction("join");
     setError(null);
+    setErrorField(null);
     try {
       const payload = await api.join(normalizedCode, normalizedName);
       router.push(`/room/${payload.room.code}`);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "That room couldn’t be joined.");
+      setErrorField(null);
       setPendingAction(null);
     }
   }
@@ -73,42 +87,52 @@ export function RoomEntry({ api = roomApi }: RoomEntryProps) {
           <p>Create a private race for up to eight players, or enter an invite code to join one.</p>
         </div>
 
-        <div className="room-entry-panel">
-          <label className="room-field">
-            <span>Your display name</span>
-            <input
-              autoComplete="nickname"
-              maxLength={40}
-              value={displayName}
-              onChange={(event) => setDisplayName(event.target.value)}
-              placeholder="e.g. Dylan"
+        <div className="room-entry-panel" aria-busy={pendingAction !== null}>
+          <form onSubmit={(event) => void createPrivateRoom(event)}>
+            <label className="room-field">
+              <span>Your display name</span>
+              <input
+                ref={displayNameRef}
+                autoComplete="nickname"
+                maxLength={24}
+                value={displayName}
+                onChange={(event) => {
+                  setDisplayName(event.target.value);
+                  if (errorField === "name") {
+                    setError(null);
+                    setErrorField(null);
+                  }
+                }}
+                placeholder="e.g. Dylan"
+                disabled={pendingAction !== null}
+                aria-describedby="room-entry-message"
+                aria-invalid={errorField === "name"}
+              />
+            </label>
+
+            <fieldset className="room-mode-picker" disabled={pendingAction !== null}>
+              <legend>Game mode</legend>
+              <div>
+                <label className={mode === "private-race" ? "is-selected" : ""}>
+                  <input type="radio" name="room-mode" value="private-race" checked={mode === "private-race"} onChange={() => setMode("private-race")} />
+                  <span><strong>Private race</strong><small>Everyone can score the same name.</small></span>
+                </label>
+                <label className={mode === "elimination" ? "is-selected" : ""}>
+                  <input type="radio" name="room-mode" value="elimination" checked={mode === "elimination"} onChange={() => setMode("elimination")} />
+                  <span><strong>Elimination</strong><small>First claim owns each name.</small></span>
+                </label>
+              </div>
+            </fieldset>
+
+            <button
+              className="room-primary-action"
+              type="submit"
               disabled={pendingAction !== null}
-            />
-          </label>
-
-          <fieldset className="room-mode-picker" disabled={pendingAction !== null}>
-            <legend>Game mode</legend>
-            <div>
-              <label className={mode === "private-race" ? "is-selected" : ""}>
-                <input type="radio" name="room-mode" value="private-race" checked={mode === "private-race"} onChange={() => setMode("private-race")} />
-                <span><strong>Private race</strong><small>Everyone can score the same name.</small></span>
-              </label>
-              <label className={mode === "elimination" ? "is-selected" : ""}>
-                <input type="radio" name="room-mode" value="elimination" checked={mode === "elimination"} onChange={() => setMode("elimination")} />
-                <span><strong>Elimination</strong><small>First claim owns each name.</small></span>
-              </label>
-            </div>
-          </fieldset>
-
-          <button
-            className="room-primary-action"
-            type="button"
-            onClick={() => void createPrivateRoom()}
-            disabled={pendingAction !== null}
-          >
-            <span>{pendingAction === "create" ? "Creating room…" : "Create private room"}</span>
-            <span aria-hidden="true">→</span>
-          </button>
+            >
+              <span>{pendingAction === "create" ? "Creating room…" : "Create private room"}</span>
+              <span aria-hidden="true">→</span>
+            </button>
+          </form>
 
           <div className="room-entry-divider"><span>or join an invite</span></div>
 
@@ -116,13 +140,22 @@ export function RoomEntry({ api = roomApi }: RoomEntryProps) {
             <label className="room-field room-code-field">
               <span>Room code</span>
               <input
+                ref={roomCodeRef}
                 autoCapitalize="characters"
                 autoComplete="off"
                 maxLength={8}
                 value={roomCode}
-                onChange={(event) => setRoomCode(event.target.value.toUpperCase())}
+                onChange={(event) => {
+                  setRoomCode(event.target.value.toUpperCase());
+                  if (errorField === "code") {
+                    setError(null);
+                    setErrorField(null);
+                  }
+                }}
                 placeholder="K7M4Q2PX"
                 disabled={pendingAction !== null}
+                aria-describedby="room-entry-message"
+                aria-invalid={errorField === "code"}
               />
             </label>
             <button className="room-secondary-action" type="submit" disabled={pendingAction !== null}>
@@ -130,7 +163,7 @@ export function RoomEntry({ api = roomApi }: RoomEntryProps) {
             </button>
           </form>
 
-          <p className={`room-form-message${error ? " is-error" : ""}`} role="status">
+          <p id="room-entry-message" className={`room-form-message${error ? " is-error" : ""}`} role={error ? "alert" : "status"} aria-live={error ? "assertive" : "polite"} aria-atomic="true">
             {error ?? "Your room identity and start time are verified by the server."}
           </p>
         </div>
@@ -138,7 +171,7 @@ export function RoomEntry({ api = roomApi }: RoomEntryProps) {
 
       <footer className="board-footer">
         <span>{mode === "elimination" ? "Elimination" : "Private race"} · 90 seconds · up to 8 players</span>
-        <Link href="/">Play Daily</Link>
+        <Link href="/daily">Play Daily</Link>
       </footer>
     </section>
   );

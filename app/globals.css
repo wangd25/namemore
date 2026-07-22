@@ -5433,6 +5433,11 @@ button {
   box-shadow: 0 0 0 4px rgba(34, 111, 244, 0.11);
 }
 
+.room-field input[aria-invalid="true"] {
+  border-color: color-mix(in srgb, var(--danger) 62%, transparent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--danger) 10%, transparent);
+}
+
 .room-field input::placeholder {
   color: #a2aab5;
 }

@@ -61,4 +61,37 @@ describe("RoomEntry", () => {
     await waitFor(() => expect(api.create).toHaveBeenCalledWith("Mode Host", "elimination"));
     expect(push).toHaveBeenCalledWith("/room/K7M4Q2PX");
   });
+
+  it("announces validation errors, focuses the affected field, and links to Daily", () => {
+    const api = makeApi();
+    render(<RoomEntry api={api} />);
+
+    const nameInput = screen.getByRole("textbox", { name: "Your display name" });
+    expect(nameInput).toHaveAttribute("maxlength", "24");
+    fireEvent.click(screen.getByRole("button", { name: /Create private room/ }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent("Use 2–24 letters or numbers");
+    expect(nameInput).toHaveFocus();
+    expect(nameInput).toHaveAttribute("aria-invalid", "true");
+
+    fireEvent.change(nameInput, { target: { value: "Room Guest" } });
+    fireEvent.click(screen.getByRole("button", { name: "Join room" }));
+
+    const codeInput = screen.getByRole("textbox", { name: "Room code" });
+    expect(codeInput).toHaveFocus();
+    expect(codeInput).toHaveAttribute("aria-invalid", "true");
+    expect(nameInput).toHaveAttribute("aria-invalid", "false");
+    expect(screen.getByRole("link", { name: "Play Daily" })).toHaveAttribute("href", "/daily");
+  });
+
+  it("supports keyboard form submission for room creation", async () => {
+    const api = makeApi();
+    render(<RoomEntry api={api} />);
+
+    const nameInput = screen.getByRole("textbox", { name: "Your display name" });
+    fireEvent.change(nameInput, { target: { value: "Keyboard Host" } });
+    fireEvent.submit(nameInput.closest("form")!);
+
+    await waitFor(() => expect(api.create).toHaveBeenCalledWith("Keyboard Host", "private-race"));
+  });
 });

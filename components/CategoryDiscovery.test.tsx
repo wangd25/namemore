@@ -54,6 +54,9 @@ describe("CategoryDiscovery", () => {
     const composer = screen.getByLabelText("Choose a category prompt");
     expect(composer).toHaveValue("How many NBA players can you name?");
     expect(await screen.findByRole("option", { name: /Current NBA players/ })).toHaveAttribute("aria-selected", "true");
+    expect(composer).toHaveAccessibleDescription(/2 reviewed categories available/);
+    expect(screen.getByRole("listbox", { name: "Category recommendations" })).toHaveAttribute("aria-busy", "false");
+    expect(screen.getByRole("region", { name: "Live NameMore activity" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Play reviewed category/ })).toHaveAttribute("href", "/daily");
     expect(screen.getByText("18 names")).toBeInTheDocument();
     expect(screen.getByText("2 rooms")).toBeInTheDocument();
