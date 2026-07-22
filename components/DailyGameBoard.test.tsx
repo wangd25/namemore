@@ -236,6 +236,9 @@ describe("DailyGameBoard", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: "End round" }));
     expect(await screen.findByText("Verified practice result · not ranked")).toBeInTheDocument();
+    const resultsHeading = screen.getByRole("heading", { name: /Verified round complete/ });
+    expect(resultsHeading).toHaveFocus();
+    expect(resultsHeading.closest("main")).toBeNull();
     expect(finish).toHaveBeenCalledWith(activeAttempt.id);
     expect(await screen.findByRole("heading", { name: "Today’s top ten" })).toBeInTheDocument();
     expect(await screen.findByText("Daily Player")).toBeInTheDocument();

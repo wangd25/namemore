@@ -344,9 +344,10 @@ describe("GameBoard", () => {
 
     finishTransition();
 
-    expect(
-      screen.getByRole("heading", { name: /Round complete/ }),
-    ).toBeInTheDocument();
+    const resultsHeading = screen.getByRole("heading", { name: /Round complete/ });
+    expect(resultsHeading).toBeInTheDocument();
+    expect(resultsHeading).toHaveFocus();
+    expect(resultsHeading.closest("main")).toBeNull();
     expect(screen.getByText("Stephen Curry")).toBeInTheDocument();
   });
 

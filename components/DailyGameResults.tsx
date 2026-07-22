@@ -1,3 +1,7 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+
 import { DailyLeaderboard } from "@/components/DailyLeaderboard";
 import { nbaTeamCodes } from "@/lib/category-types";
 import type {
@@ -62,9 +66,17 @@ export function DailyGameResults({
   onShare,
 }: DailyGameResultsProps) {
   const representedTeams = new Set(stats.representedTeamCodes);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    headingRef.current?.focus();
+  }, []);
 
   return (
-    <main className="results-layout" aria-labelledby="game-prompt">
+    <div className="results-layout" aria-labelledby="game-prompt">
+      <h1 ref={headingRef} className="sr-only" id="game-prompt" tabIndex={-1}>
+        Verified round complete — {category.prompt}
+      </h1>
       <section className="results-summary" aria-label="Verified round summary">
         <div className="result-score-lockup">
           <strong>{stats.answerCount}</strong>
@@ -170,9 +182,6 @@ export function DailyGameResults({
         />
       </section>
 
-      <h1 className="sr-only" id="game-prompt">
-        Verified round complete — {category.prompt}
-      </h1>
-    </main>
+    </div>
   );
 }

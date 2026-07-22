@@ -69,6 +69,16 @@ export function RoomGame({ roomCode, api = roomApi, realtimeConnector = connectR
   const hydrate = useCallback((nextGame: RoomGameState, serverNow: string) => {
     const offset = Date.parse(serverNow) - Date.now();
     setClockOffsetMs(Number.isFinite(offset) ? offset : 0);
+    setRemainingSeconds(
+      nextGame.status === "active"
+        ? Math.max(
+            0,
+            Math.ceil(
+              (Date.parse(nextGame.deadlineAt) - Date.parse(serverNow)) / 1_000,
+            ),
+          )
+        : 0,
+    );
     gameRef.current = nextGame;
     setGame(nextGame);
     setLoading(false);
@@ -291,17 +301,18 @@ export function RoomGame({ roomCode, api = roomApi, realtimeConnector = connectR
       <header className="board-header room-live-header">
         <Link className="brand" href="/">NameMore</Link>
         <div className="room-header-code"><span>Room</span><strong>{game.code}</strong></div>
-        <div className="room-live-hud"><strong>{formatTime(remainingSeconds)}</strong><i /><span key={currentPlayer.score}>{currentPlayer.score}</span></div>
+        <div className="room-live-hud"><strong><time dateTime={`PT${remainingSeconds}S`} aria-label={`${remainingSeconds} seconds remaining`}>{formatTime(remainingSeconds)}</time></strong><i /><span key={currentPlayer.score} aria-label={`${currentPlayer.score} accepted ${currentPlayer.score === 1 ? "answer" : "answers"}`}>{currentPlayer.score}</span></div>
       </header>
 
-      <main className="room-live-content">
+      <div className="room-live-content">
         <div className="room-live-heading">
           <span>{game.mode === "elimination" ? "Elimination · first claim wins" : "Private race · shared answer pool"}</span>
           <h1 id="room-game-title">{game.category.prompt}</h1>
         </div>
         <form className={`room-live-entry${isChecking ? " is-checking" : ""}`} onSubmit={handleSubmit} aria-busy={isChecking}>
           <label className="sr-only" htmlFor="room-answer-input">Type an NBA player’s name</label>
-          <input ref={inputRef} id="room-answer-input" value={inputValue} onChange={handleInputChange} autoComplete="off" autoCapitalize="words" spellCheck="false" maxLength={80} placeholder="Type a full name or unique last name…" />
+          <p className="sr-only" id="room-answer-guidance">Answers are checked automatically. Accepted, duplicate, already-taken, invalid, and connection results are announced below.</p>
+          <input ref={inputRef} id="room-answer-input" value={inputValue} onChange={handleInputChange} autoComplete="off" autoCapitalize="words" spellCheck="false" maxLength={80} placeholder="Type a full name or unique last name…" aria-describedby="room-answer-guidance room-answer-feedback" aria-invalid={feedback?.kind === "invalid" || feedback?.kind === "error"} />
           {isChecking ? <span className="entry-checking" aria-hidden="true"><span /></span> : null}
         </form>
 
@@ -324,7 +335,7 @@ export function RoomGame({ roomCode, api = roomApi, realtimeConnector = connectR
                 ) : (
                   <div className="room-opponent-safe-state">
                     <div className={`room-typing-signal${typing ? " is-typing" : ""}`}><i /><span>{typing ? `${player.displayName} is typing…` : "Board hidden during play"}</span></div>
-                    <ol aria-label={`${player.score} hidden accepted answers`}>
+                    <ol aria-label={`${player.score} hidden accepted ${player.score === 1 ? "answer" : "answers"}`}>
                       {Array.from({ length: player.score }, (_, index) => <li key={index}><span /><i style={{ width: `${46 + ((index * 17) % 37)}%` }} /></li>)}
                     </ol>
                   </div>
@@ -334,11 +345,11 @@ export function RoomGame({ roomCode, api = roomApi, realtimeConnector = connectR
           })}
         </div>
 
-        <div className={`room-live-status${feedback ? ` is-${feedback.kind}` : ""}`} aria-live="polite">
-          <span className={`room-realtime-dot is-${realtimeState}`} />
+        <div id="room-answer-feedback" className={`room-live-status${feedback ? ` is-${feedback.kind}` : ""}`} role={feedback?.kind === "error" ? "alert" : "status"} aria-live={feedback?.kind === "error" ? "assertive" : "polite"} aria-atomic="true" aria-relevant="text">
+          <span className={`room-realtime-dot is-${realtimeState}`} aria-hidden="true" />
           <p>{feedback?.message ?? (realtimeState === "degraded" ? "Live signals are reconnecting; verified scores still sync safely." : "Answers reveal when time ends.")}</p>
         </div>
-      </main>
+      </div>
       <footer className="board-footer"><span>{game.mode === "elimination" ? "Elimination" : "Private race"} · server clock</span><Link href="/room">Leave room</Link></footer>
     </section>
   );

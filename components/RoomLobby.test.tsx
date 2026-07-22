@@ -113,6 +113,14 @@ describe("RoomLobby", () => {
     expect(await screen.findByRole("heading", { name: "Join the board" })).toBeInTheDocument();
     expect(screen.queryByText("Guest Player")).not.toBeInTheDocument();
     expect(screen.getByText("2 of 8 spots are taken.")).toBeInTheDocument();
+
+    const nameInput = screen.getByRole("textbox", { name: "Your display name" });
+    expect(nameInput).toHaveAttribute("maxlength", "24");
+    expect(nameInput).toHaveAttribute("aria-invalid", "false");
+    fireEvent.click(screen.getByRole("button", { name: /Join private room/ }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Use 2–24 letters or numbers");
+    expect(nameInput).toHaveFocus();
+    expect(nameInput).toHaveAttribute("aria-invalid", "true");
   });
 
   it("labels elimination rooms before the host starts", async () => {

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { type FormEvent, useCallback, useEffect, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 
 import { normalizeDisplayName } from "@/lib/display-name";
 import { RoomGame } from "@/components/RoomGame";
@@ -18,6 +18,8 @@ export function RoomLobby({ roomCode, api = roomApi }: RoomLobbyProps) {
   const [pendingAction, setPendingAction] = useState<"join" | "start" | null>(null);
   const [shareState, setShareState] = useState<ShareState>("idle");
   const [error, setError] = useState<string | null>(null);
+  const [joinNameInvalid, setJoinNameInvalid] = useState(false);
+  const displayNameRef = useRef<HTMLInputElement>(null);
 
   const refreshRoom = useCallback(async (quiet = false) => {
     if (!quiet) setLoading(true);
@@ -46,10 +48,13 @@ export function RoomLobby({ roomCode, api = roomApi }: RoomLobbyProps) {
     const normalizedName = normalizeDisplayName(displayName);
     if (!normalizedName) {
       setError("Use 2–24 letters or numbers for your display name.");
+      setJoinNameInvalid(true);
+      displayNameRef.current?.focus();
       return;
     }
     setPendingAction("join");
     setError(null);
+    setJoinNameInvalid(false);
     try {
       const payload = await api.join(roomCode, normalizedName);
       setRoom(payload.room);
@@ -131,11 +136,12 @@ export function RoomLobby({ roomCode, api = roomApi }: RoomLobbyProps) {
         </div>
 
         {!isMember && room.status === "waiting" ? (
-          <form className="room-join-card" onSubmit={(event) => void joinRoom(event)}>
+          <form className="room-join-card" onSubmit={(event) => void joinRoom(event)} aria-busy={pendingAction === "join"}>
             <div><span className="room-eyebrow">You’re invited</span><h2>Join the board</h2><p>{room.playerCount} of {room.capacity} spots are taken.</p></div>
-            <label className="room-field"><span>Your display name</span><input autoFocus autoComplete="nickname" maxLength={40} value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="e.g. Dylan" /></label>
+            <label className="room-field"><span>Your display name</span><input ref={displayNameRef} autoFocus autoComplete="nickname" maxLength={24} value={displayName} onChange={(event) => { setDisplayName(event.target.value); if (joinNameInvalid) { setError(null); setJoinNameInvalid(false); } }} placeholder="e.g. Dylan" aria-describedby="room-join-help room-join-error" aria-invalid={joinNameInvalid} /></label>
+            <p className="sr-only" id="room-join-help">Use 2–24 letters or numbers. Spaces, apostrophes, periods, and hyphens are allowed.</p>
             <button className="room-primary-action" type="submit" disabled={pendingAction !== null}><span>{pendingAction === "join" ? "Joining…" : "Join private room"}</span><span aria-hidden="true">→</span></button>
-            {error ? <p className="room-form-message is-error" role="alert">{error}</p> : null}
+            {error ? <p className="room-form-message is-error" id="room-join-error" role="alert">{error}</p> : null}
           </form>
         ) : !isMember ? (
           <div className="room-join-card"><span className="room-eyebrow">Invite closed</span><h2>This room has started.</h2><p>Late joins are blocked by the server so every player begins on the same clock.</p><Link className="room-secondary-action" href="/room">Find another room</Link></div>

@@ -53,8 +53,15 @@ describe("RoomGame", () => {
     render(<RoomGame roomCode="K7M4Q2PX" api={api} realtimeConnector={null} />);
 
     const input = await screen.findByRole("textbox", { name: "Type an NBA player’s name" });
+    expect(input).toHaveAttribute(
+      "aria-describedby",
+      "room-answer-guidance room-answer-feedback",
+    );
+    expect(input).toHaveAttribute("aria-invalid", "false");
+    expect(screen.getByLabelText("80 seconds remaining")).toBeInTheDocument();
+    expect(screen.getByLabelText("0 accepted answers")).toBeInTheDocument();
     expect(screen.getByText("Guest Player")).toBeInTheDocument();
-    expect(screen.getByLabelText("1 hidden accepted answers")).toBeInTheDocument();
+    expect(screen.getByLabelText("1 hidden accepted answer")).toBeInTheDocument();
     expect(screen.queryByText("LeBron James")).not.toBeInTheDocument();
 
     fireEvent.change(input, { target: { value: "Stephen Curry" } });
@@ -77,7 +84,9 @@ describe("RoomGame", () => {
     };
     render(<RoomGame roomCode="K7M4Q2PX" api={makeApi(completedPayload)} realtimeConnector={null} />);
 
-    expect(await screen.findByRole("heading", { name: "Round complete" })).toBeInTheDocument();
+    const resultsHeading = await screen.findByRole("heading", { name: "Round complete" });
+    expect(resultsHeading).toHaveFocus();
+    expect(resultsHeading.closest("main")).toBeNull();
     expect(screen.getByText("LeBron James")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Play again" })).toHaveAttribute("href", "/room");
   });
@@ -100,5 +109,33 @@ describe("RoomGame", () => {
     expect(await screen.findByText("Already taken — another player claimed that name first.")).toBeInTheDocument();
     expect(input).toHaveValue("");
     expect(screen.queryByText("Stephen Curry")).not.toBeInTheDocument();
+  });
+
+  it("marks manual invalid feedback and urgently announces verification failures", async () => {
+    const invalidApi = makeApi(activePayload);
+    invalidApi.submit = vi.fn().mockResolvedValue({
+      status: "invalid",
+      serverNow: "2026-07-20T12:00:11.000Z",
+    });
+    const { unmount } = render(<RoomGame roomCode="K7M4Q2PX" api={invalidApi} realtimeConnector={null} />);
+
+    const input = await screen.findByRole("textbox", { name: "Type an NBA player’s name" });
+    fireEvent.change(input, { target: { value: "Not a player" } });
+    fireEvent.submit(input.closest("form")!);
+
+    expect(await screen.findByRole("status")).toHaveTextContent("No match yet");
+    expect(input).toHaveAttribute("aria-invalid", "true");
+
+    unmount();
+
+    const failingApi = makeApi(activePayload);
+    failingApi.submit = vi.fn().mockRejectedValue(new Error("offline"));
+    render(<RoomGame roomCode="FAILTEST" api={failingApi} realtimeConnector={null} />);
+    const failingInput = await screen.findByRole("textbox", { name: "Type an NBA player’s name" });
+    fireEvent.change(failingInput, { target: { value: "Curry" } });
+    fireEvent.submit(failingInput.closest("form")!);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Your verified score is safe");
+    expect(failingInput).toHaveAttribute("aria-invalid", "true");
   });
 });

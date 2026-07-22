@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useRef } from "react";
 
 import type { RoomGame } from "@/lib/room-types";
 
@@ -8,6 +11,12 @@ function CheckIcon() {
 
 export function RoomResults({ game }: { game: RoomGame }) {
   const isElimination = game.mode === "elimination";
+  const headingRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    headingRef.current?.focus();
+  }, []);
+
   return (
     <section className="game-board room-board room-results-board" aria-labelledby="room-results-title">
       <header className="board-header">
@@ -15,9 +24,9 @@ export function RoomResults({ game }: { game: RoomGame }) {
         <div className="room-header-code"><span>Room</span><strong>{game.code}</strong></div>
       </header>
 
-      <main className="room-results-content">
+      <div className="room-results-content">
         <div className="room-results-heading">
-          <h1 id="room-results-title">Round complete</h1>
+          <h1 ref={headingRef} id="room-results-title" tabIndex={-1}>Round complete</h1>
           <p>{isElimination ? "Every claimed answer is now revealed." : "All answers are now revealed."}</p>
         </div>
 
@@ -54,7 +63,7 @@ export function RoomResults({ game }: { game: RoomGame }) {
           <Link className="room-primary-action" href="/room">Play again</Link>
           <Link className="room-secondary-action" href="/">Back home</Link>
         </div>
-      </main>
+      </div>
 
       <footer className="board-footer"><span>{isElimination ? "Elimination" : "Private race"} result · server verified</span></footer>
     </section>

@@ -1,4 +1,6 @@
-import type { CSSProperties } from "react";
+"use client";
+
+import { type CSSProperties, useEffect, useRef } from "react";
 
 import type { Category, CategoryAnswer } from "@/lib/category-types";
 import type { PracticeStats } from "@/lib/practice-game";
@@ -73,9 +75,17 @@ export function GameResults({
 }: GameResultsProps) {
   const coverage = stats.coverage;
   const representedGroups = new Set(coverage?.representedGroupIds ?? []);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    headingRef.current?.focus();
+  }, []);
 
   return (
-    <main className="results-layout" aria-labelledby="game-prompt">
+    <div className="results-layout" aria-labelledby="game-prompt">
+      <h1 ref={headingRef} className="sr-only" id="game-prompt" tabIndex={-1}>
+        Round complete — {category.prompt}
+      </h1>
       <section className="results-summary" aria-label="Round summary">
         <div className="result-score-lockup">
           <strong>{stats.answerCount}</strong>
@@ -205,9 +215,6 @@ export function GameResults({
         ) : null}
       </section>
 
-      <h1 className="sr-only" id="game-prompt">
-        Round complete — {category.prompt}
-      </h1>
-    </main>
+    </div>
   );
 }
