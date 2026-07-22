@@ -180,6 +180,20 @@ export function DailyGameBoard({ api = dailyGameApi }: DailyGameBoardProps) {
   const hydrate = useCallback((payload: DailyStatusPayload) => {
     const offset = Date.parse(payload.serverNow) - Date.now();
     setClockOffsetMs(Number.isFinite(offset) ? offset : 0);
+    const activeAttempt = payload.attempt?.status === "active" ? payload.attempt : null;
+    const activeRemainingSeconds = activeAttempt
+      ? Math.max(
+          0,
+          Math.ceil(
+            (Date.parse(activeAttempt.deadlineAt) - Date.parse(payload.serverNow)) /
+              1_000,
+          ),
+        )
+      : null;
+    setRemainingSeconds(
+      activeRemainingSeconds ??
+        (payload.attempt ? 0 : payload.challenge?.category.timeLimitSeconds ?? 0),
+    );
     setChallenge(payload.challenge);
     setAttempt(payload.attempt);
     setConfirmedName(payload.attempt?.displayName ?? "");
@@ -470,9 +484,9 @@ export function DailyGameBoard({ api = dailyGameApi }: DailyGameBoardProps) {
         <div className="brand" aria-label="NameMore">NameMore</div>
         <div className="header-controls">
           <div className="game-hud" aria-label="Round status">
-            <time className={`hud-value${isUrgent ? " is-urgent" : ""}`} dateTime={`PT${remainingSeconds}S`} data-testid="timer-value">{formatTime(remainingSeconds)}</time>
+            <time className={`hud-value${isUrgent ? " is-urgent" : ""}`} dateTime={`PT${remainingSeconds}S`} data-testid="timer-value" aria-label={`${remainingSeconds} seconds remaining`}>{formatTime(remainingSeconds)}</time>
             <span className="hud-divider" aria-hidden="true" />
-            <span className="hud-value hud-score-value" data-testid="score-value">{String(attempt?.score ?? 0).padStart(2, "0")}</span>
+            <span className="hud-value hud-score-value" data-testid="score-value" aria-label={`${attempt?.score ?? 0} accepted ${(attempt?.score ?? 0) === 1 ? "answer" : "answers"}`}>{String(attempt?.score ?? 0).padStart(2, "0")}</span>
           </div>
           <button className="sound-toggle" type="button" aria-label={`Sound and haptics ${isFeedbackEnabled ? "on" : "off"}`} aria-pressed={isFeedbackEnabled} onClick={toggleFeedback}><SoundIcon isEnabled={isFeedbackEnabled} /></button>
         </div>
@@ -537,9 +551,9 @@ export function DailyGameBoard({ api = dailyGameApi }: DailyGameBoardProps) {
             {milestoneScore ? <span className="milestone-wave-label" aria-hidden="true">{milestoneScore} names</span> : null}
             <h2 className="sr-only">Your verified answers</h2>
             {acceptedAnswers.length > 0 ? <ol className="answers-list">{acceptedAnswers.map((answer) => <li className={`${answer.id === freshAnswerId ? "is-fresh" : ""}${answer.id === highlightedDuplicateId ? " is-duplicate-target" : ""}`.trim()} data-answer-id={answer.id} data-team-code={answer.teamCode} data-testid={`answer-row-${answer.id}`} key={answer.id} style={getTeamAccentStyle(answer.teamCode)}><AcceptedIcon /><strong>{answer.canonicalText}</strong><span className="answer-icon-slot" aria-label={`Team ${answer.teamCode}`}>{answer.teamCode}</span></li>)}</ol> : null}
-            {phase === "playing" ? <form className={`note-entry${isAnswerChecking ? " is-checking" : ""}`} aria-busy={isAnswerChecking} onSubmit={handleSubmit}><label className="sr-only" htmlFor="answer-input">Type an NBA player’s name</label><input ref={inputRef} id="answer-input" name="answer" type="text" value={inputValue} onChange={handleInputChange} placeholder="Type a full name or unique last name…" autoComplete="off" autoCapitalize="words" spellCheck="false" maxLength={80} />{freshAnswer ? <span className="entry-success" style={getTeamAccentStyle(freshAnswer.teamCode)} aria-hidden="true"><AcceptedIcon /></span> : isAnswerChecking ? <span className="entry-checking" aria-hidden="true"><span /></span> : null}</form> : <div className="ink-freeze" aria-hidden="true"><span /></div>}
+            {phase === "playing" ? <form className={`note-entry${isAnswerChecking ? " is-checking" : ""}`} aria-busy={isAnswerChecking} onSubmit={handleSubmit}><label className="sr-only" htmlFor="answer-input">Type an NBA player’s name</label><p className="sr-only" id="daily-answer-guidance">Answers are checked automatically. Accepted, duplicate, invalid, and connection results are announced below.</p><input ref={inputRef} id="answer-input" name="answer" type="text" value={inputValue} onChange={handleInputChange} placeholder="Type a full name or unique last name…" autoComplete="off" autoCapitalize="words" spellCheck="false" maxLength={80} aria-describedby="daily-answer-guidance daily-answer-feedback" aria-invalid={feedback?.kind === "invalid" || feedback?.kind === "error"} />{freshAnswer ? <span className="entry-success" style={getTeamAccentStyle(freshAnswer.teamCode)} aria-hidden="true"><AcceptedIcon /></span> : isAnswerChecking ? <span className="entry-checking" aria-hidden="true"><span /></span> : null}</form> : <div className="ink-freeze" aria-hidden="true"><span /></div>}
           </section>
-          <div className={`feedback${feedback ? ` is-${feedback.kind}` : ""}`} role="status" aria-live="polite" aria-atomic="true">{feedback?.kind === "accepted" ? <AcceptedIcon /> : null}<span>{feedback?.message ?? (phase === "playing" ? (isAnswerChecking ? "Checking securely…" : "Names are checked securely as you type.") : "Finishing your verified board…")}</span></div>
+          <div id="daily-answer-feedback" className={`feedback${feedback ? ` is-${feedback.kind}` : ""}`} role={feedback?.kind === "error" ? "alert" : "status"} aria-live={feedback?.kind === "error" ? "assertive" : "polite"} aria-atomic="true" aria-relevant="text">{feedback?.kind === "accepted" ? <AcceptedIcon /> : null}<span>{feedback?.message ?? (phase === "playing" ? (isAnswerChecking ? "Checking securely…" : "Names are checked securely as you type.") : "Finishing your verified board…")}</span></div>
         </div>
       )}
 

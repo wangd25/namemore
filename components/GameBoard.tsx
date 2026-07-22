@@ -762,6 +762,7 @@ export function GameBoard({ category }: GameBoardProps) {
               className={`hud-value${isUrgent ? " is-urgent" : ""}`}
               dateTime={`PT${remainingSeconds}S`}
               data-testid="timer-value"
+              aria-label={`${remainingSeconds} seconds remaining`}
             >
               {formatTime(remainingSeconds)}
             </time>
@@ -770,6 +771,7 @@ export function GameBoard({ category }: GameBoardProps) {
               className="hud-value hud-score-value"
               data-testid="score-value"
               key={acceptedEvents.length}
+              aria-label={`${acceptedEvents.length} accepted ${acceptedEvents.length === 1 ? "answer" : "answers"}`}
             >
               {String(acceptedEvents.length).padStart(2, "0")}
             </span>
@@ -922,6 +924,9 @@ export function GameBoard({ category }: GameBoardProps) {
                 <label className="sr-only" htmlFor="answer-input">
                   {category.inputLabel}
                 </label>
+                <p className="sr-only" id="practice-answer-guidance">
+                  Answers are checked automatically. Accepted, duplicate, and invalid results are announced below.
+                </p>
                 <input
                   ref={inputRef}
                   id="answer-input"
@@ -938,6 +943,8 @@ export function GameBoard({ category }: GameBoardProps) {
                   autoCapitalize="words"
                   spellCheck="false"
                   maxLength={80}
+                  aria-describedby="practice-answer-guidance practice-answer-feedback"
+                  aria-invalid={feedback?.kind === "invalid"}
                 />
                 {freshAcceptedAnswer ? (
                   <span
@@ -958,10 +965,12 @@ export function GameBoard({ category }: GameBoardProps) {
           </section>
 
           <div
+            id="practice-answer-feedback"
             className={`feedback${feedback ? ` is-${feedback.kind}` : ""}`}
             role="status"
             aria-live="polite"
             aria-atomic="true"
+            aria-relevant="text"
           >
             {feedback?.kind === "accepted" ? <AcceptedIcon /> : null}
             <span>

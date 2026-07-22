@@ -98,6 +98,17 @@ describe("DailyGameBoard", () => {
     const readyButton = await screen.findByRole("button", { name: /Move here when you’re ready/ });
     fireEvent.keyDown(readyButton, { key: "Enter" });
     const input = await screen.findByLabelText("Type an NBA player’s name");
+    expect(input).toHaveAttribute(
+      "aria-describedby",
+      "daily-answer-guidance daily-answer-feedback",
+    );
+    expect(input).toHaveAttribute("aria-invalid", "false");
+    expect(screen.getByTestId("timer-value")).toHaveAccessibleName(
+      "90 seconds remaining",
+    );
+    expect(screen.getByTestId("score-value")).toHaveAccessibleName(
+      "0 accepted answers",
+    );
     expect(api.start).toHaveBeenCalledTimes(1);
     expect(api.start).toHaveBeenCalledWith("Daily Player");
 
@@ -114,6 +125,9 @@ describe("DailyGameBoard", () => {
     });
     expect(await screen.findByText("Stephen Curry")).toBeInTheDocument();
     expect(screen.getByTestId("score-value")).toHaveTextContent("01");
+    expect(screen.getByTestId("score-value")).toHaveAccessibleName(
+      "1 accepted answer",
+    );
   });
 
   it("keeps the spring launch visible while the verified round opens", async () => {
@@ -189,6 +203,23 @@ describe("DailyGameBoard", () => {
 
     expect(await screen.findByText("Stephen Curry is already on your board")).toBeInTheDocument();
     expect(screen.getByTestId("score-value")).toHaveTextContent("01");
+  });
+
+  it("marks rejected input and announces answer-check failures urgently", async () => {
+    const api = mockApi({
+      getStatus: vi.fn().mockResolvedValue(activeStatus),
+      submit: vi.fn().mockRejectedValue(new Error("offline")),
+    });
+    render(<DailyGameBoard api={api} />);
+
+    const input = await screen.findByLabelText("Type an NBA player’s name");
+    fireEvent.change(input, { target: { value: "Curry" } });
+    fireEvent.submit(input.closest("form")!);
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("Your verified score is safe");
+    expect(alert).toHaveAttribute("aria-live", "assertive");
+    expect(input).toHaveAttribute("aria-invalid", "true");
   });
 
   it("finishes through the server and clearly labels anonymous play as unranked", async () => {

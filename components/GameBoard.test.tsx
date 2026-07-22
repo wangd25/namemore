@@ -90,7 +90,19 @@ describe("GameBoard", () => {
 
     startRound();
 
-    expect(screen.getByLabelText("Type an NBA player’s name")).toHaveFocus();
+    const input = screen.getByLabelText("Type an NBA player’s name");
+    expect(input).toHaveFocus();
+    expect(input).toHaveAttribute(
+      "aria-describedby",
+      "practice-answer-guidance practice-answer-feedback",
+    );
+    expect(input).toHaveAttribute("aria-invalid", "false");
+    expect(screen.getByTestId("timer-value")).toHaveAccessibleName(
+      "90 seconds remaining",
+    );
+    expect(screen.getByTestId("score-value")).toHaveAccessibleName(
+      "0 accepted answers",
+    );
     expect(screen.queryByRole("button", { name: "Submit" })).toBeNull();
   });
 
@@ -252,6 +264,10 @@ describe("GameBoard", () => {
 
     submitUnmatchedAnswer("Michael Jordan");
     expect(screen.getByRole("status")).toHaveTextContent("No match yet");
+    expect(screen.getByLabelText("Type an NBA player’s name")).toHaveAttribute(
+      "aria-invalid",
+      "true",
+    );
   });
 
   it("celebrates two fast answers with a liquid ripple and natural banner", () => {
