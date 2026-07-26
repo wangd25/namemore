@@ -2,9 +2,7 @@ import { notFound } from "next/navigation";
 
 import { GameBoard } from "@/components/GameBoard";
 import { CategoryReportDialog } from "@/components/CategoryReportDialog";
-import {
-  getPracticeCategory,
-} from "@/lib/chemical-elements";
+import { getPracticeCategory } from "@/lib/practice-categories";
 import { getPublishedPracticeCategory } from "@/lib/published-practice-server";
 
 export const dynamic = "force-dynamic";

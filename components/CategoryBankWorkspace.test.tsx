@@ -79,4 +79,45 @@ describe("CategoryBankWorkspace", () => {
     expect(screen.getByRole("heading", { name: "Reviewer access required." })).toBeInTheDocument();
     expect(screen.queryByText("Bank workspace")).not.toBeInTheDocument();
   });
+
+  it("previews an AI candidate before explicitly replacing unsaved editor text", async () => {
+    const aiDraft = {
+      status: "needs-verification",
+      model: "gpt-5.6-terra",
+      generatedAt: "2026-07-25T20:00:00.000Z",
+      answers: [
+        { canonicalText: "Paris", aliases: [] },
+        { canonicalText: "Rome", aliases: ["Roma"] },
+      ],
+      sourceSuggestions: [{
+        label: "Official geographic source",
+        url: "https://example.org/geography",
+      }],
+      coverageWarnings: ["Confirm transcontinental-country rules."],
+      validation: { canonicalCount: 2, aliasCount: 1 },
+    };
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ ok: true, data: aiDraft })),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    render(
+      <CategoryBankWorkspace
+        initialPayload={payload}
+        aiAssistEnabled
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Generate candidate with AI" }));
+
+    expect(await screen.findByText("Needs verification")).toBeInTheDocument();
+    expect(screen.getByLabelText("Canonical answers and aliases")).toHaveValue(
+      "Copenhagen | København\nLisbon | Lisboa",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Replace editor with candidate" }));
+    expect(screen.getByLabelText("Canonical answers and aliases")).toHaveValue(
+      "Paris\nRome | Roma",
+    );
+    expect(screen.getByText(/still unsaved and require source verification/)).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
 });

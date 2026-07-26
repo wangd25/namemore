@@ -771,9 +771,10 @@ export function GameBoard({ category }: GameBoardProps) {
               className="hud-value hud-score-value"
               data-testid="score-value"
               key={acceptedEvents.length}
-              aria-label={`${acceptedEvents.length} accepted ${acceptedEvents.length === 1 ? "answer" : "answers"}`}
+              aria-label={`${acceptedEvents.length} of ${category.answers.length} answers accepted`}
             >
-              {String(acceptedEvents.length).padStart(2, "0")}
+              <span>{String(acceptedEvents.length).padStart(2, "0")}</span>
+              <span className="hud-score-total" aria-hidden="true">/{category.answers.length}</span>
             </span>
             {personalBest > 0 || hasPassedBest ? (
               <span

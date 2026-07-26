@@ -486,7 +486,10 @@ export function DailyGameBoard({ api = dailyGameApi }: DailyGameBoardProps) {
           <div className="game-hud" aria-label="Round status">
             <time className={`hud-value${isUrgent ? " is-urgent" : ""}`} dateTime={`PT${remainingSeconds}S`} data-testid="timer-value" aria-label={`${remainingSeconds} seconds remaining`}>{formatTime(remainingSeconds)}</time>
             <span className="hud-divider" aria-hidden="true" />
-            <span className="hud-value hud-score-value" data-testid="score-value" aria-label={`${attempt?.score ?? 0} accepted ${(attempt?.score ?? 0) === 1 ? "answer" : "answers"}`}>{String(attempt?.score ?? 0).padStart(2, "0")}</span>
+            <span className="hud-value hud-score-value" data-testid="score-value" aria-label={`${attempt?.score ?? 0} of ${challenge?.category.answerCount ?? 0} answers accepted`}>
+              <span>{String(attempt?.score ?? 0).padStart(2, "0")}</span>
+              <span className="hud-score-total" aria-hidden="true">/{challenge?.category.answerCount ?? "—"}</span>
+            </span>
           </div>
           <button className="sound-toggle" type="button" aria-label={`Sound and haptics ${isFeedbackEnabled ? "on" : "off"}`} aria-pressed={isFeedbackEnabled} onClick={toggleFeedback}><SoundIcon isEnabled={isFeedbackEnabled} /></button>
         </div>

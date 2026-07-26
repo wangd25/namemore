@@ -106,9 +106,3 @@ export const chemicalElementsCategory: Category = {
   },
   answers: buildChemicalElementAnswers(),
 };
-
-export const practiceCategories = [chemicalElementsCategory] as const;
-
-export function getPracticeCategory(slug: string): Category | null {
-  return practiceCategories.find((category) => category.slug === slug) ?? null;
-}

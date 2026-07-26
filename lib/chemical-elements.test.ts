@@ -3,10 +3,10 @@ import { describe, expect, it } from "vitest";
 import {
   chemicalElementRecords,
   chemicalElementsCategory,
-  getPracticeCategory,
 } from "@/lib/chemical-elements";
 import { buildAnswerLookup, matchAnswer } from "@/lib/game-logic";
 import { normalizeAnswer } from "@/lib/normalize";
+import { getPracticeCategory } from "@/lib/practice-categories";
 
 describe("reviewed chemical elements category", () => {
   it("contains the 118 IUPAC elements in atomic-number order", () => {

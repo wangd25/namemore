@@ -9,6 +9,7 @@ export type DailyCategoryMetadata = {
   title: string;
   prompt: string;
   timeLimitSeconds: number;
+  answerCount: number;
 };
 
 export type DailyChallenge = {

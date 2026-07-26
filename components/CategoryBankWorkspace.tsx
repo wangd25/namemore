@@ -9,6 +9,8 @@ import {
   parseCategoryBankPayload,
   parseCategoryBankQueuePayload,
 } from "@/lib/category-bank-contract";
+import { parseCategoryAiDraftPayload } from "@/lib/category-ai-contract";
+import type { CategoryAiDraftPayload } from "@/lib/category-ai-types";
 import type {
   CategoryBankPayload,
   CategoryBankQueuePayload,
@@ -16,7 +18,7 @@ import type {
 } from "@/lib/category-bank-types";
 import { parseApiResponse } from "@/lib/daily-contract";
 
-type Operation = "loading" | "opening" | "saving" | "freezing" | "revising" | null;
+type Operation = "loading" | "opening" | "saving" | "freezing" | "revising" | "generating" | null;
 
 function getDraftLabel(prompt: string) {
   const match = prompt.match(/^How many (.+) can you name\??$/i);
@@ -37,7 +39,13 @@ function getBankStatusLabel(bank: CategoryBankPayload | null, fallback: "not-sta
   return "Bank rejected";
 }
 
-export function CategoryBankWorkspace({ initialPayload }: { initialPayload: CategoryBankQueuePayload | null }) {
+export function CategoryBankWorkspace({
+  initialPayload,
+  aiAssistEnabled = false,
+}: {
+  initialPayload: CategoryBankQueuePayload | null;
+  aiAssistEnabled?: boolean;
+}) {
   const [payload, setPayload] = useState(initialPayload);
   const [selectedId, setSelectedId] = useState(initialPayload?.drafts[0]?.draftId ?? null);
   const [bank, setBank] = useState<CategoryBankPayload | null>(initialPayload?.drafts[0]?.bank ?? null);
@@ -51,6 +59,7 @@ export function CategoryBankWorkspace({ initialPayload }: { initialPayload: Cate
   const [operation, setOperation] = useState<Operation>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState(initialPayload ? "" : "The bank workspace could not be loaded.");
+  const [aiDraft, setAiDraft] = useState<CategoryAiDraftPayload | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const answerEditorRef = useRef<HTMLTextAreaElement>(null);
   const messageRef = useRef<HTMLParagraphElement>(null);
@@ -70,6 +79,7 @@ export function CategoryBankWorkspace({ initialPayload }: { initialPayload: Cate
     setVersionNote(nextBank?.versionNote ?? "");
     setAnswerText(formatAnswerBankText(nextBank?.answers ?? []));
     setValidationVisible(false);
+    setAiDraft(null);
   }
 
   function selectDraft(draftId: string) {
@@ -199,6 +209,41 @@ export function CategoryBankWorkspace({ initialPayload }: { initialPayload: Cate
     }
   }
 
+  async function generateAiDraft() {
+    if (!selected || !editing || operation || !aiAssistEnabled) return;
+    setOperation("generating");
+    setError("");
+    setMessage("");
+    setAiDraft(null);
+    try {
+      const response = await fetch(
+        `/api/categories/banks/${selected.draftId}/ai-draft`,
+        { method: "POST" },
+      );
+      const parsed = parseApiResponse(
+        await response.json(),
+        parseCategoryAiDraftPayload,
+      );
+      if (!parsed.ok) throw new Error(parsed.error.message);
+      setAiDraft(parsed.data);
+      setMessage("Candidate bank generated privately. Review it before placing it in the editor.");
+    } catch (nextError) {
+      setError(nextError instanceof Error
+        ? nextError.message
+        : "The AI candidate bank could not be generated.");
+    } finally {
+      setOperation(null);
+    }
+  }
+
+  function useAiDraft() {
+    if (!aiDraft || !editing) return;
+    setAnswerText(formatAnswerBankText(aiDraft.answers));
+    setValidationVisible(true);
+    setMessage("Candidate answers placed in the editor. They are still unsaved and require source verification.");
+    requestAnimationFrame(() => answerEditorRef.current?.focus());
+  }
+
   if (payload && !payload.authorized) {
     return <section className="draft-frame"><BankHeader /><section className="review-access-boundary"><h1>Reviewer access required.</h1><p>This private workspace is available only to explicitly assigned reviewers.</p><Link href="/">Return to NameMore</Link></section></section>;
   }
@@ -243,9 +288,49 @@ export function CategoryBankWorkspace({ initialPayload }: { initialPayload: Cate
                   {validation.canonicalCount} canonical answers · {validation.aliasCount} aliases · {validation.errors.length ? `${validation.errors.length} issue${validation.errors.length === 1 ? "" : "s"}` : "No collisions"}
                   {validationVisible && validation.errors.length ? <ul>{validation.errors.slice(0, 4).map((issue) => <li key={issue}>{issue}</li>)}</ul> : null}
                 </div>
+                {aiDraft ? (
+                  <section className="bank-ai-preview" aria-label="AI candidate bank">
+                    <div className="bank-ai-preview-heading">
+                      <span>Needs verification</span>
+                      <strong>{aiDraft.validation.canonicalCount} candidate answers · {aiDraft.validation.aliasCount} aliases</strong>
+                    </div>
+                    <p>
+                      Generated suggestions are not saved, reviewed, exhaustive, or ranked-eligible.
+                    </p>
+                    {aiDraft.coverageWarnings.length ? (
+                      <ul>
+                        {aiDraft.coverageWarnings.map((warning) => (
+                          <li key={warning}>{warning}</li>
+                        ))}
+                      </ul>
+                    ) : null}
+                    <details>
+                      <summary>Suggested sources to verify</summary>
+                      {aiDraft.sourceSuggestions.map((source) => (
+                        <p key={source.url}>
+                          <strong>{source.label}</strong>
+                          <code>{source.url}</code>
+                        </p>
+                      ))}
+                    </details>
+                    <button type="button" onClick={useAiDraft}>
+                      {answerText.trim() ? "Replace editor with candidate" : "Use candidate answers"}
+                    </button>
+                  </section>
+                ) : null}
                 {editing ? <div className="bank-actions">
                   <button className="bank-save" type="submit" disabled={operation !== null}>{operation === "saving" ? "Saving…" : "Save draft"}</button>
                   <button className="bank-validate" type="button" disabled={operation !== null} onClick={() => setValidationVisible(true)}>Validate bank</button>
+                  {aiAssistEnabled ? (
+                    <button
+                      className="bank-ai-generate"
+                      type="button"
+                      disabled={operation !== null}
+                      onClick={() => void generateAiDraft()}
+                    >
+                      {operation === "generating" ? "Researching…" : "Generate candidate with AI"}
+                    </button>
+                  ) : null}
                   <button className="bank-freeze" type="button" disabled={operation !== null} onClick={() => void freezeDraft()}>{operation === "freezing" ? "Freezing…" : "Freeze for review"}</button>
                 </div> : selected.publicationCorrection && selected.available ? <div className="bank-review-outcome is-changes-requested"><h3>Published correction requested</h3><p>{selected.publicationCorrection.reason}</p><small>Version {selected.publicationCorrection.categoryVersion} remains live at /practice/{selected.publicationCorrection.slug}.</small><button className="bank-freeze" type="button" disabled={operation !== null} onClick={() => void postBank(`/api/categories/banks/${selected.draftId}/revisions`, "revising")}>{operation === "revising" ? "Starting…" : "Start published correction"}</button></div> : bank.reviewStatus === "changes-requested" && selected.available ? <div className="bank-review-outcome is-changes-requested"><h3>Correction requested</h3><p>{bank.latestReview?.note}</p><button className="bank-freeze" type="button" disabled={operation !== null} onClick={() => void postBank(`/api/categories/banks/${selected.draftId}/revisions`, "revising")}>{operation === "revising" ? "Starting…" : "Start correction revision"}</button></div> : <BankReviewOutcome bank={bank} />}
               </form>

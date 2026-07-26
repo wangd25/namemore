@@ -101,7 +101,7 @@ describe("GameBoard", () => {
       "90 seconds remaining",
     );
     expect(screen.getByTestId("score-value")).toHaveAccessibleName(
-      "0 accepted answers",
+      "0 of 300 answers accepted",
     );
     expect(screen.queryByRole("button", { name: "Submit" })).toBeNull();
   });
@@ -205,7 +205,7 @@ describe("GameBoard", () => {
 
     typeAnswer("Ja");
     expect(screen.getByLabelText("Type an NBA player’s name")).toHaveValue("Ja");
-    expect(screen.getByTestId("score-value")).toHaveTextContent("00");
+    expect(screen.getByTestId("score-value")).toHaveTextContent("00/300");
 
     typeAnswer("Jalen Green");
     expect(screen.getByRole("status")).toHaveTextContent("Jalen Green added");
@@ -222,7 +222,7 @@ describe("GameBoard", () => {
       vi.advanceTimersByTime(1);
     });
     expect(screen.getByTestId("answer-row-nba-ja-morant")).toBeInTheDocument();
-    expect(screen.getByTestId("score-value")).toHaveTextContent("02");
+    expect(screen.getByTestId("score-value")).toHaveTextContent("02/300");
   });
 
   it("settles accepted ink, locates duplicates, and reports unmatched answers", () => {
@@ -235,7 +235,7 @@ describe("GameBoard", () => {
       vi.advanceTimersByTime(420);
     });
     expect(screen.getByRole("status")).toHaveTextContent("Stephen Curry added");
-    expect(screen.getByTestId("score-value")).toHaveTextContent("01");
+    expect(screen.getByTestId("score-value")).toHaveTextContent("01/300");
     expect(screen.getByTestId("answer-row-nba-stephen-curry")).toHaveClass(
       "is-fresh",
     );
@@ -253,7 +253,7 @@ describe("GameBoard", () => {
     expect(screen.getByTestId("answer-row-nba-stephen-curry")).toHaveClass(
       "is-duplicate-target",
     );
-    expect(screen.getByTestId("score-value")).toHaveTextContent("01");
+    expect(screen.getByTestId("score-value")).toHaveTextContent("01/300");
 
     act(() => {
       vi.advanceTimersByTime(800);
@@ -311,7 +311,7 @@ describe("GameBoard", () => {
       typeAnswer(answer);
     }
 
-    expect(screen.getByTestId("score-value")).toHaveTextContent("05");
+    expect(screen.getByTestId("score-value")).toHaveTextContent("05/300");
     expect(screen.getByRole("status")).toHaveTextContent("5 names — hot run");
     expect(screen.getByText("5 names", { selector: ".milestone-wave-label" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Answer writing board" })).toHaveClass(
@@ -500,7 +500,7 @@ describe("GameBoard", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Play again" }));
 
-    expect(screen.getByTestId("score-value")).toHaveTextContent("00");
+    expect(screen.getByTestId("score-value")).toHaveTextContent("00/300");
     expect(screen.getByLabelText("Type an NBA player’s name")).toHaveFocus();
     expect(screen.queryByText("Nikola Jokić")).toBeNull();
   });

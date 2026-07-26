@@ -110,6 +110,10 @@ function parseDailyChallenge(value: unknown): DailyChallenge {
     throw new Error("Invalid daily challenge.");
   }
   const category = value.category;
+  const answerCount = readInteger(category, "answerCount");
+  if (answerCount < 1 || answerCount > 500) {
+    throw new Error("Invalid answerCount.");
+  }
   return {
     id: readString(value, "id"),
     date: readString(value, "date"),
@@ -121,6 +125,7 @@ function parseDailyChallenge(value: unknown): DailyChallenge {
       title: readString(category, "title"),
       prompt: readString(category, "prompt"),
       timeLimitSeconds: readInteger(category, "timeLimitSeconds"),
+      answerCount,
     },
   };
 }

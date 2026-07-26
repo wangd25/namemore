@@ -22,6 +22,7 @@ const challenge: DailyChallenge = {
     title: "Current NBA players",
     prompt: "How many NBA players can you name?",
     timeLimitSeconds: 90,
+    answerCount: 300,
   },
 };
 const curry: DailyAcceptedAnswer = {
@@ -107,7 +108,7 @@ describe("DailyGameBoard", () => {
       "90 seconds remaining",
     );
     expect(screen.getByTestId("score-value")).toHaveAccessibleName(
-      "0 accepted answers",
+      "0 of 300 answers accepted",
     );
     expect(api.start).toHaveBeenCalledTimes(1);
     expect(api.start).toHaveBeenCalledWith("Daily Player");
@@ -124,9 +125,9 @@ describe("DailyGameBoard", () => {
       answer: curry,
     });
     expect(await screen.findByText("Stephen Curry")).toBeInTheDocument();
-    expect(screen.getByTestId("score-value")).toHaveTextContent("01");
+    expect(screen.getByTestId("score-value")).toHaveTextContent("01/300");
     expect(screen.getByTestId("score-value")).toHaveAccessibleName(
-      "1 accepted answer",
+      "1 of 300 answers accepted",
     );
   });
 
@@ -202,7 +203,7 @@ describe("DailyGameBoard", () => {
     fireEvent.submit(input.closest("form")!);
 
     expect(await screen.findByText("Stephen Curry is already on your board")).toBeInTheDocument();
-    expect(screen.getByTestId("score-value")).toHaveTextContent("01");
+    expect(screen.getByTestId("score-value")).toHaveTextContent("01/300");
   });
 
   it("marks rejected input and announces answer-check failures urgently", async () => {

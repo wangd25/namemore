@@ -33,6 +33,7 @@ describe("daily API contracts", () => {
           title: "Current NBA players",
           prompt: "How many NBA players can you name?",
           timeLimitSeconds: 90,
+          answerCount: 300,
         },
       },
       attempt: {
@@ -50,6 +51,36 @@ describe("daily API contracts", () => {
 
     expect(payload.attempt?.answers).toEqual([acceptedAnswer]);
     expect(payload.attempt?.rankedEligible).toBe(false);
+    expect(payload.challenge?.category.answerCount).toBe(300);
+  });
+
+  it("rejects missing or impossible category answer totals", () => {
+    const base = {
+      serverNow: "2026-07-17T18:00:12.000Z",
+      challenge: {
+        id: "22222222-2222-4222-8222-222222222222",
+        date: "2026-07-17",
+        resetAt: "2026-07-18T00:00:00.000Z",
+        category: {
+          slug: "current-nba-players",
+          version: 1,
+          snapshotDate: "2026-07-15",
+          title: "Current NBA players",
+          prompt: "How many NBA players can you name?",
+          timeLimitSeconds: 90,
+        },
+      },
+      attempt: null,
+    };
+
+    expect(() => parseDailyStatusPayload(base)).toThrow("Invalid answerCount");
+    expect(() => parseDailyStatusPayload({
+      ...base,
+      challenge: {
+        ...base.challenge,
+        category: { ...base.challenge.category, answerCount: 501 },
+      },
+    })).toThrow("Invalid answerCount");
   });
 
   it("requires ranked eligibility to come from the server payload", () => {

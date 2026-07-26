@@ -90,6 +90,18 @@ const publicDefaultPrivilegeMigration = readFileSync(
   resolve(process.cwd(), "supabase/migrations/20260722203829_harden_public_default_privileges.sql"),
   "utf8",
 );
+const dailyAnswerTotalsMigration = readFileSync(
+  resolve(process.cwd(), "supabase/migrations/20260726001942_add_daily_answer_totals.sql"),
+  "utf8",
+);
+const reviewedUsStatesMigration = readFileSync(
+  resolve(process.cwd(), "supabase/migrations/20260726001943_add_reviewed_us_states_practice.sql"),
+  "utf8",
+);
+const categoryAiBudgetMigration = readFileSync(
+  resolve(process.cwd(), "supabase/migrations/20260726001944_add_category_ai_generation_budget.sql"),
+  "utf8",
+);
 
 describe("server-authoritative daily migration", () => {
   it("keeps the answer bank private and exposes only narrow RPCs", () => {
@@ -146,6 +158,57 @@ describe("server-authoritative daily migration", () => {
     expect(leaderboardMigration).not.toMatch(/grant\s+select\s+on\s+table\s+public\.daily_attempts/i);
     expect(displayNameControlFixMigration).toContain("p_display_name ~ '[[:cntrl:]]'");
     expect(displayNameControlFixMigration).toContain("revoke all on function private.normalize_daily_display_name(text)");
+  });
+
+  it("projects the private answer-bank total without exposing answer rows", () => {
+    expect(dailyAnswerTotalsMigration).toContain(
+      "create or replace function private.daily_challenge_payload",
+    );
+    expect(dailyAnswerTotalsMigration).toContain("'answerCount'");
+    expect(dailyAnswerTotalsMigration).toContain("select count(*)::integer");
+    expect(dailyAnswerTotalsMigration).toContain(
+      "revoke all on function private.daily_challenge_payload(uuid)",
+    );
+    expect(dailyAnswerTotalsMigration).not.toMatch(
+      /grant\s+select\s+on\s+private\.category_answers/i,
+    );
+  });
+
+  it("adds a reviewed 50-state practice bank without ranked eligibility", () => {
+    expect(reviewedUsStatesMigration).toContain("'us-states'");
+    expect(reviewedUsStatesMigration).toContain(
+      "'U.S. Census Bureau regions and divisions, reviewed 2026-07-25'",
+    );
+    expect(reviewedUsStatesMigration).toContain(
+      "'reviewed',\n  'practice',\n  false",
+    );
+    expect(reviewedUsStatesMigration).toContain(
+      "raise exception 'Expected 50 U.S. states.'",
+    );
+    expect(reviewedUsStatesMigration).not.toContain("competitive_eligible = true");
+  });
+
+  it("rate-limits AI drafts to the assigned private bank editor", () => {
+    expect(categoryAiBudgetMigration).toContain(
+      "create table private.category_ai_generation_events",
+    );
+    expect(categoryAiBudgetMigration).toContain(
+      "alter table private.category_ai_generation_events enable row level security",
+    );
+    expect(categoryAiBudgetMigration).toContain(
+      "version.editor_user_id = current_user_id",
+    );
+    expect(categoryAiBudgetMigration).toContain("recent_user_count >= 5");
+    expect(categoryAiBudgetMigration).toContain("recent_draft_count >= 3");
+    expect(categoryAiBudgetMigration).toContain(
+      "pg_catalog.pg_advisory_xact_lock",
+    );
+    expect(categoryAiBudgetMigration).toContain(
+      "revoke all on function public.category_ai_generation_reserve(uuid, text)",
+    );
+    expect(categoryAiBudgetMigration).not.toMatch(
+      /grant\s+(select|insert|update|delete)/i,
+    );
   });
 
   it("derives eligible scores, excludes active attempts, and orders ties deterministically", () => {
